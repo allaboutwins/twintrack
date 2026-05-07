@@ -13,8 +13,9 @@ import Sleep from "@/pages/Sleep";
 import Feeding from "@/pages/Feeding";
 import Diapers from "@/pages/Diapers";
 import Routines from "@/pages/Routines";
-import TwinsTV from "@/pages/TwinsTV";
+import Learn from "@/pages/Learn";
 import Settings from "@/pages/Settings";
+import VideoAdmin from "@/pages/VideoAdmin";
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -171,7 +172,13 @@ function ClerkProviderWithRoutes() {
               <ProtectedRoute component={Routines} />
             </Route>
             <Route path="/tv">
-              <ProtectedRoute component={TwinsTV} />
+              <ProtectedRoute component={Learn} />
+            </Route>
+            <Route path="/learn">
+              <ProtectedRoute component={Learn} />
+            </Route>
+            <Route path="/admin/videos">
+              <ProtectedRoute component={VideoAdmin} />
             </Route>
             <Route path="/settings">
               <ProtectedRoute component={Settings} />

@@ -54,7 +54,7 @@ export default function Landing() {
 
           {/* Feature pills */}
           <div className="flex flex-wrap justify-center gap-2">
-            {["Sleep Tracker", "Feeding Log", "Diaper Tracker", "Routines", "Twins TV"].map((f) => (
+            {["Sleep Tracker", "Feeding Log", "Diaper Tracker", "Routines", "Learn"].map((f) => (
               <span key={f} className="text-xs font-medium bg-primary/10 text-primary px-3 py-1 rounded-full">
                 {f}
               </span>

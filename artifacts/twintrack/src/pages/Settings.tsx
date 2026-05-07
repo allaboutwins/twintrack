@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useUser, useClerk } from "@clerk/react";
+import { useLocation } from "wouter";
 import {
   useListTwins,
   useCreateTwin,
@@ -8,7 +9,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { PageHeader } from "@/components/Layout";
-import { Save, LogOut, Plus, Edit2 } from "lucide-react";
+import { Save, LogOut, Video, ChevronRight } from "lucide-react";
 
 const COLOR_OPTIONS = [
   "#da5a9f",
@@ -34,6 +35,7 @@ export default function Settings() {
   const { user } = useUser();
   const { signOut } = useClerk();
   const qc = useQueryClient();
+  const [, setLocation] = useLocation();
 
   const { data: twins = [], isLoading } = useListTwins(
     { userId: user?.id ?? "" },
@@ -145,6 +147,27 @@ export default function Settings() {
               Sign Out
             </button>
           </div>
+        </div>
+
+        {/* Content Management */}
+        <div className="bg-white rounded-2xl border border-border overflow-hidden">
+          <div className="px-5 py-4 border-b border-border">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Content Library</p>
+          </div>
+          <button
+            onClick={() => setLocation("/admin/videos")}
+            className="w-full px-5 py-4 flex items-center gap-4 hover:bg-muted/30 active:bg-muted/50 transition-colors text-left"
+            data-testid="button-video-admin"
+          >
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Video size={18} className="text-primary" />
+            </div>
+            <div className="flex-1">
+              <p className="font-semibold text-sm text-foreground">Add Videos to Learn</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Import YouTube or other videos to the library</p>
+            </div>
+            <ChevronRight size={16} className="text-muted-foreground" />
+          </button>
         </div>
 
         {/* Twin A */}

@@ -1,12 +1,12 @@
 import { Link, useLocation } from "wouter";
-import { Home, Moon, Utensils, BookOpen, Tv, Settings } from "lucide-react";
+import { Home, Moon, Utensils, BookOpen, GraduationCap, Settings } from "lucide-react";
 
 const tabs = [
   { path: "/dashboard", icon: Home, label: "Home" },
   { path: "/sleep", icon: Moon, label: "Sleep" },
   { path: "/feeding", icon: Utensils, label: "Feed" },
   { path: "/routines", icon: BookOpen, label: "Routines" },
-  { path: "/tv", icon: Tv, label: "TV" },
+  { path: "/learn", icon: GraduationCap, label: "Learn" },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {
