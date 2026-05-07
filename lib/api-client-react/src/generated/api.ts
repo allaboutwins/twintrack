@@ -21,6 +21,7 @@ import type {
   BookmarkVideoBody,
   CreateDiaperEntryBody,
   CreateFeedingEntryBody,
+  CreateMilestoneBody,
   CreateRoutineBody,
   CreateSleepEntryBody,
   CreateTwinBody,
@@ -36,10 +37,13 @@ import type {
   ListBookmarkedVideosParams,
   ListDiaperEntriesParams,
   ListFeedingEntriesParams,
+  ListMilestonesParams,
   ListRoutinesParams,
   ListSleepEntriesParams,
   ListTwinsParams,
+  ListVideoNotesParams,
   ListVideosParams,
+  Milestone,
   Routine,
   RoutineTask,
   SleepEntry,
@@ -50,7 +54,9 @@ import type {
   UpdateRoutineTaskBody,
   UpdateSleepEntryBody,
   UpdateTwinBody,
+  UpsertVideoNoteBody,
   Video,
+  VideoNote,
 } from "./api.schemas";
 
 import { customFetch } from "../custom-fetch";
@@ -2709,6 +2715,466 @@ export function useListBookmarkedVideos<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Get notes for a video by a user
+ */
+export const getListVideoNotesUrl = (
+  id: number,
+  params: ListVideoNotesParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/videos/${id}/notes?${stringifiedParams}`
+    : `/api/videos/${id}/notes`;
+};
+
+export const listVideoNotes = async (
+  id: number,
+  params: ListVideoNotesParams,
+  options?: RequestInit,
+): Promise<VideoNote[]> => {
+  return customFetch<VideoNote[]>(getListVideoNotesUrl(id, params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListVideoNotesQueryKey = (
+  id: number,
+  params?: ListVideoNotesParams,
+) => {
+  return [`/api/videos/${id}/notes`, ...(params ? [params] : [])] as const;
+};
+
+export const getListVideoNotesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listVideoNotes>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  params: ListVideoNotesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listVideoNotes>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListVideoNotesQueryKey(id, params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listVideoNotes>>> = ({
+    signal,
+  }) => listVideoNotes(id, params, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof listVideoNotes>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListVideoNotesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listVideoNotes>>
+>;
+export type ListVideoNotesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get notes for a video by a user
+ */
+
+export function useListVideoNotes<
+  TData = Awaited<ReturnType<typeof listVideoNotes>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  params: ListVideoNotesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listVideoNotes>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListVideoNotesQueryOptions(id, params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create or update a personal note on a video
+ */
+export const getUpsertVideoNoteUrl = (id: number) => {
+  return `/api/videos/${id}/notes`;
+};
+
+export const upsertVideoNote = async (
+  id: number,
+  upsertVideoNoteBody: UpsertVideoNoteBody,
+  options?: RequestInit,
+): Promise<VideoNote> => {
+  return customFetch<VideoNote>(getUpsertVideoNoteUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(upsertVideoNoteBody),
+  });
+};
+
+export const getUpsertVideoNoteMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertVideoNote>>,
+    TError,
+    { id: number; data: BodyType<UpsertVideoNoteBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof upsertVideoNote>>,
+  TError,
+  { id: number; data: BodyType<UpsertVideoNoteBody> },
+  TContext
+> => {
+  const mutationKey = ["upsertVideoNote"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof upsertVideoNote>>,
+    { id: number; data: BodyType<UpsertVideoNoteBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return upsertVideoNote(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpsertVideoNoteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof upsertVideoNote>>
+>;
+export type UpsertVideoNoteMutationBody = BodyType<UpsertVideoNoteBody>;
+export type UpsertVideoNoteMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create or update a personal note on a video
+ */
+export const useUpsertVideoNote = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof upsertVideoNote>>,
+    TError,
+    { id: number; data: BodyType<UpsertVideoNoteBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof upsertVideoNote>>,
+  TError,
+  { id: number; data: BodyType<UpsertVideoNoteBody> },
+  TContext
+> => {
+  return useMutation(getUpsertVideoNoteMutationOptions(options));
+};
+
+/**
+ * @summary List milestones for a user (optionally filtered by twin)
+ */
+export const getListMilestonesUrl = (params: ListMilestonesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/milestones?${stringifiedParams}`
+    : `/api/milestones`;
+};
+
+export const listMilestones = async (
+  params: ListMilestonesParams,
+  options?: RequestInit,
+): Promise<Milestone[]> => {
+  return customFetch<Milestone[]>(getListMilestonesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListMilestonesQueryKey = (params?: ListMilestonesParams) => {
+  return [`/api/milestones`, ...(params ? [params] : [])] as const;
+};
+
+export const getListMilestonesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listMilestones>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListMilestonesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMilestones>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListMilestonesQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listMilestones>>> = ({
+    signal,
+  }) => listMilestones(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listMilestones>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListMilestonesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listMilestones>>
+>;
+export type ListMilestonesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List milestones for a user (optionally filtered by twin)
+ */
+
+export function useListMilestones<
+  TData = Awaited<ReturnType<typeof listMilestones>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListMilestonesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listMilestones>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListMilestonesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Log a new milestone
+ */
+export const getCreateMilestoneUrl = () => {
+  return `/api/milestones`;
+};
+
+export const createMilestone = async (
+  createMilestoneBody: CreateMilestoneBody,
+  options?: RequestInit,
+): Promise<Milestone> => {
+  return customFetch<Milestone>(getCreateMilestoneUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createMilestoneBody),
+  });
+};
+
+export const getCreateMilestoneMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createMilestone>>,
+    TError,
+    { data: BodyType<CreateMilestoneBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createMilestone>>,
+  TError,
+  { data: BodyType<CreateMilestoneBody> },
+  TContext
+> => {
+  const mutationKey = ["createMilestone"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createMilestone>>,
+    { data: BodyType<CreateMilestoneBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createMilestone(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateMilestoneMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createMilestone>>
+>;
+export type CreateMilestoneMutationBody = BodyType<CreateMilestoneBody>;
+export type CreateMilestoneMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Log a new milestone
+ */
+export const useCreateMilestone = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createMilestone>>,
+    TError,
+    { data: BodyType<CreateMilestoneBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createMilestone>>,
+  TError,
+  { data: BodyType<CreateMilestoneBody> },
+  TContext
+> => {
+  return useMutation(getCreateMilestoneMutationOptions(options));
+};
+
+/**
+ * @summary Delete a milestone
+ */
+export const getDeleteMilestoneUrl = (id: number) => {
+  return `/api/milestones/${id}`;
+};
+
+export const deleteMilestone = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteMilestoneUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteMilestoneMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteMilestone>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteMilestone>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteMilestone"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteMilestone>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteMilestone(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteMilestoneMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteMilestone>>
+>;
+
+export type DeleteMilestoneMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a milestone
+ */
+export const useDeleteMilestone = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteMilestone>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteMilestone>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteMilestoneMutationOptions(options));
+};
 
 /**
  * @summary Get today's summary for all twins

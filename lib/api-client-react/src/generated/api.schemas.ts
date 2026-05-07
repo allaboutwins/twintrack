@@ -215,7 +215,7 @@ export interface Video {
   title: string;
   /** @nullable */
   description?: string | null;
-  /** sleep, feeding, pregnancy, toddler, day-in-the-life, tips */
+  /** sleep, feeding, twin-pregnancy, breastfeeding-twins, nicu, toddler-life, routines, mental-health, product-recommendations, schedules, potty-training, expert-advice, tips, day-in-the-life */
   category: string;
   /** youtube, upload */
   sourceType: string;
@@ -224,6 +224,21 @@ export interface Video {
   thumbnailUrl?: string | null;
   /** @nullable */
   durationSeconds?: number | null;
+  /**
+   * Comma-separated tags
+   * @nullable
+   */
+  tags?: string | null;
+  /**
+   * Minimum age in months
+   * @nullable
+   */
+  ageRangeMin?: number | null;
+  /**
+   * Maximum age in months
+   * @nullable
+   */
+  ageRangeMax?: number | null;
   createdAt: string;
 }
 
@@ -238,6 +253,12 @@ export interface CreateVideoBody {
   thumbnailUrl?: string | null;
   /** @nullable */
   durationSeconds?: number | null;
+  /** @nullable */
+  tags?: string | null;
+  /** @nullable */
+  ageRangeMin?: number | null;
+  /** @nullable */
+  ageRangeMax?: number | null;
 }
 
 export interface BookmarkVideoBody {
@@ -249,6 +270,56 @@ export interface BookmarkResult {
   videoId: number;
   userId: string;
   bookmarked: boolean;
+}
+
+export interface VideoNote {
+  id: number;
+  userId: string;
+  videoId: number;
+  note: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface UpsertVideoNoteBody {
+  userId: string;
+  note: string;
+}
+
+export interface Milestone {
+  id: number;
+  userId: string;
+  twinId: number;
+  /** first-smile, first-laugh, rolled-over, sat-up, crawled, first-tooth, first-word, first-steps, slept-through-night, first-daycare, first-birthday, potty-training, first-school, custom */
+  category: string;
+  title: string;
+  achievedDate: string;
+  /** @nullable */
+  photoUrl?: string | null;
+  /** @nullable */
+  note?: string | null;
+  createdAt: string;
+}
+
+export interface CreateMilestoneBody {
+  userId: string;
+  twinId: number;
+  category: string;
+  title: string;
+  achievedDate: string;
+  /** @nullable */
+  photoUrl?: string | null;
+  /** @nullable */
+  note?: string | null;
+}
+
+export interface ListMilestonesQueryParams {
+  userId: string;
+  twinId?: number;
+}
+
+export interface DeleteMilestoneParams {
+  id: number;
 }
 
 export interface TwinDashboardSummary {
@@ -326,6 +397,15 @@ export type ListVideosParams = {
 
 export type ListBookmarkedVideosParams = {
   userId: string;
+};
+
+export type ListVideoNotesParams = {
+  userId: string;
+};
+
+export type ListMilestonesParams = {
+  userId: string;
+  twinId?: number;
 };
 
 export type GetDashboardSummaryParams = {

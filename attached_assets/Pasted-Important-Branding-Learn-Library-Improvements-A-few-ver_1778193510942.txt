@@ -1,0 +1,168 @@
+Important Branding + Learn Library Improvements 🚀
+
+A few very important updates are needed now to make TwinTrack feel like a real polished product and connected to the “All About Twins” ecosystem.
+
+--------------------------------------------------
+
+1) Change All Email Branding Immediately
+
+Right now emails are being sent from:
+“Twin Parenthood OS”
+
+This feels generic, technical, and disconnected from the actual app brand.
+
+Please change ALL email sending names, sender names, headers, notifications, and templates to:
+
+👉 TwinTrack
+
+Examples:
+- “Welcome to TwinTrack 💕”
+- “Your TwinTrack reminder”
+- “TwinTrack Daily Summary”
+- “TwinTrack Support”
+
+The app brand should remain consistent everywhere:
+- Emails
+- Push notifications
+- Authentication
+- Headers
+- Browser title
+- Mobile shortcuts
+- Meta tags
+
+Goal:
+Parents should emotionally remember the name “TwinTrack.”
+
+--------------------------------------------------
+
+2) Transform “Learn” Into a REAL Living Twin Parenting Library
+
+The Learn section should no longer contain placeholder videos or Rick Astley embeds.
+
+Instead:
+👉 The library should become a dynamic content hub powered by “All About Twins” social media content.
+
+Main goal:
+Create the largest organized twin parenting video library using our real educational content.
+
+--------------------------------------------------
+
+3) Pull Real Content From Our Channels
+
+Use videos from:
+
+YouTube Shorts
+https://www.youtube.com/@AllAboutTwins
+
+Instagram Reels
+https://www.instagram.com/allaboutwins
+
+TikTok
+https://www.tiktok.com/@allabouttwins
+
+The app should prioritize YouTube Shorts embedding first because:
+- reliable embeds
+- easy playback
+- organized library
+- scalable
+
+--------------------------------------------------
+
+4) Build a Smart Video Categorization System
+
+Every imported video should support:
+
+- title
+- thumbnail
+- category
+- tags
+- age range
+- short description
+- source platform
+- save/bookmark
+- notes
+- favorites
+
+Suggested categories:
+- Sleep
+- Feeding
+- Twin Pregnancy
+- Breastfeeding Twins
+- NICU
+- Toddler Twins
+- Twin Routines
+- Twin Mom Mental Health
+- Product Tips
+- Schedules
+- Potty Training
+- Expert Advice
+- Twin Hacks
+- Encouragement
+
+--------------------------------------------------
+
+5) IMPORTANT: Add Personal Notes + Saved Tips
+
+This is a HUGE retention feature.
+
+Parents should be able to:
+- save videos
+- write personal notes
+- save favorite tips
+- create their own mini knowledge library
+
+Examples:
+“Try this bedtime routine tonight”
+“This feeding trick worked for Twin B”
+
+This transforms passive watching into active parenting support.
+
+--------------------------------------------------
+
+6) Build Auto-Import Architecture (Very Important)
+
+Please prepare the Learn system so it can scale into hundreds or thousands of videos later.
+
+Suggested system:
+- admin imports YouTube Shorts URL
+- app automatically pulls:
+  - thumbnail
+  - title
+  - embed
+  - duration
+
+Then admin selects:
+- category
+- tags
+- age range
+
+Goal:
+Adding new content should take seconds, not manual coding.
+
+--------------------------------------------------
+
+7) “Recommended For You” Engine
+
+Later, the app should recommend videos based on:
+- twins’ age
+- saved content
+- previous watches
+- routines used
+- milestones
+
+Examples:
+“Recommended for 4-month-old twins 💕”
+“Twin sleep tips parents are loving this week”
+
+This will massively increase engagement.
+
+--------------------------------------------------
+
+8) Long-Term Vision for Learn
+
+The Learn section should eventually feel like:
+“Netflix + Pinterest + MasterClass for twin parents.”
+
+Not random videos.
+
+A beautifully organized twin parenting knowledge library powered by All About Twins content and experts.

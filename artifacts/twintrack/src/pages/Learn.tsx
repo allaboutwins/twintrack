@@ -4,13 +4,15 @@ import {
   useListVideos,
   useListBookmarkedVideos,
   useBookmarkVideo,
+  useListVideoNotes,
+  useUpsertVideoNote,
   getListVideosQueryKey,
   getListBookmarkedVideosQueryKey,
-  useCreateVideo,
+  getListVideoNotesQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { PageHeader } from "@/components/Layout";
-import { Bookmark, BookmarkCheck, Search, Play, ExternalLink, Star } from "lucide-react";
+import { Bookmark, BookmarkCheck, Search, Play, ExternalLink, Star, StickyNote, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const CATEGORIES = [
@@ -26,70 +28,21 @@ const CATEGORIES = [
   { key: "premature-twins", label: "Premature Twins" },
   { key: "schedules", label: "Schedules" },
   { key: "expert-advice", label: "Expert Advice" },
-  { key: "tips", label: "Tips" },
+  { key: "tips", label: "Twin Hacks" },
   { key: "day-in-the-life", label: "Day in Life" },
 ];
 
 const SOCIAL_LINKS = [
-  {
-    name: "Instagram",
-    handle: "@allaboutwins",
-    url: "https://www.instagram.com/allaboutwins",
-    color: "#E1306C",
-    icon: "IG",
-    bg: "#fce4ec",
-  },
-  {
-    name: "YouTube",
-    handle: "All About Twins",
-    url: "https://www.youtube.com/@AllAboutTwins",
-    color: "#FF0000",
-    icon: "YT",
-    bg: "#ffebee",
-  },
-  {
-    name: "Facebook",
-    handle: "All About Twins",
-    url: "https://tinyurl.com/m7efnvc8",
-    color: "#1877F2",
-    icon: "FB",
-    bg: "#e3f2fd",
-  },
-  {
-    name: "TikTok",
-    handle: "@allabouttwins",
-    url: "https://www.tiktok.com/@allabouttwins",
-    color: "#000000",
-    icon: "TK",
-    bg: "#f3e5f5",
-  },
-  {
-    name: "Threads",
-    handle: "@allaboutwins",
-    url: "https://www.threads.net/@allaboutwins",
-    color: "#1C1C1E",
-    icon: "TH",
-    bg: "#e8eaf6",
-  },
-  {
-    name: "Pinterest",
-    handle: "allabout2wins",
-    url: "https://www.pinterest.com/allabout2wins",
-    color: "#E60023",
-    icon: "PT",
-    bg: "#fce4ec",
-  },
-  {
-    name: "LinkedIn",
-    handle: "All About Twins",
-    url: "https://tinyurl.com/y22925vn",
-    color: "#0077B5",
-    icon: "LI",
-    bg: "#e1f5fe",
-  },
+  { name: "Instagram", handle: "@allaboutwins", url: "https://www.instagram.com/allaboutwins", color: "#E1306C", icon: "IG", bg: "#fce4ec" },
+  { name: "YouTube", handle: "All About Twins", url: "https://www.youtube.com/@AllAboutTwins", color: "#FF0000", icon: "YT", bg: "#ffebee" },
+  { name: "Facebook", handle: "All About Twins", url: "https://tinyurl.com/m7efnvc8", color: "#1877F2", icon: "FB", bg: "#e3f2fd" },
+  { name: "TikTok", handle: "@allabouttwins", url: "https://www.tiktok.com/@allabouttwins", color: "#000000", icon: "TK", bg: "#f3e5f5" },
+  { name: "Threads", handle: "@allaboutwins", url: "https://www.threads.net/@allaboutwins", color: "#1C1C1E", icon: "TH", bg: "#e8eaf6" },
+  { name: "Pinterest", handle: "allabout2wins", url: "https://www.pinterest.com/allabout2wins", color: "#E60023", icon: "PT", bg: "#fce4ec" },
+  { name: "LinkedIn", handle: "All About Twins", url: "https://tinyurl.com/y22925vn", color: "#0077B5", icon: "LI", bg: "#e1f5fe" },
 ];
 
-const TIPS_OF_DAY = [
+const TIPS = [
   "Syncing your twins' schedules is the single biggest life-changer. Even 15 minutes of difference adds up to hours of lost sleep.",
   "It's okay if one twin eats more than the other. Appetite varies naturally — just keep tracking and share with your pediatrician.",
   "\"Sleeping when the babies sleep\" is real advice. Even 20 minutes makes a difference. You're doing an incredible job.",
@@ -103,19 +56,122 @@ const TIPS_OF_DAY = [
 ];
 
 function getDayTip() {
-  const day = new Date().getDate();
-  return TIPS_OF_DAY[day % TIPS_OF_DAY.length];
+  return TIPS[new Date().getDate() % TIPS.length];
 }
 
 function getYouTubeId(url: string) {
-  const m = url.match(/(?:v=|youtu\.be\/)([\w-]{11})/);
+  const m = url.match(/(?:v=|youtu\.be\/|shorts\/)([\w-]{11})/);
   return m ? m[1] : null;
 }
 
-function getTwinAgeMonths(birthdate: string) {
-  const bd = new Date(birthdate);
-  const now = new Date();
-  return (now.getFullYear() - bd.getFullYear()) * 12 + now.getMonth() - bd.getMonth();
+function getEmbedUrl(url: string) {
+  const id = getYouTubeId(url);
+  if (id) return `https://www.youtube.com/embed/${id}?autoplay=1`;
+  return url;
+}
+
+function isYouTube(url: string) {
+  return url.includes("youtube.com") || url.includes("youtu.be");
+}
+
+function VideoNotePanel({ videoId, userId }: { videoId: number; userId: string }) {
+  const qc = useQueryClient();
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  const { data: notes = [] } = useListVideoNotes(
+    { id: videoId, userId },
+    { query: { queryKey: getListVideoNotesQueryKey({ id: videoId, userId }) } },
+  );
+
+  const upsertNote = useUpsertVideoNote();
+  const existingNote = notes[0];
+
+  function startEdit() {
+    setDraft(existingNote?.note ?? "");
+    setEditing(true);
+  }
+
+  function saveNote() {
+    upsertNote.mutate(
+      { id: videoId, data: { userId, note: draft } },
+      {
+        onSuccess: () => {
+          qc.invalidateQueries({ queryKey: getListVideoNotesQueryKey({ id: videoId, userId }) });
+          setEditing(false);
+          setSaved(true);
+          setTimeout(() => setSaved(false), 2000);
+        },
+      },
+    );
+  }
+
+  if (!editing && !existingNote) {
+    return (
+      <button
+        onClick={startEdit}
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors py-1"
+        data-testid={`add-note-${videoId}`}
+      >
+        <StickyNote size={13} />
+        Add a personal note
+      </button>
+    );
+  }
+
+  if (!editing && existingNote) {
+    return (
+      <div className="bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5 mt-2">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-start gap-2">
+            <StickyNote size={13} className="text-amber-500 flex-shrink-0 mt-0.5" />
+            <p className="text-xs text-amber-800 leading-relaxed">{existingNote.note}</p>
+          </div>
+          <button
+            onClick={startEdit}
+            className="text-xs text-amber-600 font-semibold flex-shrink-0 hover:text-amber-800"
+            data-testid={`edit-note-${videoId}`}
+          >
+            Edit
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-2 mt-2">
+      <textarea
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        placeholder="e.g. 'Try this bedtime routine tonight' or 'This feeding trick worked for Twin B'"
+        rows={3}
+        className="w-full px-3 py-2.5 rounded-xl bg-amber-50 border border-amber-200 text-xs outline-none focus:ring-2 ring-amber-300 resize-none text-amber-900 placeholder:text-amber-400"
+        autoFocus
+        data-testid={`note-input-${videoId}`}
+      />
+      <div className="flex gap-2">
+        <button
+          onClick={saveNote}
+          disabled={upsertNote.isPending || !draft.trim()}
+          className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
+            saved ? "bg-green-500 text-white" : "bg-primary text-white"
+          } disabled:opacity-50`}
+          data-testid={`save-note-${videoId}`}
+        >
+          {saved ? <Check size={12} /> : <StickyNote size={12} />}
+          {saved ? "Saved!" : "Save Note"}
+        </button>
+        <button
+          onClick={() => setEditing(false)}
+          className="px-3 py-2 rounded-xl text-xs font-semibold bg-muted text-muted-foreground"
+        >
+          Cancel
+        </button>
+      </div>
+    </div>
+  );
 }
 
 export default function Learn() {
@@ -169,7 +225,7 @@ export default function Learn() {
       <div className="px-4 pb-3 flex gap-2 border-b border-border">
         {[
           { key: "library", label: "Library" },
-          { key: "saved", label: "Saved" },
+          { key: "saved", label: `Saved${bookmarked.length > 0 ? ` (${bookmarked.length})` : ""}` },
           { key: "community", label: "Community" },
         ].map(({ key, label }) => (
           <button
@@ -188,7 +244,6 @@ export default function Learn() {
       {/* Community Tab */}
       {activeTab === "community" && (
         <div className="px-4 pt-4 space-y-5 pb-4">
-          {/* Tip of the day */}
           <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl border border-primary/20 p-5">
             <div className="flex items-center gap-2 mb-3">
               <Star size={16} className="text-primary fill-primary" />
@@ -197,7 +252,6 @@ export default function Learn() {
             <p className="text-sm text-foreground leading-relaxed">{getDayTip()}</p>
           </div>
 
-          {/* You're doing amazing */}
           <div className="bg-accent/5 border border-accent/20 rounded-2xl p-5 text-center space-y-2">
             <p className="text-2xl">✨</p>
             <p className="font-bold text-foreground">You're doing amazing.</p>
@@ -206,13 +260,10 @@ export default function Learn() {
             </p>
           </div>
 
-          {/* Follow us */}
           <div className="bg-white rounded-2xl border border-border overflow-hidden">
             <div className="px-5 py-4 border-b border-border">
               <p className="font-semibold text-foreground">Join our community</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Connect with twin families everywhere
-              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">Connect with All About Twins everywhere</p>
             </div>
             <div className="divide-y divide-border">
               {SOCIAL_LINKS.map((s) => (
@@ -240,19 +291,15 @@ export default function Learn() {
             </div>
           </div>
 
-          {/* Encouragement quote */}
           <div className="text-center py-4">
-            <p className="text-xs text-muted-foreground italic">
-              "Twins don't just double the love — they multiply it forever."
-            </p>
+            <p className="text-xs text-muted-foreground italic">"Twins don't just double the love — they multiply it forever."</p>
           </div>
         </div>
       )}
 
-      {/* Library / Saved Tab */}
+      {/* Library / Saved */}
       {activeTab !== "community" && (
         <>
-          {/* Search */}
           {activeTab === "library" && (
             <div className="px-4 pt-3 pb-2">
               <div className="flex items-center gap-2 bg-white border border-border rounded-xl px-3 py-2.5">
@@ -268,7 +315,6 @@ export default function Learn() {
             </div>
           )}
 
-          {/* Category filter */}
           {activeTab === "library" && (
             <div className="px-4 pb-3 flex gap-2 overflow-x-auto no-scrollbar">
               {CATEGORIES.map(({ key, label }) => (
@@ -286,7 +332,7 @@ export default function Learn() {
             </div>
           )}
 
-          <div className="px-4 space-y-3 pb-4">
+          <div className="px-4 space-y-4 pb-4">
             {isLoading && (
               <div className="space-y-3">
                 <Skeleton className="h-52 rounded-2xl" />
@@ -310,6 +356,14 @@ export default function Learn() {
               const isPlaying = playingId === video.id;
               const isBookmarked = bookmarkedIds.has(video.id);
               const cat = CATEGORIES.find((c) => c.key === video.category);
+              const ageLabel =
+                video.ageRangeMin != null || video.ageRangeMax != null
+                  ? video.ageRangeMin != null && video.ageRangeMax != null
+                    ? `${video.ageRangeMin}–${video.ageRangeMax} months`
+                    : video.ageRangeMin != null
+                      ? `${video.ageRangeMin}+ months`
+                      : `Up to ${video.ageRangeMax} months`
+                  : null;
 
               return (
                 <div
@@ -317,11 +371,11 @@ export default function Learn() {
                   className="bg-white rounded-2xl border border-border overflow-hidden"
                   data-testid={`video-${video.id}`}
                 >
-                  {/* Thumbnail / Player */}
+                  {/* Player */}
                   <div className="relative aspect-video bg-muted">
-                    {isPlaying && ytId ? (
+                    {isPlaying ? (
                       <iframe
-                        src={`https://www.youtube.com/embed/${ytId}?autoplay=1`}
+                        src={getEmbedUrl(video.url)}
                         className="w-full h-full"
                         allow="autoplay; fullscreen"
                         title={video.title}
@@ -333,11 +387,7 @@ export default function Learn() {
                         data-testid={`play-video-${video.id}`}
                       >
                         {video.thumbnailUrl ? (
-                          <img
-                            src={video.thumbnailUrl}
-                            alt={video.title}
-                            className="w-full h-full object-cover"
-                          />
+                          <img src={video.thumbnailUrl} alt={video.title} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20" />
                         )}
@@ -346,17 +396,31 @@ export default function Learn() {
                             <Play size={24} className="text-primary ml-1" fill="currentColor" />
                           </div>
                         </div>
+                        {ageLabel && (
+                          <div className="absolute top-3 left-3">
+                            <span className="bg-accent/90 text-white text-xs font-semibold px-2 py-1 rounded-full">
+                              {ageLabel}
+                            </span>
+                          </div>
+                        )}
                       </button>
                     )}
                   </div>
 
                   {/* Info */}
-                  <div className="p-4">
+                  <div className="px-4 pt-3 pb-2">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary mb-2 capitalize">
-                          {cat?.label ?? video.category.replace(/-/g, " ")}
-                        </span>
+                        <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                          <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary capitalize">
+                            {cat?.label ?? video.category.replace(/-/g, " ")}
+                          </span>
+                          {video.tags && video.tags.split(",").slice(0, 2).map((tag) => (
+                            <span key={tag} className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded-full">
+                              {tag.trim()}
+                            </span>
+                          ))}
+                        </div>
                         <p className="font-semibold text-foreground leading-snug">{video.title}</p>
                         {video.description && (
                           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{video.description}</p>
@@ -374,6 +438,9 @@ export default function Learn() {
                         )}
                       </button>
                     </div>
+
+                    {/* Personal notes */}
+                    {user?.id && <VideoNotePanel videoId={video.id} userId={user.id} />}
                   </div>
                 </div>
               );

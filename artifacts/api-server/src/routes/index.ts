@@ -6,6 +6,7 @@ import feedingRouter from "./feeding";
 import diapersRouter from "./diapers";
 import routinesRouter from "./routines";
 import videosRouter from "./videos";
+import milestonesRouter from "./milestones";
 import dashboardRouter from "./dashboard";
 
 const router: IRouter = Router();
@@ -17,6 +18,7 @@ router.use(feedingRouter);
 router.use(diapersRouter);
 router.use(routinesRouter);
 router.use(videosRouter);
+router.use(milestonesRouter);
 router.use(dashboardRouter);
 
 export default router;

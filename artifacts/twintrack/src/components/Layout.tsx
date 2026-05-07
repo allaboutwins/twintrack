@@ -1,11 +1,12 @@
 import { Link, useLocation } from "wouter";
-import { Home, Moon, Utensils, BookOpen, GraduationCap, Settings } from "lucide-react";
+import { Home, Moon, Utensils, BookOpen, GraduationCap, Heart, Settings } from "lucide-react";
 
 const tabs = [
   { path: "/dashboard", icon: Home, label: "Home" },
   { path: "/sleep", icon: Moon, label: "Sleep" },
   { path: "/feeding", icon: Utensils, label: "Feed" },
   { path: "/routines", icon: BookOpen, label: "Routines" },
+  { path: "/milestones", icon: Heart, label: "Memories" },
   { path: "/learn", icon: GraduationCap, label: "Learn" },
 ];
 
@@ -18,14 +19,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-border safe-area-pb">
-        <div className="flex items-center justify-around px-2 py-2">
+        <div className="flex items-center justify-around px-1 py-1.5">
           {tabs.map(({ path, icon: Icon, label }) => {
             const active = location === path || location.startsWith(path + "/");
             return (
               <Link
                 key={path}
                 to={path}
-                className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all min-w-[56px] ${
+                className={`flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-xl transition-all flex-1 ${
                   active
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground"
@@ -33,11 +34,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 data-testid={`nav-${label.toLowerCase()}`}
               >
                 <Icon
-                  size={22}
+                  size={20}
                   className={`transition-transform ${active ? "scale-110" : ""}`}
                   strokeWidth={active ? 2.5 : 1.8}
                 />
-                <span className={`text-[10px] font-medium ${active ? "font-semibold" : ""}`}>
+                <span className={`text-[9px] font-medium leading-none ${active ? "font-semibold" : ""}`}>
                   {label}
                 </span>
               </Link>
@@ -45,17 +46,17 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           })}
           <Link
             to="/settings"
-            className={`flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all min-w-[56px] ${
+            className={`flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-xl transition-all flex-1 ${
               location === "/settings" ? "text-primary" : "text-muted-foreground hover:text-foreground"
             }`}
             data-testid="nav-settings"
           >
             <Settings
-              size={22}
+              size={20}
               strokeWidth={location === "/settings" ? 2.5 : 1.8}
               className={location === "/settings" ? "scale-110 transition-transform" : "transition-transform"}
             />
-            <span className={`text-[10px] font-medium ${location === "/settings" ? "font-semibold" : ""}`}>
+            <span className={`text-[9px] font-medium leading-none ${location === "/settings" ? "font-semibold" : ""}`}>
               Settings
             </span>
           </Link>

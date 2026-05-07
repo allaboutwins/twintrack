@@ -14,6 +14,7 @@ import Feeding from "@/pages/Feeding";
 import Diapers from "@/pages/Diapers";
 import Routines from "@/pages/Routines";
 import Learn from "@/pages/Learn";
+import Milestones from "@/pages/Milestones";
 import Settings from "@/pages/Settings";
 import VideoAdmin from "@/pages/VideoAdmin";
 
@@ -136,6 +137,26 @@ function HomeRedirect() {
 
 const queryClient = new QueryClient();
 
+const clerkLocalization = {
+  applicationName: "TwinTrack",
+  signIn: {
+    start: {
+      title: "Welcome back to TwinTrack",
+      subtitle: "Sign in to continue tracking your twins",
+      actionText: "Don't have an account?",
+      actionLink: "Sign up",
+    },
+  },
+  signUp: {
+    start: {
+      title: "Join TwinTrack 💕",
+      subtitle: "The app that finally understands twin life",
+      actionText: "Already have an account?",
+      actionLink: "Sign in",
+    },
+  },
+};
+
 function ClerkProviderWithRoutes() {
   const [, setLocation] = useLocation();
 
@@ -144,6 +165,7 @@ function ClerkProviderWithRoutes() {
       publishableKey={clerkPubKey}
       proxyUrl={clerkProxyUrl}
       appearance={clerkAppearance}
+      localization={clerkLocalization}
       signInUrl={`${basePath}/sign-in`}
       signUpUrl={`${basePath}/sign-up`}
       routerPush={(to) => setLocation(stripBase(to))}
@@ -176,6 +198,9 @@ function ClerkProviderWithRoutes() {
             </Route>
             <Route path="/learn">
               <ProtectedRoute component={Learn} />
+            </Route>
+            <Route path="/milestones">
+              <ProtectedRoute component={Milestones} />
             </Route>
             <Route path="/admin/videos">
               <ProtectedRoute component={VideoAdmin} />

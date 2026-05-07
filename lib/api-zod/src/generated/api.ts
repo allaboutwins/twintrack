@@ -447,11 +447,16 @@ export const ListVideosResponseItem = zod.object({
   description: zod.string().nullish(),
   category: zod
     .string()
-    .describe("sleep, feeding, pregnancy, toddler, day-in-the-life, tips"),
+    .describe(
+      "sleep, feeding, twin-pregnancy, breastfeeding-twins, nicu, toddler-life, routines, mental-health, product-recommendations, schedules, potty-training, expert-advice, tips, day-in-the-life",
+    ),
   sourceType: zod.string().describe("youtube, upload"),
   url: zod.string(),
   thumbnailUrl: zod.string().nullish(),
   durationSeconds: zod.number().nullish(),
+  tags: zod.string().nullish().describe("Comma-separated tags"),
+  ageRangeMin: zod.number().nullish().describe("Minimum age in months"),
+  ageRangeMax: zod.number().nullish().describe("Maximum age in months"),
   createdAt: zod.string(),
 });
 export const ListVideosResponse = zod.array(ListVideosResponseItem);
@@ -467,6 +472,9 @@ export const CreateVideoBody = zod.object({
   url: zod.string(),
   thumbnailUrl: zod.string().nullish(),
   durationSeconds: zod.number().nullish(),
+  tags: zod.string().nullish(),
+  ageRangeMin: zod.number().nullish(),
+  ageRangeMax: zod.number().nullish(),
 });
 
 /**
@@ -482,11 +490,16 @@ export const GetVideoResponse = zod.object({
   description: zod.string().nullish(),
   category: zod
     .string()
-    .describe("sleep, feeding, pregnancy, toddler, day-in-the-life, tips"),
+    .describe(
+      "sleep, feeding, twin-pregnancy, breastfeeding-twins, nicu, toddler-life, routines, mental-health, product-recommendations, schedules, potty-training, expert-advice, tips, day-in-the-life",
+    ),
   sourceType: zod.string().describe("youtube, upload"),
   url: zod.string(),
   thumbnailUrl: zod.string().nullish(),
   durationSeconds: zod.number().nullish(),
+  tags: zod.string().nullish().describe("Comma-separated tags"),
+  ageRangeMin: zod.number().nullish().describe("Minimum age in months"),
+  ageRangeMax: zod.number().nullish().describe("Maximum age in months"),
   createdAt: zod.string(),
 });
 
@@ -521,16 +534,108 @@ export const ListBookmarkedVideosResponseItem = zod.object({
   description: zod.string().nullish(),
   category: zod
     .string()
-    .describe("sleep, feeding, pregnancy, toddler, day-in-the-life, tips"),
+    .describe(
+      "sleep, feeding, twin-pregnancy, breastfeeding-twins, nicu, toddler-life, routines, mental-health, product-recommendations, schedules, potty-training, expert-advice, tips, day-in-the-life",
+    ),
   sourceType: zod.string().describe("youtube, upload"),
   url: zod.string(),
   thumbnailUrl: zod.string().nullish(),
   durationSeconds: zod.number().nullish(),
+  tags: zod.string().nullish().describe("Comma-separated tags"),
+  ageRangeMin: zod.number().nullish().describe("Minimum age in months"),
+  ageRangeMax: zod.number().nullish().describe("Maximum age in months"),
   createdAt: zod.string(),
 });
 export const ListBookmarkedVideosResponse = zod.array(
   ListBookmarkedVideosResponseItem,
 );
+
+/**
+ * @summary Get notes for a video by a user
+ */
+export const ListVideoNotesParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const ListVideoNotesQueryParams = zod.object({
+  userId: zod.coerce.string(),
+});
+
+export const ListVideoNotesResponseItem = zod.object({
+  id: zod.number(),
+  userId: zod.string(),
+  videoId: zod.number(),
+  note: zod.string(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+export const ListVideoNotesResponse = zod.array(ListVideoNotesResponseItem);
+
+/**
+ * @summary Create or update a personal note on a video
+ */
+export const UpsertVideoNoteParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpsertVideoNoteBody = zod.object({
+  userId: zod.string(),
+  note: zod.string(),
+});
+
+export const UpsertVideoNoteResponse = zod.object({
+  id: zod.number(),
+  userId: zod.string(),
+  videoId: zod.number(),
+  note: zod.string(),
+  createdAt: zod.string(),
+  updatedAt: zod.string(),
+});
+
+/**
+ * @summary List milestones for a user (optionally filtered by twin)
+ */
+export const ListMilestonesQueryParams = zod.object({
+  userId: zod.coerce.string(),
+  twinId: zod.coerce.number().optional(),
+});
+
+export const ListMilestonesResponseItem = zod.object({
+  id: zod.number(),
+  userId: zod.string(),
+  twinId: zod.number(),
+  category: zod
+    .string()
+    .describe(
+      "first-smile, first-laugh, rolled-over, sat-up, crawled, first-tooth, first-word, first-steps, slept-through-night, first-daycare, first-birthday, potty-training, first-school, custom",
+    ),
+  title: zod.string(),
+  achievedDate: zod.string(),
+  photoUrl: zod.string().nullish(),
+  note: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+export const ListMilestonesResponse = zod.array(ListMilestonesResponseItem);
+
+/**
+ * @summary Log a new milestone
+ */
+export const CreateMilestoneBody = zod.object({
+  userId: zod.string(),
+  twinId: zod.number(),
+  category: zod.string(),
+  title: zod.string(),
+  achievedDate: zod.string(),
+  photoUrl: zod.string().nullish(),
+  note: zod.string().nullish(),
+});
+
+/**
+ * @summary Delete a milestone
+ */
+export const DeleteMilestoneParams = zod.object({
+  id: zod.coerce.number(),
+});
 
 /**
  * @summary Get today's summary for all twins

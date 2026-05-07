@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { eq, and, ilike, or } from "drizzle-orm";
-import { db, videosTable, videoBookmarksTable } from "@workspace/db";
+import { db, videosTable, videoBookmarksTable, videoNotesTable } from "@workspace/db";
 import {
   CreateVideoBody,
   GetVideoParams,
@@ -8,6 +8,8 @@ import {
   BookmarkVideoBody,
   ListVideosQueryParams,
   ListBookmarkedVideosQueryParams,
+  ListVideoNotesQueryParams,
+  UpsertVideoNoteBody,
 } from "@workspace/api-zod";
 
 const router: IRouter = Router();
@@ -102,6 +104,56 @@ router.get("/videos/:id", async (req, res): Promise<void> => {
     return;
   }
   res.json({ ...video, createdAt: video.createdAt.toISOString() });
+});
+
+router.get("/videos/:id/notes", async (req, res): Promise<void> => {
+  const params = GetVideoParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const parsed = ListVideoNotesQueryParams.safeParse(req.query);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const notes = await db
+    .select()
+    .from(videoNotesTable)
+    .where(and(eq(videoNotesTable.videoId, params.data.id), eq(videoNotesTable.userId, parsed.data.userId)));
+  res.json(notes.map((n) => ({ ...n, createdAt: n.createdAt.toISOString(), updatedAt: n.updatedAt.toISOString() })));
+});
+
+router.post("/videos/:id/notes", async (req, res): Promise<void> => {
+  const params = GetVideoParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const parsed = UpsertVideoNoteBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const { userId, note } = parsed.data;
+  const videoId = params.data.id;
+
+  const existing = await db
+    .select()
+    .from(videoNotesTable)
+    .where(and(eq(videoNotesTable.videoId, videoId), eq(videoNotesTable.userId, userId)));
+
+  let result;
+  if (existing.length > 0) {
+    [result] = await db
+      .update(videoNotesTable)
+      .set({ note })
+      .where(and(eq(videoNotesTable.videoId, videoId), eq(videoNotesTable.userId, userId)))
+      .returning();
+  } else {
+    [result] = await db.insert(videoNotesTable).values({ videoId, userId, note }).returning();
+  }
+  res.json({ ...result, createdAt: result.createdAt.toISOString(), updatedAt: result.updatedAt.toISOString() });
 });
 
 router.post("/videos/:id/bookmark", async (req, res): Promise<void> => {
