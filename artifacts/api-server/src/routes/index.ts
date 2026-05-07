@@ -1,8 +1,22 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
+import twinsRouter from "./twins";
+import sleepRouter from "./sleep";
+import feedingRouter from "./feeding";
+import diapersRouter from "./diapers";
+import routinesRouter from "./routines";
+import videosRouter from "./videos";
+import dashboardRouter from "./dashboard";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
+router.use(twinsRouter);
+router.use(sleepRouter);
+router.use(feedingRouter);
+router.use(diapersRouter);
+router.use(routinesRouter);
+router.use(videosRouter);
+router.use(dashboardRouter);
 
 export default router;

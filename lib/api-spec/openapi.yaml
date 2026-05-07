@@ -3,13 +3,28 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: TwinTrack API specification
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: twins
+    description: Twin profile operations
+  - name: sleep
+    description: Sleep tracking operations
+  - name: feeding
+    description: Feeding tracking operations
+  - name: diapers
+    description: Diaper tracking operations
+  - name: routines
+    description: Routine template operations
+  - name: videos
+    description: Twin TV video library operations
+  - name: dashboard
+    description: Dashboard summary operations
+
 paths:
   /healthz:
     get:
@@ -24,6 +39,648 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # --- TWIN PROFILES ---
+  /twins:
+    get:
+      operationId: listTwins
+      tags: [twins]
+      summary: List all twin profiles for the current user
+      parameters:
+        - in: query
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of twin profiles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Twin"
+    post:
+      operationId: createTwin
+      tags: [twins]
+      summary: Create a new twin profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTwinBody"
+      responses:
+        "201":
+          description: Created twin profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Twin"
+
+  /twins/{id}:
+    get:
+      operationId: getTwin
+      tags: [twins]
+      summary: Get a twin profile by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Twin profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Twin"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateTwin
+      tags: [twins]
+      summary: Update a twin profile
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateTwinBody"
+      responses:
+        "200":
+          description: Updated twin profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Twin"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteTwin
+      tags: [twins]
+      summary: Delete a twin profile
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # --- SLEEP TRACKING ---
+  /sleep:
+    get:
+      operationId: listSleepEntries
+      tags: [sleep]
+      summary: List sleep entries for a twin
+      parameters:
+        - in: query
+          name: twinId
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: date
+          required: false
+          schema:
+            type: ["string", "null"]
+            description: ISO date string (YYYY-MM-DD), omit for all entries
+      responses:
+        "200":
+          description: List of sleep entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SleepEntry"
+    post:
+      operationId: createSleepEntry
+      tags: [sleep]
+      summary: Create a new sleep entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSleepEntryBody"
+      responses:
+        "201":
+          description: Created sleep entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SleepEntry"
+
+  /sleep/{id}:
+    patch:
+      operationId: updateSleepEntry
+      tags: [sleep]
+      summary: Update a sleep entry (e.g. stop timer, add end time)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSleepEntryBody"
+      responses:
+        "200":
+          description: Updated sleep entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SleepEntry"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteSleepEntry
+      tags: [sleep]
+      summary: Delete a sleep entry
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /sleep/summary:
+    get:
+      operationId: getSleepSummary
+      tags: [sleep]
+      summary: Get daily and weekly sleep summary for a twin
+      parameters:
+        - in: query
+          name: twinId
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: date
+          required: true
+          schema:
+            type: string
+            description: ISO date string (YYYY-MM-DD)
+      responses:
+        "200":
+          description: Sleep summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SleepSummary"
+
+  # --- FEEDING TRACKING ---
+  /feeding:
+    get:
+      operationId: listFeedingEntries
+      tags: [feeding]
+      summary: List feeding entries for a twin
+      parameters:
+        - in: query
+          name: twinId
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: date
+          required: false
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: List of feeding entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FeedingEntry"
+    post:
+      operationId: createFeedingEntry
+      tags: [feeding]
+      summary: Create a new feeding entry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFeedingEntryBody"
+      responses:
+        "201":
+          description: Created feeding entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedingEntry"
+
+  /feeding/{id}:
+    patch:
+      operationId: updateFeedingEntry
+      tags: [feeding]
+      summary: Update a feeding entry
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateFeedingEntryBody"
+      responses:
+        "200":
+          description: Updated feeding entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedingEntry"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteFeedingEntry
+      tags: [feeding]
+      summary: Delete a feeding entry
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /feeding/summary:
+    get:
+      operationId: getFeedingSummary
+      tags: [feeding]
+      summary: Get daily feeding summary for a twin
+      parameters:
+        - in: query
+          name: twinId
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: date
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Feeding summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FeedingSummary"
+
+  # --- DIAPER TRACKING ---
+  /diapers:
+    get:
+      operationId: listDiaperEntries
+      tags: [diapers]
+      summary: List diaper entries for a twin
+      parameters:
+        - in: query
+          name: twinId
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: date
+          required: false
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: List of diaper entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/DiaperEntry"
+    post:
+      operationId: createDiaperEntry
+      tags: [diapers]
+      summary: Log a diaper change
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDiaperEntryBody"
+      responses:
+        "201":
+          description: Created diaper entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiaperEntry"
+
+  /diapers/{id}:
+    delete:
+      operationId: deleteDiaperEntry
+      tags: [diapers]
+      summary: Delete a diaper entry
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # --- ROUTINES ---
+  /routines:
+    get:
+      operationId: listRoutines
+      tags: [routines]
+      summary: List routines for a user
+      parameters:
+        - in: query
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of routines
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Routine"
+    post:
+      operationId: createRoutine
+      tags: [routines]
+      summary: Create a new routine
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRoutineBody"
+      responses:
+        "201":
+          description: Created routine
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Routine"
+
+  /routines/{id}:
+    get:
+      operationId: getRoutine
+      tags: [routines]
+      summary: Get a routine by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Routine
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Routine"
+        "404":
+          description: Not found
+    patch:
+      operationId: updateRoutine
+      tags: [routines]
+      summary: Update a routine
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRoutineBody"
+      responses:
+        "200":
+          description: Updated routine
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Routine"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteRoutine
+      tags: [routines]
+      summary: Delete a routine
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /routines/{id}/tasks/{taskId}:
+    patch:
+      operationId: updateRoutineTask
+      tags: [routines]
+      summary: Toggle completion of a routine task
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRoutineTaskBody"
+      responses:
+        "200":
+          description: Updated task
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoutineTask"
+        "404":
+          description: Not found
+
+  # --- VIDEOS ---
+  /videos:
+    get:
+      operationId: listVideos
+      tags: [videos]
+      summary: List all videos in the library
+      parameters:
+        - in: query
+          name: category
+          required: false
+          schema:
+            type: ["string", "null"]
+        - in: query
+          name: search
+          required: false
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: List of videos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Video"
+    post:
+      operationId: createVideo
+      tags: [videos]
+      summary: Add a video to the library (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateVideoBody"
+      responses:
+        "201":
+          description: Created video
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Video"
+
+  /videos/{id}:
+    get:
+      operationId: getVideo
+      tags: [videos]
+      summary: Get a video by ID
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Video
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Video"
+        "404":
+          description: Not found
+
+  /videos/{id}/bookmark:
+    post:
+      operationId: bookmarkVideo
+      tags: [videos]
+      summary: Bookmark a video
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookmarkVideoBody"
+      responses:
+        "200":
+          description: Bookmark toggled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookmarkResult"
+
+  /videos/bookmarks:
+    get:
+      operationId: listBookmarkedVideos
+      tags: [videos]
+      summary: List bookmarked videos for a user
+      parameters:
+        - in: query
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Bookmarked videos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Video"
+
+  # --- DASHBOARD ---
+  /dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get today's summary for all twins
+      parameters:
+        - in: query
+          name: userId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: date
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +691,492 @@ components:
       required:
         - status
 
+    Twin:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        label:
+          type: string
+          description: "Twin A or Twin B"
+        name:
+          type: string
+        gender:
+          type: ["string", "null"]
+        birthdate:
+          type: ["string", "null"]
+        profilePicture:
+          type: ["string", "null"]
+        colorTheme:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - userId
+        - label
+        - name
+        - colorTheme
+        - createdAt
+        - updatedAt
+
+    CreateTwinBody:
+      type: object
+      properties:
+        userId:
+          type: string
+        label:
+          type: string
+        name:
+          type: string
+        gender:
+          type: ["string", "null"]
+        birthdate:
+          type: ["string", "null"]
+        profilePicture:
+          type: ["string", "null"]
+        colorTheme:
+          type: string
+      required:
+        - userId
+        - label
+        - name
+        - colorTheme
+
+    UpdateTwinBody:
+      type: object
+      properties:
+        name:
+          type: ["string", "null"]
+        gender:
+          type: ["string", "null"]
+        birthdate:
+          type: ["string", "null"]
+        profilePicture:
+          type: ["string", "null"]
+        colorTheme:
+          type: ["string", "null"]
+
+    SleepEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        twinId:
+          type: integer
+        type:
+          type: string
+          description: "nap or night"
+        startTime:
+          type: string
+        endTime:
+          type: ["string", "null"]
+        durationMinutes:
+          type: ["integer", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - twinId
+        - type
+        - startTime
+        - createdAt
+
+    CreateSleepEntryBody:
+      type: object
+      properties:
+        twinId:
+          type: integer
+        type:
+          type: string
+          description: "nap or night"
+        startTime:
+          type: string
+        endTime:
+          type: ["string", "null"]
+        durationMinutes:
+          type: ["integer", "null"]
+        notes:
+          type: ["string", "null"]
+      required:
+        - twinId
+        - type
+        - startTime
+
+    UpdateSleepEntryBody:
+      type: object
+      properties:
+        endTime:
+          type: ["string", "null"]
+        durationMinutes:
+          type: ["integer", "null"]
+        notes:
+          type: ["string", "null"]
+
+    SleepSummary:
+      type: object
+      properties:
+        twinId:
+          type: integer
+        date:
+          type: string
+        dailyTotalMinutes:
+          type: integer
+        weeklyTotalMinutes:
+          type: integer
+        napCount:
+          type: integer
+        nightSleepMinutes:
+          type: integer
+      required:
+        - twinId
+        - date
+        - dailyTotalMinutes
+        - weeklyTotalMinutes
+        - napCount
+        - nightSleepMinutes
+
+    FeedingEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        twinId:
+          type: integer
+        feedingType:
+          type: string
+          description: "breastfeeding, bottle, formula, solids"
+        time:
+          type: string
+        quantity:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - twinId
+        - feedingType
+        - time
+        - createdAt
+
+    CreateFeedingEntryBody:
+      type: object
+      properties:
+        twinId:
+          type: integer
+        feedingType:
+          type: string
+        time:
+          type: string
+        quantity:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+      required:
+        - twinId
+        - feedingType
+        - time
+
+    UpdateFeedingEntryBody:
+      type: object
+      properties:
+        feedingType:
+          type: ["string", "null"]
+        time:
+          type: ["string", "null"]
+        quantity:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+
+    FeedingSummary:
+      type: object
+      properties:
+        twinId:
+          type: integer
+        date:
+          type: string
+        totalFeedings:
+          type: integer
+        breastfeedingCount:
+          type: integer
+        bottleCount:
+          type: integer
+        formulaCount:
+          type: integer
+        solidsCount:
+          type: integer
+      required:
+        - twinId
+        - date
+        - totalFeedings
+        - breastfeedingCount
+        - bottleCount
+        - formulaCount
+        - solidsCount
+
+    DiaperEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        twinId:
+          type: integer
+        type:
+          type: string
+          description: "wet, dirty, mixed"
+        time:
+          type: string
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - twinId
+        - type
+        - time
+        - createdAt
+
+    CreateDiaperEntryBody:
+      type: object
+      properties:
+        twinId:
+          type: integer
+        type:
+          type: string
+          description: "wet, dirty, mixed"
+        time:
+          type: string
+        notes:
+          type: ["string", "null"]
+      required:
+        - twinId
+        - type
+        - time
+
+    Routine:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        title:
+          type: string
+        category:
+          type: string
+          description: "morning, bedtime, outing, daycare, meal"
+        isFavorite:
+          type: boolean
+        tasks:
+          type: array
+          items:
+            $ref: "#/components/schemas/RoutineTask"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - userId
+        - title
+        - category
+        - isFavorite
+        - tasks
+        - createdAt
+        - updatedAt
+
+    RoutineTask:
+      type: object
+      properties:
+        id:
+          type: integer
+        routineId:
+          type: integer
+        text:
+          type: string
+        completed:
+          type: boolean
+        order:
+          type: integer
+      required:
+        - id
+        - routineId
+        - text
+        - completed
+        - order
+
+    CreateRoutineBody:
+      type: object
+      properties:
+        userId:
+          type: string
+        title:
+          type: string
+        category:
+          type: string
+        isFavorite:
+          type: boolean
+        tasks:
+          type: array
+          items:
+            type: object
+            properties:
+              text:
+                type: string
+              order:
+                type: integer
+            required:
+              - text
+              - order
+      required:
+        - userId
+        - title
+        - category
+
+    UpdateRoutineBody:
+      type: object
+      properties:
+        title:
+          type: ["string", "null"]
+        category:
+          type: ["string", "null"]
+        isFavorite:
+          type: ["boolean", "null"]
+
+    UpdateRoutineTaskBody:
+      type: object
+      properties:
+        completed:
+          type: boolean
+        text:
+          type: ["string", "null"]
+      required:
+        - completed
+
+    Video:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        category:
+          type: string
+          description: "sleep, feeding, pregnancy, toddler, day-in-the-life, tips"
+        sourceType:
+          type: string
+          description: "youtube, upload"
+        url:
+          type: string
+        thumbnailUrl:
+          type: ["string", "null"]
+        durationSeconds:
+          type: ["integer", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - title
+        - category
+        - sourceType
+        - url
+        - createdAt
+
+    CreateVideoBody:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: ["string", "null"]
+        category:
+          type: string
+        sourceType:
+          type: string
+        url:
+          type: string
+        thumbnailUrl:
+          type: ["string", "null"]
+        durationSeconds:
+          type: ["integer", "null"]
+      required:
+        - title
+        - category
+        - sourceType
+        - url
+
+    BookmarkVideoBody:
+      type: object
+      properties:
+        userId:
+          type: string
+        bookmarked:
+          type: boolean
+      required:
+        - userId
+        - bookmarked
+
+    BookmarkResult:
+      type: object
+      properties:
+        videoId:
+          type: integer
+        userId:
+          type: string
+        bookmarked:
+          type: boolean
+      required:
+        - videoId
+        - userId
+        - bookmarked
+
+    TwinDashboardSummary:
+      type: object
+      properties:
+        twin:
+          $ref: "#/components/schemas/Twin"
+        todaySleepMinutes:
+          type: integer
+        todayFeedingCount:
+          type: integer
+        todayDiaperCount:
+          type: integer
+        lastSleep:
+          $ref: "#/components/schemas/SleepEntry"
+        lastFeeding:
+          $ref: "#/components/schemas/FeedingEntry"
+        activeSleepEntry:
+          $ref: "#/components/schemas/SleepEntry"
+      required:
+        - twin
+        - todaySleepMinutes
+        - todayFeedingCount
+        - todayDiaperCount
+
+    DashboardSummary:
+      type: object
+      properties:
+        userId:
+          type: string
+        date:
+          type: string
+        twins:
+          type: array
+          items:
+            $ref: "#/components/schemas/TwinDashboardSummary"
+      required:
+        - userId
+        - date
+        - twins

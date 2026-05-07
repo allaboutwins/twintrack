@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "TwinTrack"
+version = "1.0.0"
+id = "artifacts/twintrack"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 19107
+
+[services.development]
+run = "pnpm --filter @workspace/twintrack run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/twintrack", "run", "build" ]
+publicDir = "artifacts/twintrack/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "19107"
+BASE_PATH = "/"
