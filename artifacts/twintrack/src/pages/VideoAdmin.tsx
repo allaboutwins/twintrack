@@ -25,8 +25,12 @@ const CATEGORIES = [
 type SourceType = "youtube" | "other";
 
 function getYouTubeId(url: string) {
-  const m = url.match(/(?:v=|youtu\.be\/)([\w-]{11})/);
+  const m = url.match(/(?:v=|youtu\.be\/|shorts\/)([\w-]{11})/);
   return m ? m[1] : null;
+}
+
+function isYouTubeShorts(url: string) {
+  return url.includes("/shorts/");
 }
 
 function autoFillThumbnail(url: string) {
@@ -138,22 +142,37 @@ export default function VideoAdmin() {
           </div>
         </div>
 
-        {/* URL */}
+        {/* URL — prominent, first field */}
         <FormField label="Video URL" error={errors.url}>
           <input
             value={form.url}
             onChange={(e) => handleUrlChange(e.target.value)}
-            placeholder={form.sourceType === "youtube" ? "https://youtube.com/watch?v=..." : "https://..."}
+            placeholder="Paste a YouTube Shorts or video URL..."
             className={`w-full px-4 py-3 rounded-xl bg-muted text-sm outline-none focus:ring-2 transition-all ${
               errors.url ? "ring-2 ring-destructive" : "ring-primary/30"
             }`}
             data-testid="input-video-url"
           />
+          {form.url && (
+            <div className="flex items-center gap-2 mt-2">
+              {isYouTubeShorts(form.url) ? (
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-500 bg-red-50 border border-red-100 px-3 py-1.5 rounded-full">
+                  ▶ YouTube Short detected — thumbnail auto-filled
+                </span>
+              ) : getYouTubeId(form.url) ? (
+                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground bg-muted px-3 py-1.5 rounded-full">
+                  ▶ YouTube video detected
+                </span>
+              ) : null}
+            </div>
+          )}
         </FormField>
 
-        {/* Thumbnail preview */}
+        {/* Thumbnail preview — portrait for Shorts, landscape for regular */}
         {form.thumbnailUrl && (
-          <div className="rounded-xl overflow-hidden border border-border aspect-video bg-muted">
+          <div className={`rounded-xl overflow-hidden border border-border bg-muted ${
+            isYouTubeShorts(form.url) ? "aspect-[9/16] max-w-[140px] mx-auto" : "aspect-video"
+          }`}>
             <img src={form.thumbnailUrl} alt="Thumbnail preview" className="w-full h-full object-cover" />
           </div>
         )}

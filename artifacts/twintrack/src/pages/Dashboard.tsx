@@ -7,10 +7,34 @@ import {
   getListTwinsQueryKey,
   useListVideos,
   getListVideosQueryKey,
+  useListMilestones,
+  getListMilestonesQueryKey,
 } from "@workspace/api-client-react";
 import Layout, { PageHeader } from "@/components/Layout";
-import { Moon, Utensils, Baby, ChevronRight, Play, Star } from "lucide-react";
+import { Moon, Utensils, Baby, ChevronRight, Play, Star, Heart } from "lucide-react";
+
 import { Skeleton } from "@/components/ui/skeleton";
+
+const MILESTONE_EMOJIS: Record<string, string> = {
+  "first-smile": "😊",
+  "first-laugh": "😂",
+  "rolled-over": "🔄",
+  "sat-up": "🧘",
+  "crawled": "🐛",
+  "first-tooth": "🦷",
+  "first-word": "💬",
+  "first-steps": "👣",
+  "slept-through-night": "🌙",
+  "first-daycare": "🎒",
+  "first-birthday": "🎂",
+  "potty-training": "🚽",
+  "first-school": "🏫",
+  "custom": "⭐",
+};
+
+function formatMilestoneDate(iso: string) {
+  return new Date(iso + "T00:00:00").toLocaleDateString([], { month: "short", day: "numeric", year: "numeric" });
+}
 
 function formatMinutes(mins: number) {
   const h = Math.floor(mins / 60);
@@ -105,6 +129,16 @@ export default function Dashboard() {
       },
     },
   );
+
+  const { data: milestones = [] } = useListMilestones(
+    { userId: user?.id ?? "" },
+    { query: { enabled: !!user?.id, queryKey: getListMilestonesQueryKey({ userId: user?.id ?? "" }) } },
+  );
+
+  const latestMilestone =
+    milestones.length > 0
+      ? [...milestones].sort((a, b) => new Date(b.achievedDate).getTime() - new Date(a.achievedDate).getTime())[0]
+      : null;
 
   const featuredVideo = recommendedVideos[0] ?? null;
   const noTwins = !isLoading && (!summary?.twins || summary.twins.length === 0);
@@ -259,6 +293,28 @@ export default function Dashboard() {
               </div>
               <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
             </button>
+
+            {/* Memory Recap */}
+            {latestMilestone && (
+              <button
+                onClick={() => setLocation("/milestones")}
+                className="w-full bg-gradient-to-br from-primary/8 to-primary/4 rounded-2xl border border-primary/20 p-4 flex items-center gap-4 text-left hover:border-primary/35 active:scale-[0.99] transition-all"
+                data-testid="memory-recap"
+              >
+                <div className="w-12 h-12 rounded-xl bg-white border border-primary/20 flex items-center justify-center text-2xl flex-shrink-0 shadow-sm">
+                  {MILESTONE_EMOJIS[latestMilestone.category] ?? "💕"}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <Heart size={10} className="text-primary fill-primary" />
+                    <p className="text-[10px] font-bold text-primary uppercase tracking-wide">Recent Memory</p>
+                  </div>
+                  <p className="font-semibold text-sm text-foreground leading-snug">{latestMilestone.title}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{formatMilestoneDate(latestMilestone.achievedDate)}</p>
+                </div>
+                <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
+              </button>
+            )}
 
             {/* Recommended video */}
             {featuredVideo && (

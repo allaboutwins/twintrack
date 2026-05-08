@@ -42,28 +42,85 @@ function formatDate(iso: string) {
   return new Date(iso + "T00:00:00").toLocaleDateString([], { month: "long", day: "numeric", year: "numeric" });
 }
 
-function Confetti({ show }: { show: boolean }) {
+const CONFETTI_PARTICLES = Array.from({ length: 65 }, (_, i) => {
+  const shapes = ["rect", "square", "circle", "thin"] as const;
+  const colors = ["#da5a9f", "#2e818c", "#83b8c0", "#ffd700", "#ff8fab", "#a8e6cf", "#ffc8dd", "#ffe4b5", "#c9f0ff"];
+  const emojis = ["💕", "✨", "⭐", "🌟", "💫", "🌸", "🥹", "💖"];
+  return {
+    id: i,
+    x: Math.random() * 100,
+    delay: Math.random() * 0.9,
+    duration: 1.6 + Math.random() * 2,
+    size: 7 + Math.random() * 11,
+    rotation: Math.random() * 360,
+    drift: Math.round((Math.random() - 0.5) * 240),
+    spin: Math.round((Math.random() < 0.5 ? 1 : -1) * (200 + Math.random() * 500)),
+    color: colors[i % colors.length],
+    shape: shapes[i % shapes.length],
+    isEmoji: i % 7 === 0,
+    emoji: emojis[i % emojis.length],
+  };
+});
+
+function PremiumConfetti({ show }: { show: boolean }) {
   if (!show) return null;
-  const particles = Array.from({ length: 20 });
-  const colors = ["#da5a9f", "#2e818c", "#83b8c0", "#ffd700", "#ff6b6b", "#a8e6cf"];
   return (
-    <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
-      {particles.map((_, i) => (
-        <div
-          key={i}
-          className="absolute w-3 h-3 rounded-sm animate-bounce"
-          style={{
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 40}%`,
-            backgroundColor: colors[i % colors.length],
-            animationDelay: `${Math.random() * 0.5}s`,
-            animationDuration: `${0.6 + Math.random() * 0.8}s`,
-            transform: `rotate(${Math.random() * 360}deg)`,
-            opacity: 0.9,
-          }}
-        />
-      ))}
-    </div>
+    <>
+      <style>{`
+        @keyframes confettiFall {
+          0% { transform: translateY(-24px) translateX(0px) rotate(0deg); opacity: 1; }
+          15% { opacity: 1; }
+          85% { opacity: 0.8; }
+          100% { transform: translateY(105vh) translateX(var(--confetti-drift)) rotate(var(--confetti-spin)); opacity: 0; }
+        }
+        @keyframes confettiWobble {
+          0%, 100% { transform: scaleX(1); }
+          50% { transform: scaleX(0.65); }
+        }
+      `}</style>
+      <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+        {CONFETTI_PARTICLES.map((p) => (
+          <div
+            key={p.id}
+            style={{
+              position: "absolute",
+              left: `${p.x}%`,
+              top: 0,
+              "--confetti-drift": `${p.drift}px`,
+              "--confetti-spin": `${p.spin}deg`,
+              animation: `confettiFall ${p.duration}s cubic-bezier(0.215, 0.61, 0.355, 1) ${p.delay}s both`,
+            } as React.CSSProperties}
+          >
+            {p.isEmoji ? (
+              <span
+                style={{
+                  fontSize: p.size + 10,
+                  display: "block",
+                  animation: `confettiWobble ${0.4 + Math.random() * 0.4}s ease-in-out infinite`,
+                }}
+              >
+                {p.emoji}
+              </span>
+            ) : (
+              <div
+                style={{
+                  width: p.shape === "thin" ? Math.round(p.size * 0.22) : p.shape === "circle" ? p.size : p.size,
+                  height:
+                    p.shape === "circle"
+                      ? p.size
+                      : p.shape === "thin"
+                        ? Math.round(p.size * 2.2)
+                        : Math.round(p.size * 0.48),
+                  backgroundColor: p.color,
+                  borderRadius: p.shape === "circle" ? "50%" : p.shape === "square" ? "2px" : "1.5px",
+                  transform: `rotate(${p.rotation}deg)`,
+                }}
+              />
+            )}
+          </div>
+        ))}
+      </div>
+    </>
   );
 }
 
@@ -74,6 +131,7 @@ export default function Milestones() {
   const [showModal, setShowModal] = useState(false);
   const [confetti, setConfetti] = useState(false);
   const [encouragement, setEncouragement] = useState("");
+  const [celebrationEmoji, setCelebrationEmoji] = useState("💕");
   const [showCelebration, setShowCelebration] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
@@ -159,12 +217,14 @@ export default function Milestones() {
           setShowModal(false);
           const enc = ENCOURAGEMENTS[Math.floor(Math.random() * ENCOURAGEMENTS.length)];
           setEncouragement(enc);
+          const preset = MILESTONE_PRESETS.find((m) => m.key === form.category);
+          setCelebrationEmoji(preset?.emoji ?? "💕");
           setConfetti(true);
           setShowCelebration(true);
           setTimeout(() => {
             setConfetti(false);
-            setTimeout(() => setShowCelebration(false), 2000);
-          }, 2500);
+            setTimeout(() => setShowCelebration(false), 2200);
+          }, 3000);
         },
       },
     );
@@ -197,15 +257,28 @@ export default function Milestones() {
 
   return (
     <Layout>
-      <Confetti show={confetti} />
+      <PremiumConfetti show={confetti} />
       <PageHeader title="Memories" subtitle="Your twin milestone timeline" />
 
       {/* Celebration overlay */}
       {showCelebration && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center pointer-events-none">
-          <div className="bg-white/95 border border-primary/20 rounded-3xl px-8 py-6 mx-6 text-center shadow-2xl">
-            <p className="text-4xl mb-2">💕</p>
-            <p className="font-bold text-foreground text-lg">{encouragement}</p>
+        <div className="fixed inset-0 z-40 flex items-center justify-center p-8 pointer-events-none">
+          <div
+            className="bg-white/98 border border-primary/25 rounded-3xl px-8 py-8 text-center shadow-2xl w-full max-w-sm"
+            style={{ animation: "fadeScaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both" }}
+          >
+            <style>{`
+              @keyframes fadeScaleIn {
+                from { opacity: 0; transform: scale(0.85) translateY(12px); }
+                to { opacity: 1; transform: scale(1) translateY(0); }
+              }
+            `}</style>
+            <div className="text-6xl mb-3" style={{ lineHeight: 1 }}>{celebrationEmoji}</div>
+            <p className="font-bold text-foreground text-xl leading-snug mb-3">{encouragement}</p>
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+              <span className="text-xs text-muted-foreground">Memory saved to your timeline</span>
+            </div>
           </div>
         </div>
       )}
