@@ -8,6 +8,8 @@ import routinesRouter from "./routines";
 import videosRouter from "./videos";
 import milestonesRouter from "./milestones";
 import dashboardRouter from "./dashboard";
+import onboardingRouter from "./onboarding";
+import feedbackRouter from "./feedback";
 
 const router: IRouter = Router();
 
@@ -20,5 +22,7 @@ router.use(routinesRouter);
 router.use(videosRouter);
 router.use(milestonesRouter);
 router.use(dashboardRouter);
+router.use(onboardingRouter);
+router.use(feedbackRouter);
 
 export default router;

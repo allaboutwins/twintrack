@@ -24,6 +24,14 @@ export interface Twin {
   colorTheme: string;
   createdAt: string;
   updatedAt: string;
+  /** @nullable */
+  isPremature?: boolean | null;
+  /** @nullable */
+  gestationalAgeWeeks?: number | null;
+  /** @nullable */
+  hadNicu?: boolean | null;
+  /** @nullable */
+  wantsAdjustedAge?: boolean | null;
 }
 
 export interface CreateTwinBody {
@@ -50,6 +58,14 @@ export interface UpdateTwinBody {
   profilePicture?: string | null;
   /** @nullable */
   colorTheme?: string | null;
+  /** @nullable */
+  isPremature?: boolean | null;
+  /** @nullable */
+  gestationalAgeWeeks?: number | null;
+  /** @nullable */
+  hadNicu?: boolean | null;
+  /** @nullable */
+  wantsAdjustedAge?: boolean | null;
 }
 
 export interface SleepEntry {
@@ -336,6 +352,83 @@ export interface DashboardSummary {
   userId: string;
   date: string;
   twins: TwinDashboardSummary[];
+}
+
+export interface Onboarding {
+  id: number;
+  userId: string;
+  /**
+   * expecting | parenting
+   * @nullable
+   */
+  parentStatus?: string | null;
+  /**
+   * twins | triplets | quads | other
+   * @nullable
+   */
+  multipleType?: string | null;
+  /**
+   * newborn | infant | toddler | older
+   * @nullable
+   */
+  babyAgeGroup?: string | null;
+  /** @nullable */
+  isPremature?: boolean | null;
+  /** @nullable */
+  gestationalAgeWeeks?: number | null;
+  /** @nullable */
+  hadNicu?: boolean | null;
+  /** @nullable */
+  wantsAdjustedAge?: boolean | null;
+  /** @nullable */
+  biggestChallenge?: string | null;
+  /** @nullable */
+  featureInterest?: string | null;
+  /** @nullable */
+  completedAt?: string | null;
+  createdAt: string;
+}
+
+export interface SaveOnboardingBody {
+  /** @nullable */
+  parentStatus?: string | null;
+  /** @nullable */
+  multipleType?: string | null;
+  /** @nullable */
+  babyAgeGroup?: string | null;
+  /** @nullable */
+  isPremature?: boolean | null;
+  /** @nullable */
+  gestationalAgeWeeks?: number | null;
+  /** @nullable */
+  hadNicu?: boolean | null;
+  /** @nullable */
+  wantsAdjustedAge?: boolean | null;
+  /** @nullable */
+  biggestChallenge?: string | null;
+  /** @nullable */
+  featureInterest?: string | null;
+}
+
+export interface SubmitFeedbackBody {
+  /** @nullable */
+  userId?: string | null;
+  /** bug | feature | feedback | confusion | love */
+  feedbackType: string;
+  message: string;
+  /** @nullable */
+  metadata?: string | null;
+}
+
+export interface Feedback {
+  id: number;
+  /** @nullable */
+  userId?: string | null;
+  feedbackType: string;
+  message: string;
+  /** @nullable */
+  metadata?: string | null;
+  createdAt: string;
 }
 
 export type ListTwinsParams = {

@@ -60,7 +60,12 @@ function getYouTubeId(url: string) {
 function getEmbedUrl(url: string) {
   const id = getYouTubeId(url);
   if (!id) return url;
-  return `https://www.youtube.com/embed/${id}?autoplay=1&playsinline=1&rel=0`;
+  const origin = encodeURIComponent(window.location.origin);
+  return `https://www.youtube-nocookie.com/embed/${id}?autoplay=1&playsinline=1&rel=0&modestbranding=1&origin=${origin}`;
+}
+
+function isYouTubeShorts(url: string) {
+  return url.includes("/shorts/");
 }
 
 function getThumbnail(video: { url: string; thumbnailUrl?: string | null }) {
@@ -510,16 +515,24 @@ export default function Learn() {
               <X size={16} className="text-white" />
             </button>
 
-            {/* Player */}
-            <div className="aspect-video bg-black flex-shrink-0">
-              <iframe
-                src={getEmbedUrl(playingVideo.url)}
-                className="w-full h-full"
-                allow="autoplay; fullscreen; picture-in-picture"
-                allowFullScreen
-                title={playingVideo.title}
-              />
-            </div>
+            {/* Player — 9:16 for Shorts, 16:9 for regular */}
+            {(() => {
+              const shorts = isYouTubeShorts(playingVideo.url);
+              return (
+                <div
+                  className="bg-black flex-shrink-0 relative w-full"
+                  style={{ paddingTop: shorts ? "min(65dvh, calc(100% * 16 / 9))" : "56.25%" }}
+                >
+                  <iframe
+                    src={getEmbedUrl(playingVideo.url)}
+                    className="absolute inset-0 w-full h-full"
+                    allow="autoplay; fullscreen; picture-in-picture; accelerometer; gyroscope"
+                    allowFullScreen
+                    title={playingVideo.title}
+                  />
+                </div>
+              );
+            })()}
 
             {/* Info scroll area */}
             <div className="flex-1 overflow-y-auto">

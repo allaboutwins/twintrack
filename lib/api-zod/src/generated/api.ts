@@ -33,6 +33,10 @@ export const ListTwinsResponseItem = zod.object({
   colorTheme: zod.string(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
+  isPremature: zod.boolean().nullish(),
+  gestationalAgeWeeks: zod.number().nullish(),
+  hadNicu: zod.boolean().nullish(),
+  wantsAdjustedAge: zod.boolean().nullish(),
 });
 export const ListTwinsResponse = zod.array(ListTwinsResponseItem);
 
@@ -67,6 +71,10 @@ export const GetTwinResponse = zod.object({
   colorTheme: zod.string(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
+  isPremature: zod.boolean().nullish(),
+  gestationalAgeWeeks: zod.number().nullish(),
+  hadNicu: zod.boolean().nullish(),
+  wantsAdjustedAge: zod.boolean().nullish(),
 });
 
 /**
@@ -82,6 +90,10 @@ export const UpdateTwinBody = zod.object({
   birthdate: zod.string().nullish(),
   profilePicture: zod.string().nullish(),
   colorTheme: zod.string().nullish(),
+  isPremature: zod.boolean().nullish(),
+  gestationalAgeWeeks: zod.number().nullish(),
+  hadNicu: zod.boolean().nullish(),
+  wantsAdjustedAge: zod.boolean().nullish(),
 });
 
 export const UpdateTwinResponse = zod.object({
@@ -95,6 +107,10 @@ export const UpdateTwinResponse = zod.object({
   colorTheme: zod.string(),
   createdAt: zod.string(),
   updatedAt: zod.string(),
+  isPremature: zod.boolean().nullish(),
+  gestationalAgeWeeks: zod.number().nullish(),
+  hadNicu: zod.boolean().nullish(),
+  wantsAdjustedAge: zod.boolean().nullish(),
 });
 
 /**
@@ -661,6 +677,10 @@ export const GetDashboardSummaryResponse = zod.object({
         colorTheme: zod.string(),
         createdAt: zod.string(),
         updatedAt: zod.string(),
+        isPremature: zod.boolean().nullish(),
+        gestationalAgeWeeks: zod.number().nullish(),
+        hadNicu: zod.boolean().nullish(),
+        wantsAdjustedAge: zod.boolean().nullish(),
       }),
       todaySleepMinutes: zod.number(),
       todayFeedingCount: zod.number(),
@@ -704,4 +724,86 @@ export const GetDashboardSummaryResponse = zod.object({
         .optional(),
     }),
   ),
+});
+
+/**
+ * @summary Get onboarding record for a user
+ */
+export const GetOnboardingParams = zod.object({
+  userId: zod.coerce.string(),
+});
+
+export const GetOnboardingResponse = zod.object({
+  id: zod.number(),
+  userId: zod.string(),
+  parentStatus: zod.string().nullish().describe("expecting | parenting"),
+  multipleType: zod
+    .string()
+    .nullish()
+    .describe("twins | triplets | quads | other"),
+  babyAgeGroup: zod
+    .string()
+    .nullish()
+    .describe("newborn | infant | toddler | older"),
+  isPremature: zod.boolean().nullish(),
+  gestationalAgeWeeks: zod.number().nullish(),
+  hadNicu: zod.boolean().nullish(),
+  wantsAdjustedAge: zod.boolean().nullish(),
+  biggestChallenge: zod.string().nullish(),
+  featureInterest: zod.string().nullish(),
+  completedAt: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Create or update onboarding answers
+ */
+export const SaveOnboardingParams = zod.object({
+  userId: zod.coerce.string(),
+});
+
+export const SaveOnboardingBody = zod.object({
+  parentStatus: zod.string().nullish(),
+  multipleType: zod.string().nullish(),
+  babyAgeGroup: zod.string().nullish(),
+  isPremature: zod.boolean().nullish(),
+  gestationalAgeWeeks: zod.number().nullish(),
+  hadNicu: zod.boolean().nullish(),
+  wantsAdjustedAge: zod.boolean().nullish(),
+  biggestChallenge: zod.string().nullish(),
+  featureInterest: zod.string().nullish(),
+});
+
+export const SaveOnboardingResponse = zod.object({
+  id: zod.number(),
+  userId: zod.string(),
+  parentStatus: zod.string().nullish().describe("expecting | parenting"),
+  multipleType: zod
+    .string()
+    .nullish()
+    .describe("twins | triplets | quads | other"),
+  babyAgeGroup: zod
+    .string()
+    .nullish()
+    .describe("newborn | infant | toddler | older"),
+  isPremature: zod.boolean().nullish(),
+  gestationalAgeWeeks: zod.number().nullish(),
+  hadNicu: zod.boolean().nullish(),
+  wantsAdjustedAge: zod.boolean().nullish(),
+  biggestChallenge: zod.string().nullish(),
+  featureInterest: zod.string().nullish(),
+  completedAt: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Submit in-app feedback
+ */
+export const SubmitFeedbackBody = zod.object({
+  userId: zod.string().nullish(),
+  feedbackType: zod
+    .string()
+    .describe("bug | feature | feedback | confusion | love"),
+  message: zod.string(),
+  metadata: zod.string().nullish(),
 });

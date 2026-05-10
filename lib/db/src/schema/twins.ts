@@ -1,16 +1,20 @@
-import { pgTable, text, serial, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, timestamp, boolean, integer } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
 export const twinsTable = pgTable("twins", {
   id: serial("id").primaryKey(),
   userId: text("user_id").notNull(),
-  label: text("label").notNull(), // "Twin A" or "Twin B"
+  label: text("label").notNull(),
   name: text("name").notNull(),
   gender: text("gender"),
   birthdate: text("birthdate"),
   profilePicture: text("profile_picture"),
   colorTheme: text("color_theme").notNull().default("#da5a9f"),
+  isPremature: boolean("is_premature"),
+  gestationalAgeWeeks: integer("gestational_age_weeks"),
+  hadNicu: boolean("had_nicu"),
+  wantsAdjustedAge: boolean("wants_adjusted_age"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

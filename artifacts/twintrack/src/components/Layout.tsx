@@ -1,5 +1,131 @@
+import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Home, Moon, Utensils, BookOpen, GraduationCap, Heart, Settings } from "lucide-react";
+import { Home, Moon, Utensils, BookOpen, GraduationCap, Heart, Settings, MessageCircle, X } from "lucide-react";
+import { useUser } from "@clerk/react";
+import { useSubmitFeedback } from "@workspace/api-client-react";
+
+const FEEDBACK_TYPES = [
+  { key: "bug", label: "🐛 Bug report" },
+  { key: "feature", label: "💡 Feature idea" },
+  { key: "feedback", label: "💬 General feedback" },
+  { key: "confusion", label: "😕 Something confusing" },
+  { key: "love", label: "💕 Something I love" },
+];
+
+function FeedbackButton() {
+  const { user } = useUser();
+  const [open, setOpen] = useState(false);
+  const [type, setType] = useState("");
+  const [message, setMessage] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const submitFeedback = useSubmitFeedback();
+
+  function close() {
+    setOpen(false);
+    setType("");
+    setMessage("");
+    setSubmitted(false);
+  }
+
+  function submit() {
+    if (!type || !message.trim()) return;
+    submitFeedback.mutate(
+      { data: { userId: user?.id ?? null, feedbackType: type, message: message.trim(), metadata: null } },
+      {
+        onSuccess: () => {
+          setSubmitted(true);
+          setTimeout(close, 2200);
+        },
+      },
+    );
+  }
+
+  return (
+    <>
+      <button
+        onClick={() => setOpen(true)}
+        className="fixed bottom-[76px] right-3 z-40 flex items-center gap-1.5 bg-white border border-border/70 shadow-md rounded-full px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-primary hover:border-primary/30 transition-all"
+        data-testid="feedback-button"
+        aria-label="Send feedback"
+      >
+        <MessageCircle size={13} />
+        Feedback
+      </button>
+
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-end">
+          <div className="absolute inset-0 bg-black/50" onClick={close} />
+          <div className="relative bg-white w-full max-w-[430px] mx-auto rounded-t-3xl p-5 space-y-4 max-h-[88dvh] overflow-y-auto safe-area-pb">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-bold text-foreground">Help us improve 💕</h3>
+                <p className="text-xs text-muted-foreground">Your feedback shapes TwinTrack</p>
+              </div>
+              <button onClick={close} className="p-1.5 rounded-lg bg-muted" aria-label="Close">
+                <X size={14} className="text-muted-foreground" />
+              </button>
+            </div>
+
+            {submitted ? (
+              <div className="py-10 text-center">
+                <p className="text-5xl mb-3">💕</p>
+                <p className="font-bold text-foreground text-lg">Thank you!</p>
+                <p className="text-sm text-muted-foreground mt-1">Your feedback means the world to us.</p>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+                    What kind of feedback?
+                  </p>
+                  <div className="space-y-1.5">
+                    {FEEDBACK_TYPES.map((t) => (
+                      <button
+                        key={t.key}
+                        onClick={() => setType(t.key)}
+                        className={`w-full py-2.5 px-4 rounded-xl text-sm font-medium text-left transition-all border ${
+                          type === t.key
+                            ? "border-primary bg-primary/8 text-primary"
+                            : "border-border bg-muted/20 text-foreground"
+                        }`}
+                        data-testid={`feedback-type-${t.key}`}
+                      >
+                        {t.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+                    Your message
+                  </p>
+                  <textarea
+                    value={message}
+                    onChange={(e) => setMessage(e.target.value)}
+                    placeholder="Tell us more…"
+                    rows={4}
+                    className="w-full px-4 py-3 rounded-xl bg-muted/30 border border-border text-sm outline-none focus:ring-2 ring-primary/30 resize-none"
+                    data-testid="feedback-message"
+                  />
+                </div>
+
+                <button
+                  onClick={submit}
+                  disabled={!type || !message.trim() || submitFeedback.isPending}
+                  className="w-full py-3.5 rounded-xl bg-primary text-white font-semibold text-sm disabled:opacity-50 active:scale-[0.98] transition-all"
+                  data-testid="feedback-submit"
+                >
+                  {submitFeedback.isPending ? "Sending…" : "Send feedback →"}
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
 
 const tabs = [
   { path: "/dashboard", icon: Home, label: "Home" },
@@ -16,6 +142,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex flex-col min-h-[100dvh] max-w-[430px] mx-auto bg-background">
       <main className="flex-1 overflow-y-auto pb-20">{children}</main>
+
+      <FeedbackButton />
 
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-border safe-area-pb">

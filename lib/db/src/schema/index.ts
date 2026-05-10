@@ -5,3 +5,5 @@ export * from "./diapers";
 export * from "./routines";
 export * from "./videos";
 export * from "./milestones";
+export * from "./onboarding";
+export * from "./feedback";

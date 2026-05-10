@@ -28,6 +28,7 @@ import type {
   CreateVideoBody,
   DashboardSummary,
   DiaperEntry,
+  Feedback,
   FeedingEntry,
   FeedingSummary,
   GetDashboardSummaryParams,
@@ -44,10 +45,13 @@ import type {
   ListVideoNotesParams,
   ListVideosParams,
   Milestone,
+  Onboarding,
   Routine,
   RoutineTask,
+  SaveOnboardingBody,
   SleepEntry,
   SleepSummary,
+  SubmitFeedbackBody,
   Twin,
   UpdateFeedingEntryBody,
   UpdateRoutineBody,
@@ -3275,3 +3279,263 @@ export function useGetDashboardSummary<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Get onboarding record for a user
+ */
+export const getGetOnboardingUrl = (userId: string) => {
+  return `/api/onboarding/${userId}`;
+};
+
+export const getOnboarding = async (
+  userId: string,
+  options?: RequestInit,
+): Promise<Onboarding> => {
+  return customFetch<Onboarding>(getGetOnboardingUrl(userId), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetOnboardingQueryKey = (userId: string) => {
+  return [`/api/onboarding/${userId}`] as const;
+};
+
+export const getGetOnboardingQueryOptions = <
+  TData = Awaited<ReturnType<typeof getOnboarding>>,
+  TError = ErrorType<void>,
+>(
+  userId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getOnboarding>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetOnboardingQueryKey(userId);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getOnboarding>>> = ({
+    signal,
+  }) => getOnboarding(userId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!userId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getOnboarding>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetOnboardingQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getOnboarding>>
+>;
+export type GetOnboardingQueryError = ErrorType<void>;
+
+/**
+ * @summary Get onboarding record for a user
+ */
+
+export function useGetOnboarding<
+  TData = Awaited<ReturnType<typeof getOnboarding>>,
+  TError = ErrorType<void>,
+>(
+  userId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getOnboarding>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetOnboardingQueryOptions(userId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create or update onboarding answers
+ */
+export const getSaveOnboardingUrl = (userId: string) => {
+  return `/api/onboarding/${userId}`;
+};
+
+export const saveOnboarding = async (
+  userId: string,
+  saveOnboardingBody: SaveOnboardingBody,
+  options?: RequestInit,
+): Promise<Onboarding> => {
+  return customFetch<Onboarding>(getSaveOnboardingUrl(userId), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(saveOnboardingBody),
+  });
+};
+
+export const getSaveOnboardingMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveOnboarding>>,
+    TError,
+    { userId: string; data: BodyType<SaveOnboardingBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof saveOnboarding>>,
+  TError,
+  { userId: string; data: BodyType<SaveOnboardingBody> },
+  TContext
+> => {
+  const mutationKey = ["saveOnboarding"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof saveOnboarding>>,
+    { userId: string; data: BodyType<SaveOnboardingBody> }
+  > = (props) => {
+    const { userId, data } = props ?? {};
+
+    return saveOnboarding(userId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SaveOnboardingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof saveOnboarding>>
+>;
+export type SaveOnboardingMutationBody = BodyType<SaveOnboardingBody>;
+export type SaveOnboardingMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create or update onboarding answers
+ */
+export const useSaveOnboarding = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof saveOnboarding>>,
+    TError,
+    { userId: string; data: BodyType<SaveOnboardingBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof saveOnboarding>>,
+  TError,
+  { userId: string; data: BodyType<SaveOnboardingBody> },
+  TContext
+> => {
+  return useMutation(getSaveOnboardingMutationOptions(options));
+};
+
+/**
+ * @summary Submit in-app feedback
+ */
+export const getSubmitFeedbackUrl = () => {
+  return `/api/feedback`;
+};
+
+export const submitFeedback = async (
+  submitFeedbackBody: SubmitFeedbackBody,
+  options?: RequestInit,
+): Promise<Feedback> => {
+  return customFetch<Feedback>(getSubmitFeedbackUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(submitFeedbackBody),
+  });
+};
+
+export const getSubmitFeedbackMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitFeedback>>,
+    TError,
+    { data: BodyType<SubmitFeedbackBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof submitFeedback>>,
+  TError,
+  { data: BodyType<SubmitFeedbackBody> },
+  TContext
+> => {
+  const mutationKey = ["submitFeedback"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof submitFeedback>>,
+    { data: BodyType<SubmitFeedbackBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return submitFeedback(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SubmitFeedbackMutationResult = NonNullable<
+  Awaited<ReturnType<typeof submitFeedback>>
+>;
+export type SubmitFeedbackMutationBody = BodyType<SubmitFeedbackBody>;
+export type SubmitFeedbackMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Submit in-app feedback
+ */
+export const useSubmitFeedback = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitFeedback>>,
+    TError,
+    { data: BodyType<SubmitFeedbackBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof submitFeedback>>,
+  TError,
+  { data: BodyType<SubmitFeedbackBody> },
+  TContext
+> => {
+  return useMutation(getSubmitFeedbackMutationOptions(options));
+};

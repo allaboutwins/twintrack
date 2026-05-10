@@ -26,6 +26,10 @@ tags:
     description: Twin milestone tracking operations
   - name: dashboard
     description: Dashboard summary operations
+  - name: onboarding
+    description: User onboarding and early access flow
+  - name: feedback
+    description: In-app feedback collection
 
 paths:
   /healthz:
@@ -791,6 +795,75 @@ paths:
               schema:
                 $ref: "#/components/schemas/DashboardSummary"
 
+  /onboarding/{userId}:
+    get:
+      operationId: getOnboarding
+      tags: [onboarding]
+      summary: Get onboarding record for a user
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Onboarding record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Onboarding"
+        "404":
+          description: No onboarding record found
+    post:
+      operationId: saveOnboarding
+      tags: [onboarding]
+      summary: Create or update onboarding answers
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveOnboardingBody"
+      responses:
+        "200":
+          description: Saved onboarding record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Onboarding"
+        "201":
+          description: Created onboarding record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Onboarding"
+
+  /feedback:
+    post:
+      operationId: submitFeedback
+      tags: [feedback]
+      summary: Submit in-app feedback
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SubmitFeedbackBody"
+      responses:
+        "201":
+          description: Feedback submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Feedback"
+
 components:
   schemas:
     HealthStatus:
@@ -825,6 +898,14 @@ components:
           type: string
         updatedAt:
           type: string
+        isPremature:
+          type: ["boolean", "null"]
+        gestationalAgeWeeks:
+          type: ["integer", "null"]
+        hadNicu:
+          type: ["boolean", "null"]
+        wantsAdjustedAge:
+          type: ["boolean", "null"]
       required:
         - id
         - userId
@@ -870,6 +951,14 @@ components:
           type: ["string", "null"]
         colorTheme:
           type: ["string", "null"]
+        isPremature:
+          type: ["boolean", "null"]
+        gestationalAgeWeeks:
+          type: ["integer", "null"]
+        hadNicu:
+          type: ["boolean", "null"]
+        wantsAdjustedAge:
+          type: ["boolean", "null"]
 
     SleepEntry:
       type: object
@@ -1412,3 +1501,99 @@ components:
         - userId
         - date
         - twins
+
+    Onboarding:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: string
+        parentStatus:
+          type: ["string", "null"]
+          description: "expecting | parenting"
+        multipleType:
+          type: ["string", "null"]
+          description: "twins | triplets | quads | other"
+        babyAgeGroup:
+          type: ["string", "null"]
+          description: "newborn | infant | toddler | older"
+        isPremature:
+          type: ["boolean", "null"]
+        gestationalAgeWeeks:
+          type: ["integer", "null"]
+        hadNicu:
+          type: ["boolean", "null"]
+        wantsAdjustedAge:
+          type: ["boolean", "null"]
+        biggestChallenge:
+          type: ["string", "null"]
+        featureInterest:
+          type: ["string", "null"]
+        completedAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - createdAt
+
+    SaveOnboardingBody:
+      type: object
+      properties:
+        parentStatus:
+          type: ["string", "null"]
+        multipleType:
+          type: ["string", "null"]
+        babyAgeGroup:
+          type: ["string", "null"]
+        isPremature:
+          type: ["boolean", "null"]
+        gestationalAgeWeeks:
+          type: ["integer", "null"]
+        hadNicu:
+          type: ["boolean", "null"]
+        wantsAdjustedAge:
+          type: ["boolean", "null"]
+        biggestChallenge:
+          type: ["string", "null"]
+        featureInterest:
+          type: ["string", "null"]
+
+    SubmitFeedbackBody:
+      type: object
+      properties:
+        userId:
+          type: ["string", "null"]
+        feedbackType:
+          type: string
+          description: "bug | feature | feedback | confusion | love"
+        message:
+          type: string
+        metadata:
+          type: ["string", "null"]
+      required:
+        - feedbackType
+        - message
+
+    Feedback:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: ["string", "null"]
+        feedbackType:
+          type: string
+        message:
+          type: string
+        metadata:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - feedbackType
+        - message
+        - createdAt

@@ -1,12 +1,14 @@
-import { useEffect, useRef } from "react";
-import { ClerkProvider, SignIn, SignUp, Show, useClerk } from "@clerk/react";
+import { useEffect, useRef, useState } from "react";
+import { ClerkProvider, SignIn, SignUp, Show, useClerk, useUser } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useGetOnboarding, getGetOnboardingQueryKey } from "@workspace/api-client-react";
 import NotFound from "@/pages/not-found";
+import OnboardingFlow from "@/pages/OnboardingFlow";
 import Landing from "@/pages/Landing";
 import Dashboard from "@/pages/Dashboard";
 import Sleep from "@/pages/Sleep";
@@ -109,11 +111,54 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
+function OnboardingGate({ children }: { children: React.ReactNode }) {
+  const { user } = useUser();
+  const qc = useQueryClient();
+  const userId = user?.id ?? "";
+
+  const { data: onboarding, isLoading, isError } = useGetOnboarding(userId, {
+    query: {
+      queryKey: getGetOnboardingQueryKey(userId),
+      enabled: !!userId,
+      retry: false,
+      staleTime: 5 * 60 * 1000,
+    },
+  });
+
+  const [localComplete, setLocalComplete] = useState(false);
+
+  if (!userId || isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[100dvh] bg-background">
+        <div className="w-8 h-8 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+      </div>
+    );
+  }
+
+  const needsOnboarding = !localComplete && (isError || !onboarding?.completedAt);
+
+  if (needsOnboarding) {
+    return (
+      <OnboardingFlow
+        userId={userId}
+        onComplete={() => {
+          setLocalComplete(true);
+          qc.invalidateQueries({ queryKey: getGetOnboardingQueryKey(userId) });
+        }}
+      />
+    );
+  }
+
+  return <>{children}</>;
+}
+
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   return (
     <>
       <Show when="signed-in">
-        <Component />
+        <OnboardingGate>
+          <Component />
+        </OnboardingGate>
       </Show>
       <Show when="signed-out">
         <Redirect to="/" />

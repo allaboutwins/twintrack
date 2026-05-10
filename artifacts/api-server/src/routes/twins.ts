@@ -67,6 +67,10 @@ router.patch("/twins/:id", async (req, res): Promise<void> => {
   if (parsed.data.birthdate !== undefined) updates.birthdate = parsed.data.birthdate;
   if (parsed.data.profilePicture !== undefined) updates.profilePicture = parsed.data.profilePicture;
   if (parsed.data.colorTheme != null) updates.colorTheme = parsed.data.colorTheme;
+  if (parsed.data.isPremature !== undefined) updates.isPremature = parsed.data.isPremature;
+  if (parsed.data.gestationalAgeWeeks !== undefined) updates.gestationalAgeWeeks = parsed.data.gestationalAgeWeeks;
+  if (parsed.data.hadNicu !== undefined) updates.hadNicu = parsed.data.hadNicu;
+  if (parsed.data.wantsAdjustedAge !== undefined) updates.wantsAdjustedAge = parsed.data.wantsAdjustedAge;
 
   const [twin] = await db.update(twinsTable).set(updates).where(eq(twinsTable.id, params.data.id)).returning();
   if (!twin) {
