@@ -133,7 +133,7 @@ export default function OnboardingFlow({
               TwinTrack
             </h1>
             <div className="bg-white/90 border border-primary/20 rounded-2xl px-6 py-5 mb-8 text-left shadow-sm">
-              <p className="text-xs font-bold text-primary uppercase tracking-wide mb-2">🌟 Founding Member</p>
+              <p className="text-xs font-bold text-primary uppercase tracking-wide mb-2">🍒 Founding Member</p>
               <p className="text-sm text-foreground leading-relaxed">
                 You're one of our first founding twin moms — helping us build the most supportive app for twin parents
                 together. Your voice shapes this product. 💕
@@ -412,8 +412,8 @@ export default function OnboardingFlow({
         {/* ── DONE ── */}
         {currentStep === "done" && (
           <div className="flex flex-col items-center justify-center min-h-full p-8 text-center bg-gradient-to-b from-primary/8 via-background to-accent/8">
-            <div className="text-7xl mb-5" style={{ lineHeight: 1 }}>
-              🎉
+            <div className="flex gap-2 text-5xl mb-5" style={{ lineHeight: 1 }}>
+              <span>🎉</span><span>🍒</span>
             </div>
             <h2 className="text-2xl font-bold text-foreground mb-2">You're a Founding TwinTrack Mom!</h2>
             <p className="text-primary font-bold text-base mb-2">💕 Thank you for being here.</p>

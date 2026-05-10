@@ -10,6 +10,7 @@ import milestonesRouter from "./milestones";
 import dashboardRouter from "./dashboard";
 import onboardingRouter from "./onboarding";
 import feedbackRouter from "./feedback";
+import adminRouter from "./admin";
 
 const router: IRouter = Router();
 
@@ -24,5 +25,6 @@ router.use(milestonesRouter);
 router.use(dashboardRouter);
 router.use(onboardingRouter);
 router.use(feedbackRouter);
+router.use(adminRouter);
 
 export default router;

@@ -19,6 +19,7 @@ import Learn from "@/pages/Learn";
 import Milestones from "@/pages/Milestones";
 import Settings from "@/pages/Settings";
 import VideoAdmin from "@/pages/VideoAdmin";
+import Admin from "@/pages/Admin";
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -152,6 +153,19 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function AdminRoute({ component: Component }: { component: React.ComponentType }) {
+  return (
+    <>
+      <Show when="signed-in">
+        <Component />
+      </Show>
+      <Show when="signed-out">
+        <Redirect to="/" />
+      </Show>
+    </>
+  );
+}
+
 function ProtectedRoute({ component: Component }: { component: React.ComponentType }) {
   return (
     <>
@@ -249,6 +263,9 @@ function ClerkProviderWithRoutes() {
             </Route>
             <Route path="/admin/videos">
               <ProtectedRoute component={VideoAdmin} />
+            </Route>
+            <Route path="/admin">
+              <AdminRoute component={Admin} />
             </Route>
             <Route path="/settings">
               <ProtectedRoute component={Settings} />

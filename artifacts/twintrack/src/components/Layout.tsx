@@ -68,7 +68,7 @@ function FeedbackButton() {
 
             {submitted ? (
               <div className="py-10 text-center">
-                <p className="text-5xl mb-3">💕</p>
+                <p className="text-5xl mb-3">💕🍒</p>
                 <p className="font-bold text-foreground text-lg">Thank you!</p>
                 <p className="text-sm text-muted-foreground mt-1">Your feedback means the world to us.</p>
               </div>

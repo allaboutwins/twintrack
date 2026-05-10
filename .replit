@@ -37,3 +37,9 @@ externalPort = 3001
 [[ports]]
 localPort = 19107
 externalPort = 3000
+
+[userenv]
+
+[userenv.shared]
+ADMIN_USER_IDS = "user_3DPe3tB5JFDHazj6xM2F2E72jYh"
+VITE_ADMIN_USER_IDS = "user_3DPe3tB5JFDHazj6xM2F2E72jYh"
