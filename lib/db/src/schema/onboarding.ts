@@ -14,6 +14,9 @@ export const onboardingTable = pgTable("onboarding", {
   wantsAdjustedAge: boolean("wants_adjusted_age"),
   biggestChallenge: text("biggest_challenge"),
   featureInterest: text("feature_interest"),
+  discoverySource: text("discovery_source"),
+  instagramHandle: text("instagram_handle"),
+  isAmbassador: boolean("is_ambassador"),
   completedAt: timestamp("completed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

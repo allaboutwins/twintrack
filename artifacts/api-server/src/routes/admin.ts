@@ -22,11 +22,13 @@ function getAdminIds(): string[] {
     .filter(Boolean);
 }
 
+function isAdmin(userId: string | undefined): boolean {
+  return !!userId && getAdminIds().includes(userId);
+}
+
 router.get("/admin/stats", async (req, res): Promise<void> => {
   const userId = req.query.userId as string | undefined;
-  const adminIds = getAdminIds();
-
-  if (!userId || !adminIds.includes(userId)) {
+  if (!isAdmin(userId)) {
     res.status(403).json({ error: "Forbidden" });
     return;
   }
@@ -44,7 +46,7 @@ router.get("/admin/stats", async (req, res): Promise<void> => {
   ] = await Promise.all([
     db.selectDistinct({ userId: twinsTable.userId }).from(twinsTable),
     db.select().from(onboardingTable).orderBy(desc(onboardingTable.createdAt)),
-    db.select().from(feedbackTable).orderBy(desc(feedbackTable.createdAt)).limit(100),
+    db.select().from(feedbackTable).orderBy(desc(feedbackTable.createdAt)).limit(200),
     db.select({ count: count() }).from(sleepEntriesTable),
     db.select({ count: count() }).from(feedingEntriesTable),
     db.select({ count: count() }).from(diaperEntriesTable),
@@ -75,6 +77,7 @@ router.get("/admin/stats", async (req, res): Promise<void> => {
       uniqueUsersWithTwins: uniqueUsers.length,
       onboardingTotal: onboardingRecords.length,
       onboardingCompleted: completed.length,
+      ambassadors: completed.filter((r) => r.isAmbassador).length,
     },
     onboarding: {
       parentStatus: breakdown((r) => r.parentStatus),
@@ -83,6 +86,7 @@ router.get("/admin/stats", async (req, res): Promise<void> => {
       isPremature: breakdown((r) => String(r.isPremature ?? "unknown")),
       biggestChallenge: breakdown((r) => r.biggestChallenge),
       featureInterest: breakdown((r) => r.featureInterest),
+      discoverySource: breakdown((r) => r.discoverySource),
     },
     feedback: feedbackRecords,
     activity: {

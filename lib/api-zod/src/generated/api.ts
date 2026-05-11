@@ -751,6 +751,14 @@ export const GetOnboardingResponse = zod.object({
   wantsAdjustedAge: zod.boolean().nullish(),
   biggestChallenge: zod.string().nullish(),
   featureInterest: zod.string().nullish(),
+  discoverySource: zod
+    .string()
+    .nullish()
+    .describe(
+      "instagram | facebook | tiktok | youtube | threads | pinterest | friend | allaboutwins | other",
+    ),
+  instagramHandle: zod.string().nullish(),
+  isAmbassador: zod.boolean().nullish(),
   completedAt: zod.string().nullish(),
   createdAt: zod.string(),
 });
@@ -772,6 +780,9 @@ export const SaveOnboardingBody = zod.object({
   wantsAdjustedAge: zod.boolean().nullish(),
   biggestChallenge: zod.string().nullish(),
   featureInterest: zod.string().nullish(),
+  discoverySource: zod.string().nullish(),
+  instagramHandle: zod.string().nullish(),
+  isAmbassador: zod.boolean().nullish(),
 });
 
 export const SaveOnboardingResponse = zod.object({
@@ -792,6 +803,14 @@ export const SaveOnboardingResponse = zod.object({
   wantsAdjustedAge: zod.boolean().nullish(),
   biggestChallenge: zod.string().nullish(),
   featureInterest: zod.string().nullish(),
+  discoverySource: zod
+    .string()
+    .nullish()
+    .describe(
+      "instagram | facebook | tiktok | youtube | threads | pinterest | friend | allaboutwins | other",
+    ),
+  instagramHandle: zod.string().nullish(),
+  isAmbassador: zod.boolean().nullish(),
   completedAt: zod.string().nullish(),
   createdAt: zod.string(),
 });

@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSaveOnboarding, getGetOnboardingQueryKey } from "@workspace/api-client-react";
 import { Check } from "lucide-react";
 
-type Step = "welcome" | "family" | "age" | "prematurity" | "journey" | "done";
+type Step = "welcome" | "family" | "age" | "prematurity" | "journey" | "discovery" | "ambassador" | "done";
 
 interface FormState {
   parentStatus: string;
@@ -15,6 +15,9 @@ interface FormState {
   wantsAdjustedAge: boolean | null;
   biggestChallenge: string;
   featureInterest: string;
+  discoverySource: string;
+  instagramHandle: string;
+  isAmbassador: boolean | null;
 }
 
 const CHALLENGES = [
@@ -36,6 +39,18 @@ const FEATURES = [
   { key: "all", label: "✨ All of it!" },
 ];
 
+const DISCOVERY_SOURCES = [
+  { key: "instagram", label: "📸 Instagram" },
+  { key: "facebook", label: "👥 Facebook" },
+  { key: "tiktok", label: "🎵 TikTok" },
+  { key: "youtube", label: "▶️ YouTube" },
+  { key: "threads", label: "🧵 Threads" },
+  { key: "pinterest", label: "📌 Pinterest" },
+  { key: "friend", label: "🤝 A friend told me" },
+  { key: "allaboutwins", label: "🍒 All About Twins" },
+  { key: "other", label: "💬 Other" },
+];
+
 function getSteps(parentStatus: string): Step[] {
   const steps: Step[] = ["welcome", "family"];
   if (parentStatus === "parenting") {
@@ -43,6 +58,8 @@ function getSteps(parentStatus: string): Step[] {
     steps.push("prematurity");
   }
   steps.push("journey");
+  steps.push("discovery");
+  steps.push("ambassador");
   steps.push("done");
   return steps;
 }
@@ -64,6 +81,9 @@ export default function OnboardingFlow({
     wantsAdjustedAge: null,
     biggestChallenge: "",
     featureInterest: "",
+    discoverySource: "",
+    instagramHandle: "",
+    isAmbassador: null,
   });
   const [stepIndex, setStepIndex] = useState(0);
   const qc = useQueryClient();
@@ -96,6 +116,9 @@ export default function OnboardingFlow({
           wantsAdjustedAge: form.wantsAdjustedAge,
           biggestChallenge: form.biggestChallenge || null,
           featureInterest: form.featureInterest || null,
+          discoverySource: form.discoverySource || null,
+          instagramHandle: form.instagramHandle || null,
+          isAmbassador: form.isAmbassador,
         },
       },
       {
@@ -107,6 +130,8 @@ export default function OnboardingFlow({
       },
     );
   }
+
+  const isLastContentStep = currentStep === "ambassador";
 
   return (
     <div className="fixed inset-0 z-[100] bg-background flex flex-col max-w-[430px] mx-auto overflow-hidden">
@@ -144,9 +169,11 @@ export default function OnboardingFlow({
               className="w-full py-4 rounded-2xl bg-primary text-white font-bold text-lg shadow-md active:scale-[0.98] transition-all"
               data-testid="onboarding-start"
             >
-              I'm in! Let's go →
+              Let's begin 🚀
             </button>
-            <p className="text-xs text-muted-foreground mt-4">Takes about 1 minute</p>
+            <button onClick={onComplete} className="mt-4 text-xs text-muted-foreground underline">
+              Skip for now
+            </button>
           </div>
         )}
 
@@ -155,53 +182,53 @@ export default function OnboardingFlow({
           <div className="p-6 space-y-6">
             <div>
               <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1">
-                Step 1 of {contentSteps.length}
+                Step {contentSteps.indexOf("family") + 1} of {contentSteps.length}
               </p>
-              <h2 className="text-xl font-bold text-foreground">Tell us about your family 👨‍👩‍👧‍👦</h2>
+              <h2 className="text-xl font-bold text-foreground">Tell us about your family 💕</h2>
+              <p className="text-sm text-muted-foreground mt-1">Helps us tailor TwinTrack just for you.</p>
             </div>
 
             <div>
-              <p className="font-semibold text-sm text-foreground mb-3">Are you expecting or already parenting?</p>
+              <p className="font-semibold text-sm mb-3">Where are you in your journey?</p>
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { key: "expecting", label: "Expecting twins", emoji: "🤰" },
-                  { key: "parenting", label: "Already parenting", emoji: "👶" },
+                  { key: "expecting", label: "🤰 Expecting multiples" },
+                  { key: "parenting", label: "👶 Parenting multiples" },
                 ].map((opt) => (
                   <button
                     key={opt.key}
                     onClick={() => setForm((f) => ({ ...f, parentStatus: opt.key }))}
-                    className={`py-5 px-3 rounded-2xl border-2 text-center transition-all ${
+                    className={`p-4 rounded-2xl border-2 text-sm font-semibold text-left transition-all ${
                       form.parentStatus === opt.key
                         ? "border-primary bg-primary/10 text-primary"
                         : "border-border bg-white text-foreground"
                     }`}
-                    data-testid={`parent-status-${opt.key}`}
+                    data-testid={`status-${opt.key}`}
                   >
-                    <div className="text-4xl mb-1.5">{opt.emoji}</div>
-                    <p className="text-xs font-semibold leading-tight">{opt.label}</p>
+                    {opt.label}
                   </button>
                 ))}
               </div>
             </div>
 
             <div>
-              <p className="font-semibold text-sm text-foreground mb-3">What kind of multiples?</p>
-              <div className="grid grid-cols-2 gap-2">
+              <p className="font-semibold text-sm mb-3">What kind of multiples?</p>
+              <div className="grid grid-cols-2 gap-3">
                 {[
                   { key: "twins", label: "👯 Twins" },
                   { key: "triplets", label: "🌟 Triplets" },
                   { key: "quads", label: "🍀 Quads" },
-                  { key: "other", label: "💫 Other multiples" },
+                  { key: "other", label: "💫 Other" },
                 ].map((opt) => (
                   <button
                     key={opt.key}
                     onClick={() => setForm((f) => ({ ...f, multipleType: opt.key }))}
-                    className={`py-3.5 px-4 rounded-xl border-2 text-sm font-semibold text-center transition-all ${
+                    className={`p-3 rounded-2xl border-2 text-sm font-semibold transition-all ${
                       form.multipleType === opt.key
                         ? "border-primary bg-primary/10 text-primary"
                         : "border-border bg-white text-foreground"
                     }`}
-                    data-testid={`multiple-type-${opt.key}`}
+                    data-testid={`multiple-${opt.key}`}
                   >
                     {opt.label}
                   </button>
@@ -213,38 +240,34 @@ export default function OnboardingFlow({
 
         {/* ── AGE ── */}
         {currentStep === "age" && (
-          <div className="p-6 space-y-5">
+          <div className="p-6 space-y-6">
             <div>
               <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1">
                 Step {contentSteps.indexOf("age") + 1} of {contentSteps.length}
               </p>
-              <h2 className="text-xl font-bold text-foreground">How old are your babies? 🍼</h2>
-              <p className="text-sm text-muted-foreground mt-1">This helps us recommend the right content for your stage.</p>
+              <h2 className="text-xl font-bold text-foreground">How old are your babies? 🐣</h2>
             </div>
-
-            <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
               {[
-                { key: "newborn", label: "Newborn", desc: "0 – 3 months", emoji: "🐣" },
-                { key: "infant", label: "Infant", desc: "3 – 12 months", emoji: "🍼" },
-                { key: "toddler", label: "Toddler", desc: "1 – 3 years", emoji: "🧒" },
-                { key: "older", label: "Older", desc: "3+ years", emoji: "🌟" },
+                { key: "newborn", label: "🐣 Newborn", sub: "0 – 3 months" },
+                { key: "infant", label: "🍼 Infant", sub: "3 – 12 months" },
+                { key: "toddler", label: "🧒 Toddler", sub: "1 – 3 years" },
+                { key: "older", label: "🌟 Older", sub: "3+ years" },
               ].map((opt) => (
                 <button
                   key={opt.key}
                   onClick={() => setForm((f) => ({ ...f, babyAgeGroup: opt.key }))}
-                  className={`w-full py-4 px-5 rounded-2xl border-2 flex items-center gap-4 text-left transition-all ${
-                    form.babyAgeGroup === opt.key ? "border-primary bg-primary/10" : "border-border bg-white"
+                  className={`p-4 rounded-2xl border-2 text-left transition-all ${
+                    form.babyAgeGroup === opt.key
+                      ? "border-primary bg-primary/10"
+                      : "border-border bg-white"
                   }`}
-                  data-testid={`age-group-${opt.key}`}
+                  data-testid={`age-${opt.key}`}
                 >
-                  <span className="text-3xl flex-shrink-0">{opt.emoji}</span>
-                  <div className="flex-1">
-                    <p className={`font-bold text-sm ${form.babyAgeGroup === opt.key ? "text-primary" : "text-foreground"}`}>
-                      {opt.label}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{opt.desc}</p>
-                  </div>
-                  {form.babyAgeGroup === opt.key && <Check size={18} className="text-primary flex-shrink-0" />}
+                  <p className={`text-sm font-bold ${form.babyAgeGroup === opt.key ? "text-primary" : "text-foreground"}`}>
+                    {opt.label}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{opt.sub}</p>
                 </button>
               ))}
             </div>
@@ -253,102 +276,90 @@ export default function OnboardingFlow({
 
         {/* ── PREMATURITY ── */}
         {currentStep === "prematurity" && (
-          <div className="p-6 space-y-5">
+          <div className="p-6 space-y-6">
             <div>
               <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1">
                 Step {contentSteps.indexOf("prematurity") + 1} of {contentSteps.length}
               </p>
-              <h2 className="text-xl font-bold text-foreground">Were they born early? 💛</h2>
-              <p className="text-sm text-muted-foreground mt-1">
-                We're building dedicated support for preemie families.
-              </p>
+              <h2 className="text-xl font-bold text-foreground">Were your babies premature? 💛</h2>
+              <p className="text-sm text-muted-foreground mt-1">We'll enable adjusted age tracking if helpful.</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { val: true, label: "Yes, premature" },
+                { val: false, label: "No, full term" },
+              ].map((opt) => (
+                <button
+                  key={String(opt.val)}
+                  onClick={() => setForm((f) => ({ ...f, isPremature: opt.val }))}
+                  className={`p-4 rounded-2xl border-2 text-sm font-semibold transition-all ${
+                    form.isPremature === opt.val
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-white text-foreground"
+                  }`}
+                  data-testid={`premature-${opt.val}`}
+                >
+                  {opt.label}
+                </button>
+              ))}
             </div>
 
-            <div>
-              <p className="font-semibold text-sm mb-3">Were your babies premature?</p>
-              <div className="grid grid-cols-2 gap-3">
-                {[
-                  { val: true, label: "Yes 💛", desc: "Born before 37 weeks" },
-                  { val: false, label: "No 😊", desc: "Born at or near term" },
-                ].map((opt) => (
-                  <button
-                    key={String(opt.val)}
-                    onClick={() => setForm((f) => ({ ...f, isPremature: opt.val }))}
-                    className={`py-5 px-3 rounded-2xl border-2 text-center transition-all ${
-                      form.isPremature === opt.val
-                        ? "border-primary bg-primary/10 text-primary"
-                        : "border-border bg-white text-foreground"
-                    }`}
-                    data-testid={`premature-${opt.val}`}
-                  >
-                    <p className="font-bold">{opt.label}</p>
-                    <p className="text-xs text-muted-foreground mt-1">{opt.desc}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {form.isPremature === true && (
-              <div className="space-y-4 bg-amber-50/50 border border-amber-100 rounded-2xl p-4">
+            {form.isPremature && (
+              <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2">
                 <div>
                   <p className="font-semibold text-sm mb-2">Gestational age at birth (weeks)</p>
-                  <input
-                    type="number"
-                    value={form.gestationalAgeWeeks ?? ""}
-                    onChange={(e) =>
-                      setForm((f) => ({
-                        ...f,
-                        gestationalAgeWeeks: e.target.value ? parseInt(e.target.value) : null,
-                      }))
-                    }
-                    placeholder="e.g. 30"
-                    min={22}
-                    max={36}
-                    className="w-full px-4 py-3 rounded-xl bg-white border border-border text-sm outline-none focus:ring-2 ring-primary/30"
-                    data-testid="gestational-age"
-                  />
-                </div>
-                <div>
-                  <p className="font-semibold text-sm mb-2">Did they have a NICU stay?</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { val: true, label: "Yes 💛" },
-                      { val: false, label: "No 😊" },
-                    ].map((opt) => (
+                  <div className="flex flex-wrap gap-2">
+                    {[23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36].map((w) => (
                       <button
-                        key={String(opt.val)}
-                        onClick={() => setForm((f) => ({ ...f, hadNicu: opt.val }))}
-                        className={`py-3 rounded-xl border-2 font-semibold text-sm transition-all ${
-                          form.hadNicu === opt.val ? "border-primary bg-primary/10 text-primary" : "border-border bg-white"
+                        key={w}
+                        onClick={() => setForm((f) => ({ ...f, gestationalAgeWeeks: w }))}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold border-2 transition-all ${
+                          form.gestationalAgeWeeks === w
+                            ? "border-primary bg-primary/10 text-primary"
+                            : "border-border bg-white text-foreground"
                         }`}
-                        data-testid={`nicu-${opt.val}`}
                       >
-                        {opt.label}
+                        {w}w
                       </button>
                     ))}
                   </div>
                 </div>
-                <div>
-                  <p className="font-semibold text-sm mb-1">Would you like adjusted age tracking?</p>
-                  <p className="text-xs text-muted-foreground mb-2">Tracks milestones based on corrected age.</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { val: true, label: "Yes please 🌟" },
-                      { val: false, label: "Not yet" },
-                    ].map((opt) => (
-                      <button
-                        key={String(opt.val)}
-                        onClick={() => setForm((f) => ({ ...f, wantsAdjustedAge: opt.val }))}
-                        className={`py-3 rounded-xl border-2 font-semibold text-sm transition-all ${
-                          form.wantsAdjustedAge === opt.val
-                            ? "border-primary bg-primary/10 text-primary"
-                            : "border-border bg-white"
-                        }`}
-                        data-testid={`adjusted-age-${opt.val}`}
-                      >
-                        {opt.label}
-                      </button>
-                    ))}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="font-semibold text-sm mb-2">Were they in NICU?</p>
+                    <div className="flex gap-2">
+                      {[{ val: true, label: "Yes" }, { val: false, label: "No" }].map((opt) => (
+                        <button
+                          key={String(opt.val)}
+                          onClick={() => setForm((f) => ({ ...f, hadNicu: opt.val }))}
+                          className={`flex-1 py-2.5 rounded-xl border-2 text-xs font-semibold transition-all ${
+                            form.hadNicu === opt.val
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-border bg-white text-foreground"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div>
+                    <p className="font-semibold text-sm mb-2">Use adjusted age?</p>
+                    <div className="flex gap-2">
+                      {[{ val: true, label: "Yes" }, { val: false, label: "No" }].map((opt) => (
+                        <button
+                          key={String(opt.val)}
+                          onClick={() => setForm((f) => ({ ...f, wantsAdjustedAge: opt.val }))}
+                          className={`flex-1 py-2.5 rounded-xl border-2 text-xs font-semibold transition-all ${
+                            form.wantsAdjustedAge === opt.val
+                              ? "border-primary bg-primary/10 text-primary"
+                              : "border-border bg-white text-foreground"
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -405,6 +416,90 @@ export default function OnboardingFlow({
                   </button>
                 ))}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── DISCOVERY ── */}
+        {currentStep === "discovery" && (
+          <div className="p-6 space-y-6">
+            <div>
+              <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1">
+                Step {contentSteps.indexOf("discovery") + 1} of {contentSteps.length}
+              </p>
+              <h2 className="text-xl font-bold text-foreground">How did you find TwinTrack? 🔍</h2>
+              <p className="text-sm text-muted-foreground mt-1">Helps us reach more twin families!</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {DISCOVERY_SOURCES.map((src) => (
+                <button
+                  key={src.key}
+                  onClick={() => setForm((f) => ({ ...f, discoverySource: src.key }))}
+                  className={`p-3 rounded-2xl border-2 text-sm font-semibold text-left transition-all ${
+                    form.discoverySource === src.key
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-white text-foreground"
+                  }`}
+                >
+                  {src.label}
+                </button>
+              ))}
+            </div>
+            <div>
+              <p className="font-semibold text-sm mb-2">Your Instagram handle <span className="text-muted-foreground font-normal">(optional)</span></p>
+              <input
+                type="text"
+                placeholder="@yourusername"
+                value={form.instagramHandle}
+                onChange={(e) => setForm((f) => ({ ...f, instagramHandle: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl border-2 border-border bg-white text-sm font-medium focus:border-primary focus:outline-none transition-colors"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* ── AMBASSADOR ── */}
+        {currentStep === "ambassador" && (
+          <div className="p-6 space-y-6">
+            <div>
+              <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1">
+                Step {contentSteps.indexOf("ambassador") + 1} of {contentSteps.length}
+              </p>
+              <h2 className="text-xl font-bold text-foreground">One last thing... 🍒</h2>
+            </div>
+            <div className="bg-gradient-to-br from-primary/8 to-accent/8 border border-primary/20 rounded-2xl p-5">
+              <p className="text-2xl mb-3">💕</p>
+              <h3 className="font-bold text-foreground text-base mb-2">Become a Founding Ambassador?</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                We're building TwinTrack with our community. As a Founding Ambassador, you'd get early access to new features,
+                share feedback, and help other twin families find their footing.
+              </p>
+              <p className="text-xs text-primary font-semibold mt-2">No pressure — just love 🍒</p>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setForm((f) => ({ ...f, isAmbassador: true }))}
+                className={`p-4 rounded-2xl border-2 text-sm font-bold transition-all ${
+                  form.isAmbassador === true
+                    ? "border-primary bg-primary text-white"
+                    : "border-primary/40 bg-white text-primary"
+                }`}
+                data-testid="ambassador-yes"
+              >
+                {form.isAmbassador === true && <Check size={16} className="inline mr-1" />}
+                Yes! 💕 I'm in
+              </button>
+              <button
+                onClick={() => setForm((f) => ({ ...f, isAmbassador: false }))}
+                className={`p-4 rounded-2xl border-2 text-sm font-semibold transition-all ${
+                  form.isAmbassador === false
+                    ? "border-muted-foreground bg-muted text-muted-foreground"
+                    : "border-border bg-white text-foreground"
+                }`}
+                data-testid="ambassador-no"
+              >
+                Maybe later
+              </button>
             </div>
           </div>
         )}
@@ -466,7 +561,7 @@ export default function OnboardingFlow({
             className="flex-[2] py-3.5 rounded-xl bg-primary text-white text-sm font-semibold shadow-sm active:scale-[0.98] transition-all"
             data-testid="onboarding-next"
           >
-            {currentStep === "journey" ? "Almost done! →" : "Next →"}
+            {isLastContentStep ? "Almost done! →" : "Next →"}
           </button>
         </div>
       )}

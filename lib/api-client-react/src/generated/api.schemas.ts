@@ -384,6 +384,15 @@ export interface Onboarding {
   biggestChallenge?: string | null;
   /** @nullable */
   featureInterest?: string | null;
+  /**
+   * instagram | facebook | tiktok | youtube | threads | pinterest | friend | allaboutwins | other
+   * @nullable
+   */
+  discoverySource?: string | null;
+  /** @nullable */
+  instagramHandle?: string | null;
+  /** @nullable */
+  isAmbassador?: boolean | null;
   /** @nullable */
   completedAt?: string | null;
   createdAt: string;
@@ -408,6 +417,12 @@ export interface SaveOnboardingBody {
   biggestChallenge?: string | null;
   /** @nullable */
   featureInterest?: string | null;
+  /** @nullable */
+  discoverySource?: string | null;
+  /** @nullable */
+  instagramHandle?: string | null;
+  /** @nullable */
+  isAmbassador?: boolean | null;
 }
 
 export interface SubmitFeedbackBody {
@@ -428,6 +443,8 @@ export interface Feedback {
   message: string;
   /** @nullable */
   metadata?: string | null;
+  isStarred: boolean;
+  isResolved: boolean;
   createdAt: string;
 }
 

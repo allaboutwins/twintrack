@@ -1530,6 +1530,13 @@ components:
           type: ["string", "null"]
         featureInterest:
           type: ["string", "null"]
+        discoverySource:
+          type: ["string", "null"]
+          description: "instagram | facebook | tiktok | youtube | threads | pinterest | friend | allaboutwins | other"
+        instagramHandle:
+          type: ["string", "null"]
+        isAmbassador:
+          type: ["boolean", "null"]
         completedAt:
           type: ["string", "null"]
         createdAt:
@@ -1560,6 +1567,12 @@ components:
           type: ["string", "null"]
         featureInterest:
           type: ["string", "null"]
+        discoverySource:
+          type: ["string", "null"]
+        instagramHandle:
+          type: ["string", "null"]
+        isAmbassador:
+          type: ["boolean", "null"]
 
     SubmitFeedbackBody:
       type: object
@@ -1590,10 +1603,16 @@ components:
           type: string
         metadata:
           type: ["string", "null"]
+        isStarred:
+          type: boolean
+        isResolved:
+          type: boolean
         createdAt:
           type: string
       required:
         - id
         - feedbackType
         - message
+        - isStarred
+        - isResolved
         - createdAt
