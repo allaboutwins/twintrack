@@ -1,0 +1,219 @@
+TwinTrack — Founder Admin Dashboard + Growth System 🚀💕
+
+Before launching “Founding Moms Early Access,” we now need a proper founder/admin system so we can understand users, collect feedback, and improve the app quickly using real-world data.
+
+The goal is:
+👉 understand our users deeply
+👉 improve retention
+👉 prioritize the right features
+👉 build the app WITH the twin community
+
+Please build the following:
+
+---
+
+1. CREATE A PROTECTED ADMIN DASHBOARD
+
+Add a secure admin route:
+👉 /admin
+
+Access should only be available to approved admin emails.
+
+Suggested first admin:
+
+* my email account only for now
+
+The admin dashboard should feel:
+
+* clean
+* visual
+* founder-friendly
+* mobile responsive
+
+---
+
+2. ADMIN DASHBOARD OVERVIEW
+
+Main dashboard cards:
+
+* Total Signups
+* Active Users Today
+* Total Twins Families
+* Triplets / Quads Count
+* Premature / NICU Families
+* Feedback Submitted
+* Most Used Feature
+* Most Watched Learn Videos
+* Returning Users
+* Daily Growth
+
+Optional later:
+
+* retention charts
+* usage heatmaps
+* onboarding completion %
+
+---
+
+3. GOOGLE SHEETS AUTOMATION (VERY IMPORTANT)
+
+Please automatically send all onboarding/signup data to Google Sheets.
+
+Goal:
+Create a live growth + research spreadsheet.
+
+Important columns:
+
+* signup date
+* email
+* Instagram handle
+* family type (twins/triplets/quads)
+* babies age
+* premature/NICU
+* adjusted age enabled
+* biggest parenting struggle
+* most wanted feature
+* iPhone/Android
+* how they discovered TwinTrack
+* ambassador interest YES/NO
+* active user status
+
+This should auto-update every new signup.
+
+---
+
+4. ADD “HOW DID YOU HEAR ABOUT US?”
+
+This is extremely important for growth tracking.
+
+Options:
+
+* Instagram
+* Facebook
+* TikTok
+* YouTube
+* Threads
+* Pinterest
+* Friend
+* All About Twins
+* Other
+
+Store this in:
+
+* database
+* admin dashboard
+* Google Sheets
+
+---
+
+5. ADD “TWINTRACK AMBASSADOR” QUESTION
+
+Question:
+“Would you like to become a TwinTrack Founding Ambassador? 💕”
+
+YES / NO
+
+Goal:
+Identify engaged moms early.
+
+These users may later help with:
+
+* testimonials
+* feedback
+* beta testing
+* referrals
+* UGC content
+
+---
+
+6. FEEDBACK MANAGEMENT CENTER
+
+Inside admin dashboard:
+Create a Feedback section.
+
+Display:
+
+* bug reports
+* feature requests
+* positive feedback
+* confusing UX reports
+
+Allow:
+
+* filtering
+* sorting
+* marking as resolved
+* starring important feedback
+
+Goal:
+Help prioritize development based on real parent needs.
+
+---
+
+7. USER PROFILES (ADMIN VIEW)
+
+Allow admin to click a user and view:
+
+* onboarding answers
+* twins age
+* premature/NICU status
+* tracker usage
+* milestones logged
+* Learn videos watched
+* last active date
+* feedback history
+
+This helps deeply understand user behavior.
+
+---
+
+8. ANALYTICS FOR LEARN TAB
+
+Track:
+
+* most watched videos
+* average watch time
+* saved videos
+* notes created
+* favorite categories
+* most searched topics
+
+Goal:
+Understand what twin parents need most.
+
+This data will guide future content creation.
+
+---
+
+9. FUTURE-PROOF THE DATABASE
+
+IMPORTANT:
+Please continue structuring the app as:
+“multi-child scalable”
+
+NOT hardcoded twins.
+
+Support future:
+
+* twins
+* triplets
+* quads
+* larger families
+
+Even if the UI remains twin-focused for now.
+
+---
+
+10. FOUNDER GOAL
+
+TwinTrack is no longer just a tracker app.
+
+It is becoming:
+
+* a twin parenting platform
+* a learning hub
+* a memory keeper
+* a support system
+* a data-informed parenting ecosystem
+
+The admin dashboard is what will help us intelligently grow the product using real feedback from real families 💕
