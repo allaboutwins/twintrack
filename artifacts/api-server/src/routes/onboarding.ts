@@ -59,7 +59,7 @@ router.post("/onboarding/:userId", async (req, res): Promise<void> => {
     isAmbassador: record.isAmbassador,
     completedAt: record.completedAt?.toISOString() ?? null,
     createdAt: record.createdAt.toISOString(),
-  }).catch(() => {});
+  }).catch((err: unknown) => req.log.warn({ err }, "sheets: fire-and-forget failed"));
 });
 
 export default router;
