@@ -5,27 +5,13 @@ import { VitePWA } from "vite-plugin-pwa";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
+// PORT is only needed for the dev/preview server — not for production builds.
+// Fall back to 19107 so `vite build` works without the env var.
 const rawPort = process.env.PORT;
+const port = rawPort && !Number.isNaN(Number(rawPort)) ? Number(rawPort) : 19107;
 
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
-}
-
-const port = Number(rawPort);
-
-if (Number.isNaN(port) || port <= 0) {
-  throw new Error(`Invalid PORT value: "${rawPort}"`);
-}
-
-const basePath = process.env.BASE_PATH;
-
-if (!basePath) {
-  throw new Error(
-    "BASE_PATH environment variable is required but was not provided.",
-  );
-}
+// BASE_PATH defaults to "/" when not set (e.g. during static production builds).
+const basePath = process.env.BASE_PATH ?? "/";
 
 const scope = basePath === "/" ? "/" : basePath + "/";
 const startUrl = basePath + "/dashboard";
