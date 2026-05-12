@@ -42,6 +42,6 @@ externalPort = 3000
 [userenv]
 
 [userenv.shared]
-ADMIN_USER_IDS = "user_3DPe3tB5JFDHazj6xM2F2E72jYh"
-VITE_ADMIN_USER_IDS = "user_3DPe3tB5JFDHazj6xM2F2E72jYh"
+ADMIN_USER_IDS = "user_3DPe3tB5JFDHazj6xM2F2E72jYh,user_3DZswzvrN88fZSKNbiRItsJHje6"
+VITE_ADMIN_USER_IDS = "user_3DPe3tB5JFDHazj6xM2F2E72jYh,user_3DZswzvrN88fZSKNbiRItsJHje6"
 GOOGLE_SHEET_ID = "1RIh_80qnHsIVKEqsXp5S4WwzatdULK_bN3o1IhHgIlk"
