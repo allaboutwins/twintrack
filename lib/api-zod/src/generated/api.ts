@@ -826,3 +826,70 @@ export const SubmitFeedbackBody = zod.object({
   message: zod.string(),
   metadata: zod.string().nullish(),
 });
+
+/**
+ * @summary Get the currently active poll and user response status
+ */
+export const GetActivePollQueryParams = zod.object({
+  userId: zod.coerce.string(),
+});
+
+export const GetActivePollResponse = zod
+  .object({
+    id: zod.number(),
+    question: zod.string(),
+    category: zod.string(),
+    options: zod.array(
+      zod.object({
+        key: zod.string(),
+        label: zod.string(),
+      }),
+    ),
+    isActive: zod.boolean(),
+    startsAt: zod.string().nullish(),
+    endsAt: zod.string().nullish(),
+    createdAt: zod.string(),
+  })
+  .and(
+    zod.object({
+      hasResponded: zod.boolean(),
+      userOptionKey: zod.string().nullish(),
+      results: zod
+        .object({
+          totalResponses: zod.number(),
+          breakdown: zod.array(
+            zod.object({
+              optionKey: zod.string(),
+              count: zod.number(),
+              percentage: zod.number(),
+            }),
+          ),
+        })
+        .nullish(),
+    }),
+  );
+
+/**
+ * @summary Submit a response to a poll
+ */
+export const RespondToPollParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const RespondToPollBody = zod.object({
+  userId: zod.string(),
+  optionKey: zod.string(),
+});
+
+/**
+ * @summary Backfill all onboarding records to Google Sheets
+ */
+export const BackfillSheetsOnboardingQueryParams = zod.object({
+  userId: zod.coerce.string(),
+});
+
+export const BackfillSheetsOnboardingResponse = zod.object({
+  success: zod.number(),
+  failed: zod.number(),
+  skipped: zod.number(),
+});

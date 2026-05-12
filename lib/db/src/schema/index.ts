@@ -7,3 +7,4 @@ export * from "./videos";
 export * from "./milestones";
 export * from "./onboarding";
 export * from "./feedback";
+export * from "./polls";

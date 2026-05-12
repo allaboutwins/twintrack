@@ -11,6 +11,7 @@ import dashboardRouter from "./dashboard";
 import onboardingRouter from "./onboarding";
 import feedbackRouter from "./feedback";
 import adminRouter from "./admin";
+import pollsRouter from "./polls";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use(dashboardRouter);
 router.use(onboardingRouter);
 router.use(feedbackRouter);
 router.use(adminRouter);
+router.use(pollsRouter);
 
 export default router;

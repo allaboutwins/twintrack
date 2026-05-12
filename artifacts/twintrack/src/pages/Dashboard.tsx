@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useUser } from "@clerk/react";
 import { useLocation } from "wouter";
 import {
@@ -9,9 +10,13 @@ import {
   getListVideosQueryKey,
   useListMilestones,
   getListMilestonesQueryKey,
+  useGetActivePoll,
+  getGetActivePollQueryKey,
+  useRespondToPoll,
 } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import Layout, { PageHeader } from "@/components/Layout";
-import { Moon, Utensils, Baby, ChevronRight, Play, Star, Heart } from "lucide-react";
+import { Moon, Utensils, Baby, ChevronRight, Play, Star, Heart, BarChart2 } from "lucide-react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -358,6 +363,11 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* Poll widget */}
+        {!noTwins && !isLoading && user?.id && (
+          <PollWidget userId={user.id} />
+        )}
+
         {/* Quick add */}
         {!noTwins && !isLoading && (
           <div className="grid grid-cols-2 gap-3">
@@ -369,6 +379,82 @@ export default function Dashboard() {
         )}
       </div>
     </Layout>
+  );
+}
+
+function PollWidget({ userId }: { userId: string }) {
+  const qc = useQueryClient();
+  const { data: poll } = useGetActivePoll(
+    { userId },
+    {
+      query: {
+        enabled: !!userId,
+        queryKey: getGetActivePollQueryKey({ userId }),
+        retry: false,
+        staleTime: 60 * 1000,
+      },
+    },
+  );
+  const respond = useRespondToPoll();
+
+  if (!poll) return null;
+
+  function vote(optionKey: string) {
+    if (!poll || poll.hasResponded) return;
+    respond.mutate(
+      { id: poll.id, data: { userId, optionKey } },
+      { onSuccess: () => qc.invalidateQueries({ queryKey: getGetActivePollQueryKey({ userId }) }) },
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-border p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <BarChart2 size={15} className="text-primary" />
+        <p className="text-[10px] font-bold text-primary uppercase tracking-wide">Twin Mom Poll</p>
+      </div>
+      <p className="font-semibold text-sm text-foreground leading-snug">{poll.question}</p>
+      {!poll.hasResponded ? (
+        <div className="space-y-2">
+          {poll.options.map((opt) => (
+            <button
+              key={opt.key}
+              onClick={() => vote(opt.key)}
+              disabled={respond.isPending}
+              className="w-full py-2.5 px-4 rounded-xl text-sm font-medium text-left border border-border bg-muted/20 hover:bg-primary/8 hover:border-primary/30 transition-all active:scale-[0.98] disabled:opacity-60"
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-2.5">
+          {poll.results?.breakdown.map((item) => {
+            const opt = poll.options.find((o) => o.key === item.optionKey);
+            const isUser = item.optionKey === poll.userOptionKey;
+            return (
+              <div key={item.optionKey}>
+                <div className="flex justify-between text-xs mb-1">
+                  <span className={`font-medium ${isUser ? "text-primary" : "text-foreground"}`}>
+                    {isUser ? "✓ " : ""}{opt?.label ?? item.optionKey}
+                  </span>
+                  <span className="text-muted-foreground">{item.percentage}%</span>
+                </div>
+                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all ${isUser ? "bg-primary" : "bg-muted-foreground/40"}`}
+                    style={{ width: `${item.percentage}%` }}
+                  />
+                </div>
+              </div>
+            );
+          })}
+          <p className="text-[11px] text-muted-foreground text-center pt-1">
+            {poll.results?.totalResponses ?? 0} twin {poll.results?.totalResponses === 1 ? "mom" : "moms"} voted 💕
+          </p>
+        </div>
+      )}
+    </div>
   );
 }
 

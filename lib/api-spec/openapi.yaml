@@ -30,6 +30,10 @@ tags:
     description: User onboarding and early access flow
   - name: feedback
     description: In-app feedback collection
+  - name: polls
+    description: Community polls for twin moms
+  - name: admin
+    description: Admin-only operations
 
 paths:
   /healthz:
@@ -864,6 +868,75 @@ paths:
               schema:
                 $ref: "#/components/schemas/Feedback"
 
+  /polls/active:
+    get:
+      operationId: getActivePoll
+      tags: [polls]
+      summary: Get the currently active poll and user response status
+      parameters:
+        - in: query
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Active poll with user response status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PollWithResponse"
+        "404":
+          description: No active poll
+
+  /polls/{id}/respond:
+    post:
+      operationId: respondToPoll
+      tags: [polls]
+      summary: Submit a response to a poll
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RespondToPollBody"
+      responses:
+        "201":
+          description: Response recorded and results returned
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PollWithResponse"
+        "409":
+          description: Already responded to this poll
+
+  /admin/backfill-sheets:
+    post:
+      operationId: backfillSheetsOnboarding
+      tags: [admin]
+      summary: Backfill all onboarding records to Google Sheets
+      parameters:
+        - in: query
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Backfill results
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BackfillResult"
+        "403":
+          description: Forbidden — admin only
+
 components:
   schemas:
     HealthStatus:
@@ -1616,3 +1689,91 @@ components:
         - isStarred
         - isResolved
         - createdAt
+
+    PollOption:
+      type: object
+      required: [key, label]
+      properties:
+        key:
+          type: string
+        label:
+          type: string
+
+    PollResultBreakdown:
+      type: object
+      required: [optionKey, count, percentage]
+      properties:
+        optionKey:
+          type: string
+        count:
+          type: integer
+        percentage:
+          type: number
+
+    PollResults:
+      type: object
+      required: [totalResponses, breakdown]
+      properties:
+        totalResponses:
+          type: integer
+        breakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/PollResultBreakdown"
+
+    Poll:
+      type: object
+      required: [id, question, category, options, isActive, createdAt]
+      properties:
+        id:
+          type: integer
+        question:
+          type: string
+        category:
+          type: string
+        options:
+          type: array
+          items:
+            $ref: "#/components/schemas/PollOption"
+        isActive:
+          type: boolean
+        startsAt:
+          type: ["string", "null"]
+        endsAt:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    PollWithResponse:
+      allOf:
+        - $ref: "#/components/schemas/Poll"
+        - type: object
+          required: [hasResponded]
+          properties:
+            hasResponded:
+              type: boolean
+            userOptionKey:
+              type: ["string", "null"]
+            results:
+              nullable: true
+              $ref: "#/components/schemas/PollResults"
+
+    RespondToPollBody:
+      type: object
+      required: [userId, optionKey]
+      properties:
+        userId:
+          type: string
+        optionKey:
+          type: string
+
+    BackfillResult:
+      type: object
+      required: [success, failed, skipped]
+      properties:
+        success:
+          type: integer
+        failed:
+          type: integer
+        skipped:
+          type: integer

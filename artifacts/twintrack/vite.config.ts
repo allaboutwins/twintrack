@@ -1,6 +1,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import { VitePWA } from "vite-plugin-pwa";
 import path from "path";
 import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 
@@ -26,12 +27,51 @@ if (!basePath) {
   );
 }
 
+const scope = basePath === "/" ? "/" : basePath + "/";
+const startUrl = basePath + "/dashboard";
+
 export default defineConfig({
   base: basePath,
   plugins: [
     react(),
     tailwindcss({ optimize: false }),
     runtimeErrorOverlay(),
+    VitePWA({
+      registerType: "autoUpdate",
+      injectRegister: "auto",
+      includeAssets: ["favicon.svg", "logo.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png"],
+      manifest: {
+        name: "TwinTrack",
+        short_name: "TwinTrack",
+        description: "The twin parenting app that finally understands twin life",
+        theme_color: "#da5a9f",
+        background_color: "#fdf8fa",
+        display: "standalone",
+        orientation: "portrait",
+        scope,
+        start_url: startUrl,
+        icons: [
+          { src: "icon-192.png", sizes: "192x192", type: "image/png" },
+          { src: "icon-512.png", sizes: "512x512", type: "image/png" },
+          { src: "icon-512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
+          { src: "apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+        ],
+      },
+      workbox: {
+        navigateFallback: null,
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-fonts",
+              expiration: { maxEntries: 10, maxAgeSeconds: 31536000 },
+            },
+          },
+        ],
+      },
+    }),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [

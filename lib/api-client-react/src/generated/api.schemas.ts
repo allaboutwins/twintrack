@@ -448,6 +448,53 @@ export interface Feedback {
   createdAt: string;
 }
 
+export interface PollOption {
+  key: string;
+  label: string;
+}
+
+export interface PollResultBreakdown {
+  optionKey: string;
+  count: number;
+  percentage: number;
+}
+
+export interface PollResults {
+  totalResponses: number;
+  breakdown: PollResultBreakdown[];
+}
+
+export interface Poll {
+  id: number;
+  question: string;
+  category: string;
+  options: PollOption[];
+  isActive: boolean;
+  /** @nullable */
+  startsAt?: string | null;
+  /** @nullable */
+  endsAt?: string | null;
+  createdAt: string;
+}
+
+export type PollWithResponse = Poll & {
+  hasResponded: boolean;
+  /** @nullable */
+  userOptionKey?: string | null;
+  results?: PollResults | null;
+};
+
+export interface RespondToPollBody {
+  userId: string;
+  optionKey: string;
+}
+
+export interface BackfillResult {
+  success: number;
+  failed: number;
+  skipped: number;
+}
+
 export type ListTwinsParams = {
   userId: string;
 };
@@ -521,4 +568,12 @@ export type ListMilestonesParams = {
 export type GetDashboardSummaryParams = {
   userId: string;
   date: string;
+};
+
+export type GetActivePollParams = {
+  userId: string;
+};
+
+export type BackfillSheetsOnboardingParams = {
+  userId: string;
 };

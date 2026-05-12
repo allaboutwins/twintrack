@@ -22,27 +22,40 @@ const ONBOARDING_HEADERS = [
 ];
 
 async function ensureHeaders(spreadsheetId: string, sheetName: string, headers: string[]): Promise<void> {
+  logger.info({ spreadsheetId, sheetName }, "sheets: checking headers");
   try {
     const checkRes = await connectors.proxy(
       "google-sheet",
       `/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetName + "!A1:A1")}`,
       { method: "GET" },
     );
-    const checkData = await checkRes.json() as { values?: string[][] };
+    const checkData = await checkRes.json() as { values?: string[][]; error?: { message: string } };
+    if (checkData.error) {
+      logger.warn({ error: checkData.error, spreadsheetId, sheetName }, "sheets: header check returned error");
+      return;
+    }
     if (!checkData.values?.length) {
-      await connectors.proxy(
+      logger.info({ sheetName }, "sheets: writing headers (sheet is empty)");
+      const writeRes = await connectors.proxy(
         "google-sheet",
         `/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(sheetName + "!A1")}:append?valueInputOption=USER_ENTERED`,
         { method: "POST", body: JSON.stringify({ values: [headers] }) },
       );
-      logger.info({ sheetName }, "sheets: headers written");
+      const writeData = await writeRes.json() as { error?: { message: string } };
+      if (writeData.error) {
+        logger.warn({ error: writeData.error }, "sheets: header write failed");
+      } else {
+        logger.info({ sheetName }, "sheets: headers written OK");
+      }
+    } else {
+      logger.info({ sheetName }, "sheets: headers already present");
     }
   } catch (err) {
-    logger.warn({ err }, "sheets: ensureHeaders failed");
+    logger.warn({ err }, "sheets: ensureHeaders threw");
   }
 }
 
-export async function appendOnboardingRow(data: {
+export type OnboardingRowData = {
   userId: string;
   multipleType?: string | null;
   babyAgeGroup?: string | null;
@@ -57,15 +70,25 @@ export async function appendOnboardingRow(data: {
   isAmbassador?: boolean | null;
   completedAt?: string | null;
   createdAt: string;
-}): Promise<void> {
-  // Read env var lazily so production picks it up after deploy
+};
+
+export async function appendOnboardingRow(data: OnboardingRowData): Promise<void> {
   const spreadsheetId = process.env.GOOGLE_SHEET_ID ?? "";
+  const tabName = "Onboarding";
+
+  logger.info(
+    { userId: data.userId, spreadsheetId: spreadsheetId || "(not set)", tab: tabName },
+    "sheets: appendOnboardingRow called",
+  );
+
   if (!spreadsheetId) {
-    logger.warn("sheets: GOOGLE_SHEET_ID not set — skipping sync. Redeploy after setting the env var.");
+    logger.warn("sheets: GOOGLE_SHEET_ID env var is not set — skipping sync. Set it and redeploy.");
     return;
   }
+
   try {
-    await ensureHeaders(spreadsheetId, "Onboarding", ONBOARDING_HEADERS);
+    await ensureHeaders(spreadsheetId, tabName, ONBOARDING_HEADERS);
+
     const row = [
       new Date().toISOString(),
       data.userId,
@@ -82,18 +105,60 @@ export async function appendOnboardingRow(data: {
       data.completedAt ?? "",
       data.createdAt,
     ];
+
+    logger.info({ userId: data.userId, range: ONBOARDING_RANGE }, "sheets: appending row");
+
     const res = await connectors.proxy(
       "google-sheet",
       `/v4/spreadsheets/${spreadsheetId}/values/${encodeURIComponent(ONBOARDING_RANGE)}:append?valueInputOption=USER_ENTERED`,
       { method: "POST", body: JSON.stringify({ values: [row] }) },
     );
-    if (!res.ok) {
-      const text = await res.text();
-      logger.warn({ status: res.status, body: text }, "sheets: append failed");
+
+    const body = await res.json() as {
+      updates?: { updatedRange?: string; updatedRows?: number };
+      error?: { code?: number; message?: string; status?: string };
+    };
+
+    if (!res.ok || body.error) {
+      logger.error(
+        { status: res.status, error: body.error, userId: data.userId, spreadsheetId },
+        "sheets: append FAILED",
+      );
     } else {
-      logger.info({ userId: data.userId }, "sheets: onboarding row appended OK");
+      logger.info(
+        { userId: data.userId, updatedRange: body.updates?.updatedRange, updatedRows: body.updates?.updatedRows },
+        "sheets: row appended OK ✓",
+      );
     }
   } catch (err) {
-    logger.warn({ err }, "sheets: appendOnboardingRow error");
+    logger.error({ err, userId: data.userId, spreadsheetId }, "sheets: appendOnboardingRow threw");
   }
+}
+
+export async function backfillOnboardingRows(
+  records: OnboardingRowData[],
+): Promise<{ success: number; failed: number; skipped: number }> {
+  const spreadsheetId = process.env.GOOGLE_SHEET_ID ?? "";
+  if (!spreadsheetId) {
+    logger.warn("sheets: backfill skipped — GOOGLE_SHEET_ID not set");
+    return { success: 0, failed: 0, skipped: records.length };
+  }
+
+  logger.info({ total: records.length, spreadsheetId }, "sheets: starting backfill");
+  let success = 0;
+  let failed = 0;
+
+  for (const record of records) {
+    try {
+      await appendOnboardingRow(record);
+      success++;
+      await new Promise((r) => setTimeout(r, 300));
+    } catch (err) {
+      logger.warn({ err, userId: record.userId }, "sheets: backfill row failed");
+      failed++;
+    }
+  }
+
+  logger.info({ success, failed, total: records.length }, "sheets: backfill complete");
+  return { success, failed, skipped: 0 };
 }

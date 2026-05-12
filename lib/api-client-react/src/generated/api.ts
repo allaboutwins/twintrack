@@ -17,6 +17,8 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  BackfillResult,
+  BackfillSheetsOnboardingParams,
   BookmarkResult,
   BookmarkVideoBody,
   CreateDiaperEntryBody,
@@ -31,6 +33,7 @@ import type {
   Feedback,
   FeedingEntry,
   FeedingSummary,
+  GetActivePollParams,
   GetDashboardSummaryParams,
   GetFeedingSummaryParams,
   GetSleepSummaryParams,
@@ -46,6 +49,8 @@ import type {
   ListVideosParams,
   Milestone,
   Onboarding,
+  PollWithResponse,
+  RespondToPollBody,
   Routine,
   RoutineTask,
   SaveOnboardingBody,
@@ -3538,4 +3543,283 @@ export const useSubmitFeedback = <
   TContext
 > => {
   return useMutation(getSubmitFeedbackMutationOptions(options));
+};
+
+/**
+ * @summary Get the currently active poll and user response status
+ */
+export const getGetActivePollUrl = (params: GetActivePollParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/polls/active?${stringifiedParams}`
+    : `/api/polls/active`;
+};
+
+export const getActivePoll = async (
+  params: GetActivePollParams,
+  options?: RequestInit,
+): Promise<PollWithResponse> => {
+  return customFetch<PollWithResponse>(getGetActivePollUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetActivePollQueryKey = (params?: GetActivePollParams) => {
+  return [`/api/polls/active`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetActivePollQueryOptions = <
+  TData = Awaited<ReturnType<typeof getActivePoll>>,
+  TError = ErrorType<void>,
+>(
+  params: GetActivePollParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getActivePoll>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetActivePollQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getActivePoll>>> = ({
+    signal,
+  }) => getActivePoll(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getActivePoll>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetActivePollQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getActivePoll>>
+>;
+export type GetActivePollQueryError = ErrorType<void>;
+
+/**
+ * @summary Get the currently active poll and user response status
+ */
+
+export function useGetActivePoll<
+  TData = Awaited<ReturnType<typeof getActivePoll>>,
+  TError = ErrorType<void>,
+>(
+  params: GetActivePollParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getActivePoll>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetActivePollQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Submit a response to a poll
+ */
+export const getRespondToPollUrl = (id: number) => {
+  return `/api/polls/${id}/respond`;
+};
+
+export const respondToPoll = async (
+  id: number,
+  respondToPollBody: RespondToPollBody,
+  options?: RequestInit,
+): Promise<PollWithResponse> => {
+  return customFetch<PollWithResponse>(getRespondToPollUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(respondToPollBody),
+  });
+};
+
+export const getRespondToPollMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof respondToPoll>>,
+    TError,
+    { id: number; data: BodyType<RespondToPollBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof respondToPoll>>,
+  TError,
+  { id: number; data: BodyType<RespondToPollBody> },
+  TContext
+> => {
+  const mutationKey = ["respondToPoll"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof respondToPoll>>,
+    { id: number; data: BodyType<RespondToPollBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return respondToPoll(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type RespondToPollMutationResult = NonNullable<
+  Awaited<ReturnType<typeof respondToPoll>>
+>;
+export type RespondToPollMutationBody = BodyType<RespondToPollBody>;
+export type RespondToPollMutationError = ErrorType<void>;
+
+/**
+ * @summary Submit a response to a poll
+ */
+export const useRespondToPoll = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof respondToPoll>>,
+    TError,
+    { id: number; data: BodyType<RespondToPollBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof respondToPoll>>,
+  TError,
+  { id: number; data: BodyType<RespondToPollBody> },
+  TContext
+> => {
+  return useMutation(getRespondToPollMutationOptions(options));
+};
+
+/**
+ * @summary Backfill all onboarding records to Google Sheets
+ */
+export const getBackfillSheetsOnboardingUrl = (
+  params: BackfillSheetsOnboardingParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/backfill-sheets?${stringifiedParams}`
+    : `/api/admin/backfill-sheets`;
+};
+
+export const backfillSheetsOnboarding = async (
+  params: BackfillSheetsOnboardingParams,
+  options?: RequestInit,
+): Promise<BackfillResult> => {
+  return customFetch<BackfillResult>(getBackfillSheetsOnboardingUrl(params), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getBackfillSheetsOnboardingMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof backfillSheetsOnboarding>>,
+    TError,
+    { params: BackfillSheetsOnboardingParams },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof backfillSheetsOnboarding>>,
+  TError,
+  { params: BackfillSheetsOnboardingParams },
+  TContext
+> => {
+  const mutationKey = ["backfillSheetsOnboarding"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof backfillSheetsOnboarding>>,
+    { params: BackfillSheetsOnboardingParams }
+  > = (props) => {
+    const { params } = props ?? {};
+
+    return backfillSheetsOnboarding(params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type BackfillSheetsOnboardingMutationResult = NonNullable<
+  Awaited<ReturnType<typeof backfillSheetsOnboarding>>
+>;
+
+export type BackfillSheetsOnboardingMutationError = ErrorType<void>;
+
+/**
+ * @summary Backfill all onboarding records to Google Sheets
+ */
+export const useBackfillSheetsOnboarding = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof backfillSheetsOnboarding>>,
+    TError,
+    { params: BackfillSheetsOnboardingParams },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof backfillSheetsOnboarding>>,
+  TError,
+  { params: BackfillSheetsOnboardingParams },
+  TContext
+> => {
+  return useMutation(getBackfillSheetsOnboardingMutationOptions(options));
 };

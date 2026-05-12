@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useUser } from "@clerk/react";
 import { useLocation } from "wouter";
-import { RefreshCw, Users, MessageCircle, BarChart2, Activity, Copy, Check, Star, CheckCircle2, Filter } from "lucide-react";
+import { RefreshCw, Users, MessageCircle, BarChart2, Activity, Copy, Check, Star, CheckCircle2, Filter, Sheet, Plus, Trash2 } from "lucide-react";
 
 interface Breakdown { key: string; value: number; }
 interface FeedbackEntry {
@@ -24,6 +24,10 @@ interface AdminStats {
   feedback: FeedbackEntry[];
   activity: { sleepEntries: number; feedingEntries: number; diaperEntries: number; milestones: number; bookmarks: number; videoNotes: number; };
 }
+
+interface BackfillResult { success: number; failed: number; skipped: number; }
+
+interface PollOption { key: string; label: string; }
 
 const LABELS: Record<string, Record<string, string>> = {
   challenge: { sleep:"😴 Sleep deprivation", feeding:"🍼 Feeding two at once", time:"⏰ Finding time", schedules:"📅 Schedules", "mental-health":"🧠 Mental health", support:"🤝 Support", other:"💬 Other", unknown:"❓ N/A" },
@@ -109,6 +113,23 @@ export default function Admin() {
   const [showStarredOnly, setShowStarredOnly] = useState(false);
   const [showUnresolvedOnly, setShowUnresolvedOnly] = useState(false);
 
+  // Sheets backfill state
+  const [isBackfilling, setIsBackfilling] = useState(false);
+  const [backfillResult, setBackfillResult] = useState<BackfillResult | null>(null);
+  const [backfillError, setBackfillError] = useState<string | null>(null);
+
+  // Poll creation state
+  const [showPollForm, setShowPollForm] = useState(false);
+  const [pollQuestion, setPollQuestion] = useState("");
+  const [pollCategory, setPollCategory] = useState("community");
+  const [pollOptions, setPollOptions] = useState<PollOption[]>([
+    { key: "a", label: "" },
+    { key: "b", label: "" },
+    { key: "c", label: "" },
+  ]);
+  const [isCreatingPoll, setIsCreatingPoll] = useState(false);
+  const [pollSuccess, setPollSuccess] = useState(false);
+
   const baseUrl = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
 
   const fetchStats = useCallback(async () => {
@@ -126,6 +147,50 @@ export default function Admin() {
   }, [isAdmin, userId, baseUrl]);
 
   useEffect(() => { if (isAdmin) fetchStats(); }, [fetchStats]);
+
+  async function backfillSheets() {
+    setIsBackfilling(true);
+    setBackfillResult(null);
+    setBackfillError(null);
+    try {
+      const r = await fetch(`${baseUrl}/api/admin/backfill-sheets?userId=${encodeURIComponent(userId)}`, { method: "POST" });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const result: BackfillResult = await r.json();
+      setBackfillResult(result);
+    } catch (e) {
+      setBackfillError(String(e));
+    } finally {
+      setIsBackfilling(false);
+    }
+  }
+
+  async function createPoll() {
+    const validOptions = pollOptions.filter((o) => o.label.trim());
+    if (!pollQuestion.trim() || validOptions.length < 2) return;
+    setIsCreatingPoll(true);
+    try {
+      const r = await fetch(`${baseUrl}/api/admin/polls?userId=${encodeURIComponent(userId)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          question: pollQuestion.trim(),
+          category: pollCategory,
+          options: JSON.stringify(validOptions.map((o, i) => ({ key: o.key || String.fromCharCode(97 + i), label: o.label.trim() }))),
+          isActive: true,
+        }),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      setPollSuccess(true);
+      setPollQuestion("");
+      setPollOptions([{ key: "a", label: "" }, { key: "b", label: "" }, { key: "c", label: "" }]);
+      setShowPollForm(false);
+      setTimeout(() => setPollSuccess(false), 3000);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsCreatingPoll(false);
+    }
+  }
 
   async function toggleStar(id: number) {
     const r = await fetch(`${baseUrl}/api/feedback/${id}/star?userId=${encodeURIComponent(userId)}`, { method: "PATCH" });
@@ -211,6 +276,153 @@ export default function Admin() {
             </div>
           </section>
 
+          {/* ── GOOGLE SHEETS SYNC ── */}
+          <section>
+            <SectionHeader icon={<Sheet size={16} />} title="Google Sheets Sync" />
+            <div className="bg-white rounded-2xl border border-border p-5 space-y-4">
+              <div>
+                <p className="text-sm text-foreground font-medium mb-1">Backfill Onboarding Records</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Syncs all completed onboarding records to the Google Sheet tab "Onboarding". 
+                  Use this if new signups aren't appearing in the sheet. Check API server logs for details.
+                </p>
+              </div>
+
+              {backfillResult && (
+                <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm">
+                  <p className="font-semibold text-green-800 mb-1">✓ Backfill complete</p>
+                  <p className="text-green-700 text-xs">
+                    {backfillResult.success} synced · {backfillResult.failed} failed · {backfillResult.skipped} skipped
+                  </p>
+                </div>
+              )}
+
+              {backfillError && (
+                <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
+                  {backfillError}
+                </div>
+              )}
+
+              <button
+                onClick={backfillSheets}
+                disabled={isBackfilling}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50 transition-all active:scale-[0.98]"
+              >
+                <RefreshCw size={14} className={isBackfilling ? "animate-spin" : ""} />
+                {isBackfilling ? "Syncing records…" : "Run Backfill Now"}
+              </button>
+
+              <p className="text-xs text-muted-foreground">
+                ⚡ Requires <code className="bg-muted px-1 rounded">GOOGLE_SHEET_ID</code> env var. 
+                Watch the API server logs for step-by-step output.
+              </p>
+            </div>
+          </section>
+
+          {/* ── COMMUNITY POLLS ── */}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                  <BarChart2 size={16} />
+                </div>
+                <h2 className="font-bold text-foreground text-base">Community Polls</h2>
+              </div>
+              <button
+                onClick={() => { setShowPollForm((v) => !v); setPollSuccess(false); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 text-primary text-xs font-semibold"
+              >
+                <Plus size={13} />{showPollForm ? "Cancel" : "New Poll"}
+              </button>
+            </div>
+
+            {pollSuccess && (
+              <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-800 font-medium mb-4">
+                ✓ Poll created and activated!
+              </div>
+            )}
+
+            {showPollForm && (
+              <div className="bg-white rounded-2xl border border-border p-5 space-y-4 mb-4">
+                <p className="text-sm font-semibold text-foreground">Create New Poll</p>
+
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Question</label>
+                  <textarea
+                    value={pollQuestion}
+                    onChange={(e) => setPollQuestion(e.target.value)}
+                    placeholder="e.g. What's your biggest twin mom challenge?"
+                    rows={2}
+                    className="mt-1.5 w-full px-3 py-2.5 rounded-xl bg-muted/30 border border-border text-sm outline-none focus:ring-2 ring-primary/30 resize-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Category</label>
+                  <input
+                    value={pollCategory}
+                    onChange={(e) => setPollCategory(e.target.value)}
+                    placeholder="community"
+                    className="mt-1.5 w-full px-3 py-2.5 rounded-xl bg-muted/30 border border-border text-sm outline-none focus:ring-2 ring-primary/30"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2 block">
+                    Options (at least 2)
+                  </label>
+                  <div className="space-y-2">
+                    {pollOptions.map((opt, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <span className="text-xs font-mono text-muted-foreground w-4">{opt.key}</span>
+                        <input
+                          value={opt.label}
+                          onChange={(e) => {
+                            const next = [...pollOptions];
+                            next[i] = { ...next[i], label: e.target.value };
+                            setPollOptions(next);
+                          }}
+                          placeholder={`Option ${i + 1}`}
+                          className="flex-1 px-3 py-2 rounded-xl bg-muted/30 border border-border text-sm outline-none focus:ring-2 ring-primary/30"
+                        />
+                        {pollOptions.length > 2 && (
+                          <button
+                            onClick={() => setPollOptions(pollOptions.filter((_, j) => j !== i))}
+                            className="p-1.5 text-muted-foreground hover:text-red-500"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                    <button
+                      onClick={() => setPollOptions([...pollOptions, { key: String.fromCharCode(97 + pollOptions.length), label: "" }])}
+                      className="text-xs text-primary font-semibold flex items-center gap-1 pt-1"
+                    >
+                      <Plus size={12} /> Add option
+                    </button>
+                  </div>
+                </div>
+
+                <button
+                  onClick={createPoll}
+                  disabled={isCreatingPoll || !pollQuestion.trim() || pollOptions.filter((o) => o.label.trim()).length < 2}
+                  className="w-full py-2.5 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50 transition-all active:scale-[0.98]"
+                >
+                  {isCreatingPoll ? "Creating…" : "Create & Activate Poll"}
+                </button>
+              </div>
+            )}
+
+            <div className="bg-white rounded-2xl border border-border p-5">
+              <p className="text-sm text-muted-foreground">
+                Active polls appear on the Dashboard for all users. 
+                Creating a new poll here will mark it active. 
+                Use the database to deactivate old polls when rotating new ones.
+              </p>
+            </div>
+          </section>
+
           {/* ── ONBOARDING INSIGHTS ── */}
           <section>
             <SectionHeader icon={<BarChart2 size={16} />} title="Onboarding Insights" />
@@ -246,9 +458,7 @@ export default function Admin() {
           <section>
             <SectionHeader icon={<MessageCircle size={16} />} title="Feedback Center" />
 
-            {/* Filter bar */}
             <div className="bg-white rounded-2xl p-3 border border-border mb-4 space-y-3">
-              {/* Type chips */}
               <div className="flex flex-wrap gap-2">
                 <button onClick={() => setFbFilter("all")}
                   className={`px-3 py-1 rounded-full text-xs font-semibold border transition-all ${fbFilter === "all" ? "bg-foreground text-background border-foreground" : "bg-muted text-muted-foreground border-transparent"}`}>
@@ -261,7 +471,6 @@ export default function Admin() {
                   </button>
                 ))}
               </div>
-              {/* Toggle filters */}
               <div className="flex gap-2">
                 <button onClick={() => setShowStarredOnly((v) => !v)}
                   className={`flex items-center gap-1 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all ${showStarredOnly ? "bg-amber-50 text-amber-700 border-amber-200" : "bg-muted text-muted-foreground border-transparent"}`}>

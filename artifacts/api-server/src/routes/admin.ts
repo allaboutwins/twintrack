@@ -12,6 +12,7 @@ import {
   videoBookmarksTable,
   videoNotesTable,
 } from "@workspace/db";
+import { backfillOnboardingRows, type OnboardingRowData } from "../sheets";
 
 const router: IRouter = Router();
 
@@ -98,6 +99,80 @@ router.get("/admin/stats", async (req, res): Promise<void> => {
       videoNotes: Number(noteCount?.count ?? 0),
     },
   });
+});
+
+router.post("/admin/backfill-sheets", async (req, res): Promise<void> => {
+  const userId = req.query.userId as string | undefined;
+  if (!isAdmin(userId)) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+
+  req.log.info({ userId }, "admin: backfill-sheets triggered");
+
+  const allRecords = await db
+    .select()
+    .from(onboardingTable)
+    .orderBy(desc(onboardingTable.createdAt));
+
+  req.log.info({ total: allRecords.length }, "admin: found onboarding records for backfill");
+
+  const rows: OnboardingRowData[] = allRecords.map((r) => ({
+    userId: r.userId,
+    multipleType: r.multipleType,
+    babyAgeGroup: r.babyAgeGroup,
+    isPremature: r.isPremature,
+    gestationalAgeWeeks: r.gestationalAgeWeeks,
+    hadNicu: r.hadNicu,
+    wantsAdjustedAge: r.wantsAdjustedAge,
+    biggestChallenge: r.biggestChallenge,
+    featureInterest: r.featureInterest,
+    discoverySource: r.discoverySource,
+    instagramHandle: r.instagramHandle,
+    isAmbassador: r.isAmbassador,
+    completedAt: r.completedAt?.toISOString() ?? null,
+    createdAt: r.createdAt.toISOString(),
+  }));
+
+  const result = await backfillOnboardingRows(rows);
+
+  req.log.info(result, "admin: backfill-sheets complete");
+  res.json(result);
+});
+
+router.post("/admin/polls", async (req, res): Promise<void> => {
+  const userId = req.query.userId as string | undefined;
+  if (!isAdmin(userId)) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+
+  const { question, category, options, isActive } = req.body as {
+    question?: string;
+    category?: string;
+    options?: string;
+    isActive?: boolean;
+  };
+
+  if (!question?.trim() || !options) {
+    res.status(400).json({ error: "question and options are required" });
+    return;
+  }
+
+  const { pollsTable } = await import("@workspace/db");
+
+  const [poll] = await db
+    .insert(pollsTable)
+    .values({
+      question: question.trim(),
+      category: category ?? "community",
+      options,
+      isActive: isActive ?? true,
+    })
+    .returning();
+
+  req.log.info({ pollId: poll.id, question: poll.question }, "admin: poll created");
+  res.status(201).json(poll);
 });
 
 export default router;

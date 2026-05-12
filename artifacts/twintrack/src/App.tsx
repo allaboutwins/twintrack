@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { posthog } from "./lib/posthog";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk, useUser } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
@@ -88,6 +89,19 @@ function SignUpPage() {
       <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
     </div>
   );
+}
+
+function PostHogIdentifier() {
+  const { user } = useUser();
+  useEffect(() => {
+    if (!user) return;
+    posthog?.identify(user.id, {
+      email: user.primaryEmailAddress?.emailAddress,
+      name: user.fullName ?? undefined,
+      created_at: user.createdAt?.toISOString(),
+    });
+  }, [user?.id]);
+  return null;
 }
 
 function ClerkQueryClientCacheInvalidator() {
@@ -232,6 +246,7 @@ function ClerkProviderWithRoutes() {
     >
       <QueryClientProvider client={queryClient}>
         <ClerkQueryClientCacheInvalidator />
+        <PostHogIdentifier />
         <TooltipProvider>
           <Switch>
             <Route path="/" component={HomeRedirect} />
