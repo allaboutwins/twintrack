@@ -1,0 +1,317 @@
+TwinTrack — Next Major Product Improvements 🚀💕
+
+We are now entering the next phase:
+👉 transitioning from an Early Access web experience into a real scalable mobile-first product for twin parents.
+
+The community response has been AMAZING already, and now we need to focus on:
+
+* reliability
+* engagement
+* retention
+* mobile app readiness
+* analytics
+* community feeling
+
+Please work on the following improvements carefully.
+
+---
+
+1. GOOGLE SHEETS ISSUE — FULL DEBUG REQUIRED
+
+The Google Sheet sync is STILL not updating after successful onboarding completions.
+
+Please fully debug the production Sheets integration step-by-step.
+
+Requirements:
+
+* Add detailed production logs for every Google Sheets write attempt
+* Log:
+
+  * onboarding completion
+  * payload sent
+  * spreadsheet ID
+  * tab name
+  * API response
+  * errors/failures
+* Verify service account permissions
+* Verify Editor access to the Google Sheet
+* Verify production env vars are loaded correctly
+* Verify writes are happening to the correct tab:
+  👉 "Onboarding"
+
+IMPORTANT:
+Please stop silent failures.
+If Google Sheets fails:
+
+* show error logs clearly
+* retry gracefully
+* surface failure reason
+
+Also:
+Please create a manual “Backfill to Google Sheets” admin action to sync existing onboarding users already stored in the database.
+
+---
+
+2. PREPARE TWINTRACK FOR APP STORE + GOOGLE PLAY
+
+Twin moms are expecting a REAL app experience, not a browser website.
+
+Main current issue:
+👉 repeated logins
+👉 browser friction
+👉 not feeling native/mobile
+
+Please begin preparing TwinTrack for future App Store and Google Play launch.
+
+PHASE 1:
+Convert the current web app into a polished PWA (Progressive Web App).
+
+Requirements:
+
+* “Add to Home Screen” support
+* app splash screen
+* app icon
+* mobile app behavior
+* persistent login/session
+* auto-login
+* remember device
+* smoother mobile navigation
+* offline-ready foundations
+* push notification readiness
+
+VERY IMPORTANT:
+Fix login persistence.
+Users should NOT need to repeatedly log in throughout the day.
+
+Please improve:
+
+* auth session duration
+* refresh token handling
+* persistent sessions
+* mobile auth reliability
+
+PHASE 2 (future):
+Prepare architecture for:
+
+* iOS App Store
+* Google Play Store
+  using:
+* Capacitor
+* React Native wrapper
+  or equivalent mobile packaging solution.
+
+Goal:
+TwinTrack should eventually behave like a real native app.
+
+---
+
+3. LEARN SECTION — COMPLETE REBUILD OF VIDEO EXPERIENCE
+
+The Learn tab still has major UX problems.
+
+Current issues:
+
+* “Video unavailable”
+* broken Shorts embeds
+* incorrect video titles
+* inconsistent playback
+* weak content feed experience
+
+Please fully redesign the Learn video architecture.
+
+IMPORTANT:
+Use REAL YouTube Shorts from:
+https://www.youtube.com/@AllAboutTwins
+
+Requirements:
+
+* automatically fetch original YouTube Shorts titles
+* automatically fetch thumbnails
+* automatically detect Shorts format
+* preserve vertical 9:16 aspect ratio
+* smooth mobile playback
+* stable embeds
+* prevent broken videos
+
+VERY IMPORTANT:
+Do NOT manually rewrite titles anymore.
+
+Correct system:
+
+* use original YouTube title
+* admin only assigns category/tags
+
+Example categories:
+
+* Sleep
+* Feeding
+* Breastfeeding
+* NICU
+* Premature Twins
+* Routines
+* Toddler Twins
+* Twin Hacks
+* Mental Health
+* Product Tips
+* Schedules
+* Encouragement
+
+Please improve Learn visually so it feels like:
+👉 Netflix + TikTok + Pinterest for twin parents
+
+Add:
+
+* Continue Watching
+* Recently Saved
+* Recommended For You
+* Better vertical card layouts
+* Smooth loading states
+
+---
+
+4. TWIN MOM POLLS SYSTEM 💕
+
+This is now a HIGH PRIORITY engagement feature.
+
+Goal:
+Create emotional community learning between twin moms.
+
+Please build:
+👉 “Twin Mom Polls”
+
+Requirements:
+
+* weekly rotating polls
+* different parenting topics
+* visible on homepage/dashboard
+* ALL twin moms can participate
+* users ONLY see results after answering
+* save full poll history/archive
+* users can browse older polls anytime
+
+This is NOT social media.
+This is lightweight community intelligence.
+
+The emotional value:
+Twin moms learn from other twin moms experiences.
+
+Suggested poll categories:
+
+* Sleep
+* Feeding
+* NICU
+* Twin routines
+* Marriage/mental load
+* Pumping
+* Breastfeeding
+* Toddler twins
+* Potty training
+* Schedules
+* Self-care
+* Favorite twin products
+
+Example:
+“How many times do your twins wake up at night?”
+
+After answering:
+
+* show percentages
+* show total responses
+* optionally show encouraging insights
+
+This feature can become a MAJOR retention driver.
+
+---
+
+5. WEBSITE / APP ICON UPDATE
+
+The current website icon is showing as a plain red square.
+
+Please replace it with the attached TwinTrack logo image (or create an improved polished app icon inspired by it).
+
+Requirements:
+
+* favicon update
+* PWA icon update
+* Apple touch icon
+* Android icon
+* app launcher icon
+* browser tab icon
+
+Goal:
+TwinTrack should feel like a real premium mobile app brand.
+
+Please create:
+
+* modern
+* soft
+* clean
+* emotionally warm icon design
+
+using the TwinTrack overlapping twins circles branding.
+
+---
+
+6. WEBSITE ANALYTICS + USER STATISTICS ACCESS
+
+I now need full visibility into user behavior and product usage.
+
+Please implement analytics + founder access.
+
+I need access to:
+
+* total users
+* daily active users
+* onboarding completion %
+* retention
+* most used features
+* Learn tab engagement
+* most watched videos
+* most answered polls
+* milestone usage
+* feedback submissions
+* session duration
+* device types
+* iPhone vs Android
+* traffic sources
+
+Please recommend and integrate:
+
+* PostHog
+  or
+* Mixpanel
+  or
+* Google Analytics
+
+IMPORTANT:
+I need a founder-friendly dashboard where I can actually SEE:
+
+* how twin moms are using TwinTrack
+* where users drop off
+* what features are loved most
+
+This is extremely important before scaling the app further.
+
+---
+
+7. CURRENT PRIORITY ORDER
+
+8. Fix Google Sheets sync
+
+9. Fix Learn tab + Shorts playback
+
+10. Improve login persistence
+
+11. Add analytics/dashboard access
+
+12. Build Twin Mom Polls
+
+13. Improve mobile app feel/PWA
+
+14. Continue App Store preparation
+
+TwinTrack is evolving from:
+👉 a tracker website
+
+into:
+👉 a real twin parenting platform + mobile ecosystem 💕
