@@ -411,6 +411,29 @@ paths:
                 $ref: "#/components/schemas/DiaperEntry"
 
   /diapers/{id}:
+    patch:
+      operationId: updateDiaperEntry
+      tags: [diapers]
+      summary: Update a diaper entry
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateDiaperEntryBody"
+      responses:
+        "200":
+          description: Updated diaper entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DiaperEntry"
     delete:
       operationId: deleteDiaperEntry
       tags: [diapers]
@@ -1084,10 +1107,15 @@ components:
     UpdateSleepEntryBody:
       type: object
       properties:
+        startTime:
+          type: ["string", "null"]
         endTime:
           type: ["string", "null"]
         durationMinutes:
           type: ["integer", "null"]
+        type:
+          type: ["string", "null"]
+          description: "nap, night"
         notes:
           type: ["string", "null"]
 
@@ -1234,6 +1262,17 @@ components:
         - twinId
         - type
         - time
+
+    UpdateDiaperEntryBody:
+      type: object
+      properties:
+        type:
+          type: ["string", "null"]
+          description: "wet, dirty, mixed"
+        time:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
 
     Routine:
       type: object

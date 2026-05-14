@@ -13,7 +13,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { TwinTabs, PageHeader } from "@/components/Layout";
-import { Moon, Play, Square, Plus, Trash2 } from "lucide-react";
+import { Moon, Play, Square, Plus, Trash2, Pencil, X, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 function formatMinutes(mins: number) {
@@ -36,6 +36,125 @@ function elapsed(startIso: string) {
   return `${h > 0 ? h + "h " : ""}${m}m ${s}s`;
 }
 
+function toDatetimeLocal(iso: string) {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+type SleepEntry = {
+  id: number;
+  type: string;
+  startTime: string;
+  endTime?: string | null;
+  durationMinutes?: number | null;
+};
+
+function EditSleepSheet({
+  entry,
+  onClose,
+  onSave,
+}: {
+  entry: SleepEntry;
+  onClose: () => void;
+  onSave: (updates: { type: string; startTime: string; endTime: string | null; durationMinutes: number | null }) => void;
+}) {
+  const [type, setType] = useState<"nap" | "night">(entry.type === "night" ? "night" : "nap");
+  const [startVal, setStartVal] = useState(toDatetimeLocal(entry.startTime));
+  const [endVal, setEndVal] = useState(entry.endTime ? toDatetimeLocal(entry.endTime) : "");
+
+  function calcDuration(): number | null {
+    if (!endVal) return null;
+    const start = new Date(startVal).getTime();
+    const end = new Date(endVal).getTime();
+    const mins = Math.round((end - start) / 60000);
+    return mins > 0 ? mins : null;
+  }
+
+  function save() {
+    const duration = calcDuration();
+    onSave({
+      type,
+      startTime: new Date(startVal).toISOString(),
+      endTime: endVal ? new Date(endVal).toISOString() : null,
+      durationMinutes: duration,
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative bg-white w-full max-w-[430px] mx-auto rounded-t-3xl p-5 space-y-4 safe-area-pb">
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold text-foreground">Edit Sleep Entry</h3>
+          <button onClick={onClose} className="p-1.5 rounded-lg bg-muted" aria-label="Close">
+            <X size={14} className="text-muted-foreground" />
+          </button>
+        </div>
+
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Type</p>
+          <div className="flex gap-2">
+            {(["nap", "night"] as const).map((t) => (
+              <button
+                key={t}
+                onClick={() => setType(t)}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                  type === t ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                }`}
+              >
+                {t === "nap" ? "🌤 Nap" : "🌙 Night Sleep"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Start Time</p>
+          <input
+            type="datetime-local"
+            value={startVal}
+            onChange={(e) => setStartVal(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl bg-muted/30 border border-border text-sm outline-none focus:ring-2 ring-primary/30"
+          />
+        </div>
+
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">End Time (leave blank if ongoing)</p>
+          <input
+            type="datetime-local"
+            value={endVal}
+            onChange={(e) => setEndVal(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl bg-muted/30 border border-border text-sm outline-none focus:ring-2 ring-primary/30"
+          />
+        </div>
+
+        {endVal && calcDuration() !== null && (
+          <p className="text-xs text-muted-foreground text-center">
+            Duration: <span className="font-semibold text-primary">{formatMinutes(calcDuration()!)}</span>
+          </p>
+        )}
+
+        <div className="flex gap-3 pt-1">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 rounded-xl bg-muted text-muted-foreground font-semibold text-sm"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={save}
+            className="flex-1 py-3 rounded-xl bg-primary text-white font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all"
+          >
+            <Check size={15} />
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Sleep() {
   const { user } = useUser();
   const qc = useQueryClient();
@@ -43,6 +162,7 @@ export default function Sleep() {
   const [tick, setTick] = useState(0);
   const [showAdd, setShowAdd] = useState(false);
   const [addType, setAddType] = useState<"nap" | "night">("nap");
+  const [editingEntry, setEditingEntry] = useState<SleepEntry | null>(null);
 
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 1000);
@@ -120,7 +240,18 @@ export default function Sleep() {
     );
   }
 
-  const activeTwin = twins.find((t) => t.id === twinId);
+  function saveEdit(updates: { type: string; startTime: string; endTime: string | null; durationMinutes: number | null }) {
+    if (!editingEntry) return;
+    updateEntry.mutate(
+      { id: editingEntry.id, data: updates },
+      {
+        onSuccess: () => {
+          invalidate();
+          setEditingEntry(null);
+        },
+      },
+    );
+  }
 
   return (
     <Layout>
@@ -153,6 +284,13 @@ export default function Sleep() {
                 <p className="text-xs text-muted-foreground">Night</p>
               </div>
             </div>
+            {summary.weeklyTotalMinutes > 0 && (
+              <div className="mt-3 pt-3 border-t border-border text-center">
+                <p className="text-xs text-muted-foreground">
+                  7-day avg: <span className="font-semibold text-foreground">{formatMinutes(Math.round(summary.weeklyTotalMinutes / 7))}/day</span>
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -264,15 +402,25 @@ export default function Sleep() {
                     </p>
                   </div>
                 </div>
-                <button
-                  onClick={() =>
-                    deleteEntry.mutate({ id: entry.id }, { onSuccess: invalidate })
-                  }
-                  className="text-muted-foreground hover:text-destructive p-2 transition-colors"
-                  data-testid={`delete-sleep-${entry.id}`}
-                >
-                  <Trash2 size={14} />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => setEditingEntry(entry)}
+                    className="text-muted-foreground hover:text-primary p-2 transition-colors"
+                    data-testid={`edit-sleep-${entry.id}`}
+                    aria-label="Edit entry"
+                  >
+                    <Pencil size={13} />
+                  </button>
+                  <button
+                    onClick={() =>
+                      deleteEntry.mutate({ id: entry.id }, { onSuccess: invalidate })
+                    }
+                    className="text-muted-foreground hover:text-destructive p-2 transition-colors"
+                    data-testid={`delete-sleep-${entry.id}`}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -290,6 +438,14 @@ export default function Sleep() {
           </div>
         )}
       </div>
+
+      {editingEntry && (
+        <EditSleepSheet
+          entry={editingEntry}
+          onClose={() => setEditingEntry(null)}
+          onSave={saveEdit}
+        />
+      )}
     </Layout>
   );
 }

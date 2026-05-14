@@ -4,13 +4,14 @@ import {
   useListTwins,
   useListDiaperEntries,
   useCreateDiaperEntry,
+  useUpdateDiaperEntry,
   useDeleteDiaperEntry,
   getListDiaperEntriesQueryKey,
   getListTwinsQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { TwinTabs, PageHeader } from "@/components/Layout";
-import { Trash2 } from "lucide-react";
+import { Trash2, Pencil, X, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -26,11 +27,96 @@ function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
+function toDatetimeLocal(iso: string) {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+type DiaperEntry = {
+  id: number;
+  type: string;
+  time: string;
+};
+
+function EditDiaperSheet({
+  entry,
+  onClose,
+  onSave,
+}: {
+  entry: DiaperEntry;
+  onClose: () => void;
+  onSave: (updates: { type: string; time: string }) => void;
+}) {
+  const [diaperType, setDiaperType] = useState<DiaperType>(entry.type as DiaperType);
+  const [timeVal, setTimeVal] = useState(toDatetimeLocal(entry.time));
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative bg-white w-full max-w-[430px] mx-auto rounded-t-3xl p-5 space-y-4 safe-area-pb">
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold text-foreground">Edit Diaper Entry</h3>
+          <button onClick={onClose} className="p-1.5 rounded-lg bg-muted" aria-label="Close">
+            <X size={14} className="text-muted-foreground" />
+          </button>
+        </div>
+
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Type</p>
+          <div className="grid grid-cols-3 gap-2">
+            {DIAPER_TYPES.map(({ key, label, emoji }) => (
+              <button
+                key={key}
+                onClick={() => setDiaperType(key)}
+                className={`py-3 rounded-xl text-sm font-semibold transition-all ${
+                  diaperType === key ? "text-white shadow-sm" : "bg-muted text-muted-foreground"
+                }`}
+                style={diaperType === key ? { backgroundColor: DIAPER_TYPES.find(d => d.key === key)?.color } : {}}
+              >
+                <span className="block text-lg mb-0.5">{emoji}</span>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Time</p>
+          <input
+            type="datetime-local"
+            value={timeVal}
+            onChange={(e) => setTimeVal(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl bg-muted/30 border border-border text-sm outline-none focus:ring-2 ring-primary/30"
+          />
+        </div>
+
+        <div className="flex gap-3 pt-1">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 rounded-xl bg-muted text-muted-foreground font-semibold text-sm"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onSave({ type: diaperType, time: new Date(timeVal).toISOString() })}
+            className="flex-1 py-3 rounded-xl bg-primary text-white font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all"
+          >
+            <Check size={15} />
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Diapers() {
   const { user } = useUser();
   const qc = useQueryClient();
   const today = new Date().toISOString().split("T")[0];
   const [justLogged, setJustLogged] = useState<DiaperType | null>(null);
+  const [editingEntry, setEditingEntry] = useState<DiaperEntry | null>(null);
 
   const { data: twins = [] } = useListTwins(
     { userId: user?.id ?? "" },
@@ -50,6 +136,7 @@ export default function Diapers() {
   );
 
   const createEntry = useCreateDiaperEntry();
+  const updateEntry = useUpdateDiaperEntry();
   const deleteEntry = useDeleteDiaperEntry();
 
   function invalidate() {
@@ -66,8 +153,18 @@ export default function Diapers() {
     );
   }
 
-  const wetCount = entries.filter((e) => e.type === "wet" || e.type === "mixed").length;
-  const dirtyCount = entries.filter((e) => e.type === "dirty" || e.type === "mixed").length;
+  function saveEdit(updates: { type: string; time: string }) {
+    if (!editingEntry) return;
+    updateEntry.mutate(
+      { id: editingEntry.id, data: updates },
+      {
+        onSuccess: () => {
+          invalidate();
+          setEditingEntry(null);
+        },
+      },
+    );
+  }
 
   return (
     <Layout>
@@ -153,13 +250,23 @@ export default function Diapers() {
                       <p className="text-xs text-muted-foreground">{formatTime(entry.time)}</p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => deleteEntry.mutate({ id: entry.id }, { onSuccess: invalidate })}
-                    className="text-muted-foreground hover:text-destructive p-2 transition-colors"
-                    data-testid={`delete-diaper-${entry.id}`}
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setEditingEntry(entry)}
+                      className="text-muted-foreground hover:text-primary p-2 transition-colors"
+                      data-testid={`edit-diaper-${entry.id}`}
+                      aria-label="Edit entry"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                    <button
+                      onClick={() => deleteEntry.mutate({ id: entry.id }, { onSuccess: invalidate })}
+                      className="text-muted-foreground hover:text-destructive p-2 transition-colors"
+                      data-testid={`delete-diaper-${entry.id}`}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -178,6 +285,14 @@ export default function Diapers() {
           </div>
         )}
       </div>
+
+      {editingEntry && (
+        <EditDiaperSheet
+          entry={editingEntry}
+          onClose={() => setEditingEntry(null)}
+          onSave={saveEdit}
+        />
+      )}
     </Layout>
   );
 }

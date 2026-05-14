@@ -160,8 +160,10 @@ export const UpdateSleepEntryParams = zod.object({
 });
 
 export const UpdateSleepEntryBody = zod.object({
+  startTime: zod.string().nullish(),
   endTime: zod.string().nullish(),
   durationMinutes: zod.number().nullish(),
+  type: zod.string().nullish().describe("nap, night"),
   notes: zod.string().nullish(),
 });
 
@@ -309,6 +311,28 @@ export const CreateDiaperEntryBody = zod.object({
   type: zod.string().describe("wet, dirty, mixed"),
   time: zod.string(),
   notes: zod.string().nullish(),
+});
+
+/**
+ * @summary Update a diaper entry
+ */
+export const UpdateDiaperEntryParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateDiaperEntryBody = zod.object({
+  type: zod.string().nullish().describe("wet, dirty, mixed"),
+  time: zod.string().nullish(),
+  notes: zod.string().nullish(),
+});
+
+export const UpdateDiaperEntryResponse = zod.object({
+  id: zod.number(),
+  twinId: zod.number(),
+  type: zod.string().describe("wet, dirty, mixed"),
+  time: zod.string(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string(),
 });
 
 /**

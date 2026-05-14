@@ -58,6 +58,7 @@ import type {
   SleepSummary,
   SubmitFeedbackBody,
   Twin,
+  UpdateDiaperEntryBody,
   UpdateFeedingEntryBody,
   UpdateRoutineBody,
   UpdateRoutineTaskBody,
@@ -1661,6 +1662,93 @@ export const useCreateDiaperEntry = <
   TContext
 > => {
   return useMutation(getCreateDiaperEntryMutationOptions(options));
+};
+
+/**
+ * @summary Update a diaper entry
+ */
+export const getUpdateDiaperEntryUrl = (id: number) => {
+  return `/api/diapers/${id}`;
+};
+
+export const updateDiaperEntry = async (
+  id: number,
+  updateDiaperEntryBody: UpdateDiaperEntryBody,
+  options?: RequestInit,
+): Promise<DiaperEntry> => {
+  return customFetch<DiaperEntry>(getUpdateDiaperEntryUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateDiaperEntryBody),
+  });
+};
+
+export const getUpdateDiaperEntryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateDiaperEntry>>,
+    TError,
+    { id: number; data: BodyType<UpdateDiaperEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateDiaperEntry>>,
+  TError,
+  { id: number; data: BodyType<UpdateDiaperEntryBody> },
+  TContext
+> => {
+  const mutationKey = ["updateDiaperEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateDiaperEntry>>,
+    { id: number; data: BodyType<UpdateDiaperEntryBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateDiaperEntry(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateDiaperEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateDiaperEntry>>
+>;
+export type UpdateDiaperEntryMutationBody = BodyType<UpdateDiaperEntryBody>;
+export type UpdateDiaperEntryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update a diaper entry
+ */
+export const useUpdateDiaperEntry = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateDiaperEntry>>,
+    TError,
+    { id: number; data: BodyType<UpdateDiaperEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateDiaperEntry>>,
+  TError,
+  { id: number; data: BodyType<UpdateDiaperEntryBody> },
+  TContext
+> => {
+  return useMutation(getUpdateDiaperEntryMutationOptions(options));
 };
 
 /**

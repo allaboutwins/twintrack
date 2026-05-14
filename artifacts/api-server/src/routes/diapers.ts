@@ -3,6 +3,8 @@ import { eq, and, gte, lte } from "drizzle-orm";
 import { db, diaperEntriesTable } from "@workspace/db";
 import {
   CreateDiaperEntryBody,
+  UpdateDiaperEntryBody,
+  UpdateDiaperEntryParams,
   DeleteDiaperEntryParams,
   ListDiaperEntriesQueryParams,
 } from "@workspace/api-zod";
@@ -54,6 +56,38 @@ router.post("/diapers", async (req, res): Promise<void> => {
     })
     .returning();
   res.status(201).json({
+    ...entry,
+    time: entry.time.toISOString(),
+    createdAt: entry.createdAt.toISOString(),
+  });
+});
+
+router.patch("/diapers/:id", async (req, res): Promise<void> => {
+  const params = UpdateDiaperEntryParams.safeParse(req.params);
+  if (!params.success) {
+    res.status(400).json({ error: params.error.message });
+    return;
+  }
+  const parsed = UpdateDiaperEntryBody.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+  const updates: Record<string, unknown> = {};
+  if (parsed.data.type != null) updates.type = parsed.data.type;
+  if (parsed.data.time != null) updates.time = new Date(parsed.data.time);
+  if (parsed.data.notes !== undefined) updates.notes = parsed.data.notes;
+
+  const [entry] = await db
+    .update(diaperEntriesTable)
+    .set(updates)
+    .where(eq(diaperEntriesTable.id, params.data.id))
+    .returning();
+  if (!entry) {
+    res.status(404).json({ error: "Diaper entry not found" });
+    return;
+  }
+  res.json({
     ...entry,
     time: entry.time.toISOString(),
     createdAt: entry.createdAt.toISOString(),

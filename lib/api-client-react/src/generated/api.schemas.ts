@@ -98,9 +98,16 @@ export interface CreateSleepEntryBody {
 
 export interface UpdateSleepEntryBody {
   /** @nullable */
+  startTime?: string | null;
+  /** @nullable */
   endTime?: string | null;
   /** @nullable */
   durationMinutes?: number | null;
+  /**
+   * nap, night
+   * @nullable
+   */
+  type?: string | null;
   /** @nullable */
   notes?: string | null;
 }
@@ -174,6 +181,18 @@ export interface CreateDiaperEntryBody {
   /** wet, dirty, mixed */
   type: string;
   time: string;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface UpdateDiaperEntryBody {
+  /**
+   * wet, dirty, mixed
+   * @nullable
+   */
+  type?: string | null;
+  /** @nullable */
+  time?: string | null;
   /** @nullable */
   notes?: string | null;
 }

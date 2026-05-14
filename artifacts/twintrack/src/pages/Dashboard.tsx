@@ -16,7 +16,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { PageHeader } from "@/components/Layout";
-import { Moon, Utensils, Baby, ChevronRight, Play, Star, Heart, BarChart2 } from "lucide-react";
+import { Moon, Utensils, Baby, ChevronRight, Play, Star, Heart, BarChart2, Sparkles, X } from "lucide-react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -269,6 +269,9 @@ export default function Dashboard() {
           </div>
         ))}
 
+        {/* What's New */}
+        {!noTwins && !isLoading && <WhatsNewCard />}
+
         {/* For You Today */}
         {!noTwins && !isLoading && (
           <div className="space-y-3">
@@ -379,6 +382,54 @@ export default function Dashboard() {
         )}
       </div>
     </Layout>
+  );
+}
+
+const WHATS_NEW_ITEMS = [
+  { emoji: "✏️", title: "Edit tracking entries", desc: "Tap the pencil on any sleep, feeding, or diaper entry to correct it." },
+  { emoji: "📚", title: "Twins Magazine Library", desc: "11 issues of Twins Magazine now in the Learn tab — tap to read!" },
+  { emoji: "👶", title: "Weekly sleep average", desc: "Your sleep summary now shows a 7-day daily average." },
+];
+const WHATS_NEW_KEY = "whats_new_dismissed_v3";
+
+function WhatsNewCard() {
+  const [dismissed, setDismissed] = useState(() => {
+    try { return localStorage.getItem(WHATS_NEW_KEY) === "1"; } catch { return false; }
+  });
+
+  if (dismissed) return null;
+
+  return (
+    <div className="bg-gradient-to-br from-violet-50 to-pink-50 border border-violet-200/60 rounded-2xl p-4 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Sparkles size={15} className="text-violet-500" />
+          <p className="text-xs font-bold text-violet-600 uppercase tracking-wide">What's New</p>
+        </div>
+        <button
+          onClick={() => {
+            setDismissed(true);
+            try { localStorage.setItem(WHATS_NEW_KEY, "1"); } catch { /* noop */ }
+          }}
+          className="p-1 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
+          aria-label="Dismiss"
+          data-testid="whats-new-dismiss"
+        >
+          <X size={14} />
+        </button>
+      </div>
+      <div className="space-y-2.5">
+        {WHATS_NEW_ITEMS.map((item) => (
+          <div key={item.title} className="flex items-start gap-3">
+            <span className="text-base flex-shrink-0 mt-0.5">{item.emoji}</span>
+            <div>
+              <p className="text-sm font-semibold text-foreground leading-snug">{item.title}</p>
+              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{item.desc}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 

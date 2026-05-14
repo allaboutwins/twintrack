@@ -4,6 +4,7 @@ import {
   useListTwins,
   useListFeedingEntries,
   useCreateFeedingEntry,
+  useUpdateFeedingEntry,
   useDeleteFeedingEntry,
   useGetFeedingSummary,
   getListFeedingEntriesQueryKey,
@@ -12,7 +13,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { TwinTabs, PageHeader } from "@/components/Layout";
-import { Trash2 } from "lucide-react";
+import { Trash2, Pencil, X, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const FEEDING_TYPES = [
@@ -24,14 +25,111 @@ const FEEDING_TYPES = [
 
 type FeedingType = "breastfeeding" | "bottle" | "formula" | "solids";
 
+function feedingIcon(type: string) {
+  switch (type) {
+    case "breastfeeding": return "🤱";
+    case "bottle": return "🍼";
+    case "formula": return "🧴";
+    case "solids": return "🥣";
+    default: return "🍼";
+  }
+}
+
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function toDatetimeLocal(iso: string) {
+  const d = new Date(iso);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+type FeedingEntry = {
+  id: number;
+  feedingType: string;
+  time: string;
+  quantity?: string | null;
+};
+
+function EditFeedingSheet({
+  entry,
+  onClose,
+  onSave,
+}: {
+  entry: FeedingEntry;
+  onClose: () => void;
+  onSave: (updates: { feedingType: string; time: string }) => void;
+}) {
+  const [feedType, setFeedType] = useState<FeedingType>(entry.feedingType as FeedingType);
+  const [timeVal, setTimeVal] = useState(toDatetimeLocal(entry.time));
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative bg-white w-full max-w-[430px] mx-auto rounded-t-3xl p-5 space-y-4 safe-area-pb">
+        <div className="flex items-center justify-between">
+          <h3 className="font-bold text-foreground">Edit Feeding Entry</h3>
+          <button onClick={onClose} className="p-1.5 rounded-lg bg-muted" aria-label="Close">
+            <X size={14} className="text-muted-foreground" />
+          </button>
+        </div>
+
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Feeding Type</p>
+          <div className="grid grid-cols-2 gap-2">
+            {FEEDING_TYPES.map(({ key, label }) => (
+              <button
+                key={key}
+                onClick={() => setFeedType(key)}
+                className={`py-2.5 px-3 rounded-xl text-sm font-semibold transition-all border ${
+                  feedType === key
+                    ? "text-white border-transparent shadow-sm"
+                    : "bg-muted text-muted-foreground border-transparent"
+                }`}
+                style={feedType === key ? { backgroundColor: FEEDING_TYPES.find(f => f.key === key)?.color } : {}}
+              >
+                {feedingIcon(key)} {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Time</p>
+          <input
+            type="datetime-local"
+            value={timeVal}
+            onChange={(e) => setTimeVal(e.target.value)}
+            className="w-full px-4 py-3 rounded-xl bg-muted/30 border border-border text-sm outline-none focus:ring-2 ring-primary/30"
+          />
+        </div>
+
+        <div className="flex gap-3 pt-1">
+          <button
+            onClick={onClose}
+            className="flex-1 py-3 rounded-xl bg-muted text-muted-foreground font-semibold text-sm"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onSave({ feedingType: feedType, time: new Date(timeVal).toISOString() })}
+            className="flex-1 py-3 rounded-xl bg-primary text-white font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all"
+          >
+            <Check size={15} />
+            Save Changes
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function Feeding() {
   const { user } = useUser();
   const qc = useQueryClient();
   const today = new Date().toISOString().split("T")[0];
+  const [editingEntry, setEditingEntry] = useState<FeedingEntry | null>(null);
 
   const { data: twins = [] } = useListTwins(
     { userId: user?.id ?? "" },
@@ -56,6 +154,7 @@ export default function Feeding() {
   );
 
   const createEntry = useCreateFeedingEntry();
+  const updateEntry = useUpdateFeedingEntry();
   const deleteEntry = useDeleteFeedingEntry();
 
   function invalidate() {
@@ -68,6 +167,19 @@ export default function Feeding() {
     createEntry.mutate(
       { data: { twinId, feedingType, time: new Date().toISOString() } },
       { onSuccess: invalidate },
+    );
+  }
+
+  function saveEdit(updates: { feedingType: string; time: string }) {
+    if (!editingEntry) return;
+    updateEntry.mutate(
+      { id: editingEntry.id, data: updates },
+      {
+        onSuccess: () => {
+          invalidate();
+          setEditingEntry(null);
+        },
+      },
     );
   }
 
@@ -140,13 +252,23 @@ export default function Feeding() {
                       </p>
                     </div>
                   </div>
-                  <button
-                    onClick={() => deleteEntry.mutate({ id: entry.id }, { onSuccess: invalidate })}
-                    className="text-muted-foreground hover:text-destructive p-2 transition-colors"
-                    data-testid={`delete-feeding-${entry.id}`}
-                  >
-                    <Trash2 size={14} />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setEditingEntry(entry)}
+                      className="text-muted-foreground hover:text-primary p-2 transition-colors"
+                      data-testid={`edit-feeding-${entry.id}`}
+                      aria-label="Edit entry"
+                    >
+                      <Pencil size={13} />
+                    </button>
+                    <button
+                      onClick={() => deleteEntry.mutate({ id: entry.id }, { onSuccess: invalidate })}
+                      className="text-muted-foreground hover:text-destructive p-2 transition-colors"
+                      data-testid={`delete-feeding-${entry.id}`}
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
                 </div>
               );
             })}
@@ -165,16 +287,14 @@ export default function Feeding() {
           </div>
         )}
       </div>
+
+      {editingEntry && (
+        <EditFeedingSheet
+          entry={editingEntry}
+          onClose={() => setEditingEntry(null)}
+          onSave={saveEdit}
+        />
+      )}
     </Layout>
   );
-}
-
-function feedingIcon(type: string) {
-  switch (type) {
-    case "breastfeeding": return "🤱";
-    case "bottle": return "🍼";
-    case "formula": return "🧴";
-    case "solids": return "🥣";
-    default: return "🍼";
-  }
 }

@@ -124,10 +124,14 @@ router.patch("/sleep/:id", async (req, res): Promise<void> => {
     return;
   }
   const updates: Record<string, unknown> = {};
+  if (parsed.data.startTime !== undefined) {
+    updates.startTime = parsed.data.startTime ? new Date(parsed.data.startTime) : undefined;
+  }
   if (parsed.data.endTime !== undefined) {
     updates.endTime = parsed.data.endTime ? new Date(parsed.data.endTime) : null;
   }
   if (parsed.data.durationMinutes !== undefined) updates.durationMinutes = parsed.data.durationMinutes;
+  if (parsed.data.type !== undefined && parsed.data.type !== null) updates.type = parsed.data.type;
   if (parsed.data.notes !== undefined) updates.notes = parsed.data.notes;
 
   const [entry] = await db
