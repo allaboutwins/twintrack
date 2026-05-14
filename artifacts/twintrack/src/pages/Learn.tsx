@@ -15,6 +15,30 @@ import Layout from "@/components/Layout";
 import { Bookmark, BookmarkCheck, Search, Play, ExternalLink, StickyNote, Check, X, BookOpen, Sparkles } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
+// Magazine cover images
+import coverJan24 from "@assets/Twins_Magazine_Jan._24_1778767835834.png";
+import coverApr24 from "@assets/Twins_Magazine_Apr._2024_1778767835834.png";
+import coverJul24 from "@assets/Twins_Magazine_Jul._24_1778767835834.png";
+import coverNov24 from "@assets/Twins_Magazine_Nov._24_1778767835833.jpg";
+import coverJan25 from "@assets/Twins_Magazine_Jan._2025_1778767835834.png";
+import coverApr25 from "@assets/Twins_Magazine_Apr._25_1778767835834.png";
+import coverJul25 from "@assets/Twins_Magazine_Jul._2025_1778767835833.jpg";
+import coverNov25 from "@assets/Twins_Magazine_Nov._25__1778767835833.png";
+import coverJan26 from "@assets/Twins_Magazine_Jan._26__1778767835834.png";
+import coverApr26 from "@assets/Twins_Magazine_Apr._26_1778767835833.png";
+
+// Magazine inside/index images
+import insideJan24 from "@assets/Twins_Magazine_Jan._24_Inside_Issue_1778767835834.png";
+import insideApr24 from "@assets/Twins_Magazine_Apr._24_Inside_1778767835834.png";
+import insideJul24 from "@assets/Twins_Magazine_Jul._24_Inside_1778767835833.png";
+import insideNov24 from "@assets/Twins_Magazine_Nov._24_Inside_1778767835834.jpg";
+import insideJan25 from "@assets/Twins_Magazine_Jan._2025_-_Inside_1778767835834.png";
+import insideApr25 from "@assets/Twins_Magazine_Apr._25_Inside_1778767835834.png";
+import insideJul25 from "@assets/Twins_Magazine_Jul._2025_-_Inside_1778767835833.jpg";
+import insideNov25 from "@assets/Twins_Magazine_Nov._25_-_What's_Inside_1778767835834.png";
+import insideJan26 from "@assets/Twins_Magazine_Jan._26_Index_1778767835834.png";
+import insideApr26 from "@assets/Twins_Magazine_Apr._26_Index_1778767835834.png";
+
 const CATEGORIES = [
   { key: "", label: "All" },
   { key: "sleep", label: "💤 Sleep" },
@@ -52,20 +76,20 @@ function getDayTip() {
   return TIPS[new Date().getDate() % TIPS.length];
 }
 
-// Magazine data — static curated list
+// Magazine data — static curated list with real cover + inside images
 const MAGAZINES = [
-  { id: 1, issue: "Jan / Feb 2024", season: "Winter 2024", url: "https://tinyurl.com/TMJan2024", gradient: "from-rose-400 to-pink-600" },
-  { id: 2, issue: "Apr / May 2024", season: "Spring 2024", url: "https://tinyurl.com/4axxtxvf", gradient: "from-violet-400 to-purple-600" },
-  { id: 3, issue: "Jul / Aug 2024", season: "Summer 2024", url: "https://tinyurl.com/3f4kj2tz", gradient: "from-amber-400 to-orange-500" },
-  { id: 4, issue: "Nov / Dec 2024", season: "Fall 2024", url: "https://tinyurl.com/ku3uvkjn", gradient: "from-teal-400 to-cyan-600" },
-  { id: 5, issue: "Jan / Feb 2025", season: "Winter 2025", url: "https://tinyurl.com/4rcee82w", gradient: "from-blue-400 to-indigo-600" },
-  { id: 6, issue: "Apr / May 2025", season: "Spring 2025", url: "https://tinyurl.com/yaf8zm5v", gradient: "from-emerald-400 to-green-600" },
-  { id: 7, issue: "Jul / Aug 2025", season: "Summer 2025", url: "https://tinyurl.com/uy8mx53s", gradient: "from-yellow-400 to-amber-500" },
-  { id: 8, issue: "Nov / Dec 2025", season: "Fall 2025", url: "https://tinyurl.com/j4wz9taa", gradient: "from-red-400 to-rose-600" },
-  { id: 9, issue: "Jan / Feb 2026", season: "Winter 2026", url: "https://tinyurl.com/3962vvbn", gradient: "from-sky-400 to-blue-600" },
-  { id: 10, issue: "Apr / May 2026", season: "Spring 2026", url: "https://tinyurl.com/3ujxz5vy", gradient: "from-fuchsia-400 to-pink-600" },
-  { id: 11, issue: "Jul / Aug 2026", season: "Summer 2026", url: "https://tinyurl.com/2yd3r8vz", gradient: "from-lime-400 to-green-500" },
-];
+  { id: 1,  issue: "Jan / Feb 2024", season: "Winter 2024",  url: "https://tinyurl.com/TMJan2024",  cover: coverJan24,  inside: insideJan24 },
+  { id: 2,  issue: "Apr / May 2024", season: "Spring 2024",  url: "https://tinyurl.com/4axxtxvf",   cover: coverApr24,  inside: insideApr24 },
+  { id: 3,  issue: "Jul / Aug 2024", season: "Summer 2024",  url: "https://tinyurl.com/3f4kj2tz",   cover: coverJul24,  inside: insideJul24 },
+  { id: 4,  issue: "Nov / Dec 2024", season: "Fall 2024",    url: "https://tinyurl.com/ku3uvkjn",   cover: coverNov24,  inside: insideNov24 },
+  { id: 5,  issue: "Jan / Feb 2025", season: "Winter 2025",  url: "https://tinyurl.com/4rcee82w",   cover: coverJan25,  inside: insideJan25 },
+  { id: 6,  issue: "Apr / May 2025", season: "Spring 2025",  url: "https://tinyurl.com/yaf8zm5v",   cover: coverApr25,  inside: insideApr25 },
+  { id: 7,  issue: "Jul / Aug 2025", season: "Summer 2025",  url: "https://tinyurl.com/uy8mx53s",   cover: coverJul25,  inside: insideJul25 },
+  { id: 8,  issue: "Nov / Dec 2025", season: "Fall 2025",    url: "https://tinyurl.com/j4wz9taa",   cover: coverNov25,  inside: insideNov25 },
+  { id: 9,  issue: "Jan / Feb 2026", season: "Winter 2026",  url: "https://tinyurl.com/3962vvbn",   cover: coverJan26,  inside: insideJan26 },
+  { id: 10, issue: "Apr / May 2026", season: "Spring 2026",  url: "https://tinyurl.com/3ujxz5vy",   cover: coverApr26,  inside: insideApr26 },
+  { id: 11, issue: "Jul / Aug 2026", season: "Summer 2026",  url: "https://tinyurl.com/2yd3r8vz",   cover: null,        inside: null, gradient: "from-lime-400 to-green-500" },
+] as const;
 
 function getYouTubeId(url: string) {
   const m = url.match(/(?:v=|youtu\.be\/|shorts\/)([\w-]{11})/);
@@ -182,57 +206,122 @@ function VideoNotePanel({ videoId, userId }: { videoId: number; userId: string }
   );
 }
 
+type Magazine = (typeof MAGAZINES)[number];
+
+function MagazinePreviewModal({ mag, onClose }: { mag: Magazine; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end">
+      <div className="absolute inset-0 bg-black/60" onClick={onClose} />
+      <div className="relative bg-white w-full max-w-[430px] mx-auto rounded-t-3xl overflow-hidden flex flex-col max-h-[92dvh]">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border flex-shrink-0">
+          <div>
+            <p className="font-bold text-foreground">{mag.issue}</p>
+            <p className="text-xs text-muted-foreground">{mag.season} · All About Twins Magazine</p>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg bg-muted">
+            <X size={14} className="text-muted-foreground" />
+          </button>
+        </div>
+
+        {/* Scrollable content */}
+        <div className="overflow-y-auto flex-1">
+          <div className="p-4 space-y-4">
+            {/* Cover */}
+            {mag.cover && (
+              <div className="rounded-2xl overflow-hidden shadow-md">
+                <img src={mag.cover} alt={`${mag.issue} cover`} className="w-full object-cover" />
+              </div>
+            )}
+            {/* Inside preview */}
+            {mag.inside && (
+              <div>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">What's Inside</p>
+                <div className="rounded-2xl overflow-hidden shadow-sm border border-border">
+                  <img src={mag.inside} alt={`${mag.issue} contents`} className="w-full object-cover" />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* CTA */}
+        <div className="px-4 pb-6 pt-3 border-t border-border flex-shrink-0">
+          <a
+            href={mag.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-primary text-white font-semibold text-sm active:scale-[0.98] transition-all shadow-sm"
+            data-testid={`read-magazine-${mag.id}`}
+          >
+            <BookOpen size={16} />
+            Read Full Issue
+            <ExternalLink size={13} className="opacity-75" />
+          </a>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MagazineLibrary() {
+  const [selected, setSelected] = useState<Magazine | null>(null);
+
   return (
     <div className="px-4 pt-4 pb-6 space-y-4">
       <div className="bg-gradient-to-br from-primary/8 to-secondary/8 rounded-2xl border border-primary/15 p-4">
         <div className="flex items-center gap-2 mb-1.5">
           <BookOpen size={15} className="text-primary" />
-          <p className="text-xs font-bold text-primary uppercase tracking-wide">Twins Magazine</p>
+          <p className="text-xs font-bold text-primary uppercase tracking-wide">All About Twins Magazine</p>
         </div>
         <p className="text-sm text-foreground leading-relaxed">
-          The original twin parenting magazine — curated articles, expert advice, and real twin family stories.
+          Real stories, expert advice, and community from twin parents worldwide. Tap any issue to preview.
         </p>
       </div>
 
       <div className="grid grid-cols-2 gap-3">
         {MAGAZINES.map((mag) => (
-          <a
+          <button
             key={mag.id}
-            href={mag.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block rounded-2xl overflow-hidden shadow-sm active:scale-[0.97] transition-all"
+            onClick={() => setSelected(mag)}
+            className="block rounded-2xl overflow-hidden shadow-sm active:scale-[0.97] transition-all text-left w-full"
             data-testid={`magazine-${mag.id}`}
           >
-            {/* Cover */}
-            <div className={`relative aspect-[3/4] bg-gradient-to-br ${mag.gradient} flex flex-col items-center justify-center p-4`}>
-              {/* Masthead */}
-              <div className="absolute top-0 left-0 right-0 bg-white/20 backdrop-blur-sm py-2 px-3 text-center">
-                <p className="text-[9px] font-black text-white uppercase tracking-widest">Twins</p>
-                <p className="text-[6px] font-bold text-white/80 uppercase tracking-widest">magazine</p>
-              </div>
-              {/* Centered content */}
-              <div className="mt-6 flex flex-col items-center gap-2">
-                <div className="w-14 h-14 rounded-full bg-white/20 border-2 border-white/40 flex items-center justify-center">
-                  <span className="text-2xl">👶👶</span>
+            <div className="relative aspect-[3/4] bg-slate-100 overflow-hidden">
+              {mag.cover ? (
+                <>
+                  <img
+                    src={mag.cover}
+                    alt={`${mag.issue} cover`}
+                    className="w-full h-full object-cover object-top"
+                  />
+                  {/* Subtle overlay with issue label */}
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pt-8 pb-2.5 px-2.5">
+                    <p className="text-white text-[10px] font-bold leading-tight">{mag.issue}</p>
+                    <p className="text-white/70 text-[9px] uppercase tracking-wide">{mag.season}</p>
+                  </div>
+                </>
+              ) : (
+                /* Fallback gradient for issues without a cover yet */
+                <div className={`w-full h-full bg-gradient-to-br ${"gradient" in mag ? mag.gradient : "from-gray-400 to-gray-600"} flex flex-col items-center justify-center p-4`}>
+                  <div className="absolute top-0 left-0 right-0 bg-white/15 py-1.5 px-3 text-center">
+                    <p className="text-[8px] font-black text-white uppercase tracking-widest">All About Twins</p>
+                  </div>
+                  <span className="text-4xl mt-4">👶👶</span>
+                  <div className="absolute bottom-0 left-0 right-0 bg-black/30 py-1.5 px-2.5 text-center">
+                    <p className="text-[9px] font-semibold text-white">{mag.issue}</p>
+                    <p className="text-[8px] text-white/70 uppercase tracking-wide">{mag.season}</p>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <p className="text-white text-[11px] font-bold leading-tight">{mag.issue}</p>
-                </div>
-              </div>
-              {/* Season badge */}
-              <div className="absolute bottom-0 left-0 right-0 bg-black/30 backdrop-blur-sm py-1.5 px-3 text-center">
-                <p className="text-[9px] font-semibold text-white uppercase tracking-wide">{mag.season}</p>
-              </div>
-              {/* Open indicator */}
+              )}
+              {/* Preview badge */}
               <div className="absolute top-2 right-2">
-                <div className="w-5 h-5 rounded-full bg-white/30 flex items-center justify-center">
+                <div className="w-5 h-5 rounded-full bg-black/30 backdrop-blur-sm flex items-center justify-center">
                   <ExternalLink size={9} className="text-white" />
                 </div>
               </div>
             </div>
-          </a>
+          </button>
         ))}
       </div>
 
@@ -241,6 +330,10 @@ function MagazineLibrary() {
         <p className="text-xs font-semibold text-foreground">More issues coming soon</p>
         <p className="text-xs text-muted-foreground">New editions added as they publish 💕</p>
       </div>
+
+      {selected && (
+        <MagazinePreviewModal mag={selected} onClose={() => setSelected(null)} />
+      )}
     </div>
   );
 }
