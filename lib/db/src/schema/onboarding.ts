@@ -17,6 +17,8 @@ export const onboardingTable = pgTable("onboarding", {
   discoverySource: text("discovery_source"),
   instagramHandle: text("instagram_handle"),
   isAmbassador: boolean("is_ambassador"),
+  email: text("email"),
+  newsletterConsent: boolean("newsletter_consent"),
   completedAt: timestamp("completed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });

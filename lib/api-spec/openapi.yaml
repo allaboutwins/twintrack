@@ -32,6 +32,8 @@ tags:
     description: In-app feedback collection
   - name: polls
     description: Community polls for twin moms
+  - name: Storage
+    description: Object storage upload and serving endpoints.
   - name: admin
     description: Admin-only operations
 
@@ -939,6 +941,107 @@ paths:
         "409":
           description: Already responded to this poll
 
+  /storage/uploads/request-url:
+    post:
+      tags: [Storage]
+      operationId: requestUploadUrl
+      summary: Request a presigned URL for file upload
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadUrlRequest'
+      responses:
+        '200':
+          description: Presigned upload URL generated.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadUrlResponse'
+        '400':
+          description: Missing or invalid required fields.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+        '500':
+          description: Failed to generate upload URL.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /storage/public-objects/{filePath}:
+    get:
+      tags: [Storage]
+      operationId: getPublicObject
+      summary: Serve a public asset from PUBLIC_OBJECT_SEARCH_PATHS
+      parameters:
+        - name: filePath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Object content streamed.
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: File not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+  /storage/objects/{objectPath}:
+    get:
+      tags: [Storage]
+      operationId: getStorageObject
+      summary: Serve an object entity from PRIVATE_OBJECT_DIR
+      parameters:
+        - name: objectPath
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Object content streamed.
+          content:
+            '*/*':
+              schema:
+                type: string
+                format: binary
+        '404':
+          description: Object not found.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorEnvelope'
+
+  /polls/history:
+    get:
+      operationId: getPollHistory
+      tags: [polls]
+      summary: Get all polls with optional user response data
+      parameters:
+        - in: query
+          name: userId
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of polls ordered by most recent
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PollWithResponse"
+
   /admin/backfill-sheets:
     post:
       operationId: backfillSheetsOnboarding
@@ -1649,6 +1752,10 @@ components:
           type: ["string", "null"]
         isAmbassador:
           type: ["boolean", "null"]
+        email:
+          type: ["string", "null"]
+        newsletterConsent:
+          type: ["boolean", "null"]
         completedAt:
           type: ["string", "null"]
         createdAt:
@@ -1684,6 +1791,10 @@ components:
         instagramHandle:
           type: ["string", "null"]
         isAmbassador:
+          type: ["boolean", "null"]
+        email:
+          type: ["string", "null"]
+        newsletterConsent:
           type: ["boolean", "null"]
 
     SubmitFeedbackBody:
@@ -1816,3 +1927,34 @@ components:
           type: integer
         skipped:
           type: integer
+
+    UploadUrlRequest:
+      type: object
+      required: [name, size, contentType]
+      properties:
+        name:
+          type: string
+          minLength: 1
+        size:
+          type: integer
+          minimum: 1
+        contentType:
+          type: string
+          minLength: 1
+
+    UploadUrlResponse:
+      type: object
+      required: [uploadURL, objectPath]
+      properties:
+        uploadURL:
+          type: string
+          format: uri
+        objectPath:
+          type: string
+
+    ErrorEnvelope:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string

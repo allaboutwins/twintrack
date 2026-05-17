@@ -413,6 +413,10 @@ export interface Onboarding {
   /** @nullable */
   isAmbassador?: boolean | null;
   /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  newsletterConsent?: boolean | null;
+  /** @nullable */
   completedAt?: string | null;
   createdAt: string;
 }
@@ -442,6 +446,10 @@ export interface SaveOnboardingBody {
   instagramHandle?: string | null;
   /** @nullable */
   isAmbassador?: boolean | null;
+  /** @nullable */
+  email?: string | null;
+  /** @nullable */
+  newsletterConsent?: boolean | null;
 }
 
 export interface SubmitFeedbackBody {
@@ -512,6 +520,24 @@ export interface BackfillResult {
   success: number;
   failed: number;
   skipped: number;
+}
+
+export interface UploadUrlRequest {
+  /** @minLength 1 */
+  name: string;
+  /** @minimum 1 */
+  size: number;
+  /** @minLength 1 */
+  contentType: string;
+}
+
+export interface UploadUrlResponse {
+  uploadURL: string;
+  objectPath: string;
+}
+
+export interface ErrorEnvelope {
+  error: string;
 }
 
 export type ListTwinsParams = {
@@ -591,6 +617,10 @@ export type GetDashboardSummaryParams = {
 
 export type GetActivePollParams = {
   userId: string;
+};
+
+export type GetPollHistoryParams = {
+  userId?: string;
 };
 
 export type BackfillSheetsOnboardingParams = {

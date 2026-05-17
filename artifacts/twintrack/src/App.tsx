@@ -156,6 +156,7 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
     return (
       <OnboardingFlow
         userId={userId}
+        userEmail={user?.primaryEmailAddress?.emailAddress ?? ""}
         onComplete={() => {
           setLocalComplete(true);
           qc.invalidateQueries({ queryKey: getGetOnboardingQueryKey(userId) });

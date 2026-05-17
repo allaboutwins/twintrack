@@ -83,6 +83,18 @@ router.get("/polls/active", async (req, res): Promise<void> => {
   res.json(result);
 });
 
+router.get("/polls/history", async (req, res): Promise<void> => {
+  const userId = req.query.userId as string | undefined;
+
+  const polls = await db
+    .select()
+    .from(pollsTable)
+    .orderBy(sql`${pollsTable.createdAt} DESC`);
+
+  const results = await Promise.all(polls.map((poll) => buildPollWithResponse(poll, userId ?? "")));
+  res.json(results);
+});
+
 router.post("/polls/:id/respond", async (req, res): Promise<void> => {
   const pollId = Number(req.params.id);
   const { userId, optionKey } = req.body as { userId?: string; optionKey?: string };

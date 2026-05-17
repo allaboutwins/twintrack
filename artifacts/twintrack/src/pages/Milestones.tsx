@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useUser } from "@clerk/react";
 import {
   useListMilestones,
@@ -7,10 +7,11 @@ import {
   getListMilestonesQueryKey,
   useListTwins,
   getListTwinsQueryKey,
+  useRequestUploadUrl,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { PageHeader } from "@/components/Layout";
-import { Plus, Trash2, X, Check, ChevronRight } from "lucide-react";
+import { Plus, Trash2, X, Check, Camera, Share2, ImageIcon } from "lucide-react";
 
 const MILESTONE_PRESETS = [
   { key: "first-smile", label: "First Smile", emoji: "😊" },
@@ -142,7 +143,13 @@ export default function Milestones() {
     achievedDate: new Date().toISOString().split("T")[0],
     note: "",
     isCustom: false,
+    photoUrl: null as string | null,
   });
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [shareToast, setShareToast] = useState<number | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const requestUploadUrl = useRequestUploadUrl();
 
   const { data: twins = [] } = useListTwins(
     { userId: user?.id ?? "" },
@@ -180,8 +187,53 @@ export default function Milestones() {
       achievedDate: new Date().toISOString().split("T")[0],
       note: "",
       isCustom: false,
+      photoUrl: null,
     });
+    setPhotoPreview(null);
     setShowModal(true);
+  }
+
+  async function handlePhotoSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const preview = URL.createObjectURL(file);
+    setPhotoPreview(preview);
+    setIsUploadingPhoto(true);
+    try {
+      const { uploadURL, objectPath } = await requestUploadUrl.mutateAsync({
+        data: { name: file.name, size: file.size, contentType: file.type },
+      });
+      await fetch(uploadURL, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      setForm((f) => ({ ...f, photoUrl: objectPath }));
+    } catch {
+      setPhotoPreview(null);
+      setForm((f) => ({ ...f, photoUrl: null }));
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  }
+
+  function handleShare(milestone: { id: number; category: string; title: string; achievedDate: string; note?: string | null; twinId: number }) {
+    const twin = getTwinForMilestone(milestone.twinId);
+    const twinName = twin?.name || twin?.label || "Our twin";
+    const preset = MILESTONE_PRESETS.find((m) => m.key === milestone.category);
+    const text = [
+      `${preset?.emoji ?? "🎉"} ${twinName} just hit a milestone: ${milestone.title}!`,
+      `📅 ${formatDate(milestone.achievedDate)}`,
+      milestone.note ? `💭 "${milestone.note}"` : null,
+      `\nMade with TwinTrack 💕`,
+    ].filter(Boolean).join("\n");
+    if (navigator.share) {
+      navigator.share({ text }).catch(() => {});
+    } else {
+      navigator.clipboard?.writeText(text).catch(() => {});
+      setShareToast(milestone.id);
+      setTimeout(() => setShareToast(null), 2000);
+    }
   }
 
   function selectPreset(key: string, label: string) {
@@ -208,7 +260,7 @@ export default function Milestones() {
           title,
           achievedDate: form.achievedDate,
           note: form.note || null,
-          photoUrl: null,
+          photoUrl: form.photoUrl,
         },
       },
       {
@@ -388,8 +440,26 @@ export default function Milestones() {
                   </div>
                 </div>
 
-                {/* Delete */}
-                <div className="border-t border-border px-4 py-2 flex justify-end">
+                {/* Photo */}
+                {milestone.photoUrl && (
+                  <img
+                    src={`/api${milestone.photoUrl}`}
+                    alt={milestone.title}
+                    className="w-full h-48 object-cover"
+                  />
+                )}
+
+                {/* Actions */}
+                <div className="border-t border-border px-4 py-2 flex items-center justify-between">
+                  <button
+                    onClick={() => handleShare(milestone)}
+                    className="text-xs text-primary font-semibold flex items-center gap-1 py-1 px-2 rounded-lg hover:bg-primary/5 transition-colors relative"
+                    data-testid={`share-milestone-${milestone.id}`}
+                  >
+                    <Share2 size={12} />
+                    {shareToast === milestone.id ? "Copied!" : "Share"}
+                  </button>
+
                   {deleteConfirm === milestone.id ? (
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-muted-foreground">Remove this memory?</span>
@@ -519,15 +589,63 @@ export default function Milestones() {
                 />
               </div>
 
+              {/* Photo upload */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Add a Photo (optional)</label>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handlePhotoSelect}
+                  data-testid="input-milestone-photo"
+                />
+                {photoPreview ? (
+                  <div className="relative rounded-2xl overflow-hidden">
+                    <img src={photoPreview} alt="Preview" className="w-full h-40 object-cover" />
+                    {isUploadingPhoto && (
+                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    )}
+                    <button
+                      onClick={() => { setPhotoPreview(null); setForm((f) => ({ ...f, photoUrl: null })); }}
+                      className="absolute top-2 right-2 w-7 h-7 bg-black/50 rounded-full flex items-center justify-center"
+                    >
+                      <X size={14} className="text-white" />
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="w-full py-4 rounded-2xl border-2 border-dashed border-border flex items-center justify-center gap-2 text-sm text-muted-foreground hover:border-primary/40 hover:text-primary hover:bg-primary/5 transition-all"
+                  >
+                    <Camera size={18} />
+                    Take or choose a photo
+                  </button>
+                )}
+              </div>
+
               {/* Save */}
               <button
                 onClick={handleSave}
-                disabled={createMilestone.isPending || !form.category || !form.twinId || (form.isCustom && !form.title)}
+                disabled={createMilestone.isPending || isUploadingPhoto || !form.category || !form.twinId || (form.isCustom && !form.title)}
                 className="w-full py-4 rounded-2xl bg-primary text-white font-bold text-base flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm disabled:opacity-50"
                 data-testid="button-save-milestone"
               >
-                <Check size={20} />
-                Save This Memory
+                {isUploadingPhoto ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Uploading photo...
+                  </>
+                ) : (
+                  <>
+                    <Check size={20} />
+                    Save This Memory
+                  </>
+                )}
               </button>
             </div>
           </div>

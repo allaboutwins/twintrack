@@ -783,6 +783,8 @@ export const GetOnboardingResponse = zod.object({
     ),
   instagramHandle: zod.string().nullish(),
   isAmbassador: zod.boolean().nullish(),
+  email: zod.string().nullish(),
+  newsletterConsent: zod.boolean().nullish(),
   completedAt: zod.string().nullish(),
   createdAt: zod.string(),
 });
@@ -807,6 +809,8 @@ export const SaveOnboardingBody = zod.object({
   discoverySource: zod.string().nullish(),
   instagramHandle: zod.string().nullish(),
   isAmbassador: zod.boolean().nullish(),
+  email: zod.string().nullish(),
+  newsletterConsent: zod.boolean().nullish(),
 });
 
 export const SaveOnboardingResponse = zod.object({
@@ -835,6 +839,8 @@ export const SaveOnboardingResponse = zod.object({
     ),
   instagramHandle: zod.string().nullish(),
   isAmbassador: zod.boolean().nullish(),
+  email: zod.string().nullish(),
+  newsletterConsent: zod.boolean().nullish(),
   completedAt: zod.string().nullish(),
   createdAt: zod.string(),
 });
@@ -904,6 +910,78 @@ export const RespondToPollBody = zod.object({
   userId: zod.string(),
   optionKey: zod.string(),
 });
+
+/**
+ * @summary Request a presigned URL for file upload
+ */
+
+export const RequestUploadUrlBody = zod.object({
+  name: zod.string().min(1),
+  size: zod.number().min(1),
+  contentType: zod.string().min(1),
+});
+
+export const RequestUploadUrlResponse = zod.object({
+  uploadURL: zod.string().url(),
+  objectPath: zod.string(),
+});
+
+/**
+ * @summary Serve a public asset from PUBLIC_OBJECT_SEARCH_PATHS
+ */
+export const GetPublicObjectParams = zod.object({
+  filePath: zod.coerce.string(),
+});
+
+/**
+ * @summary Serve an object entity from PRIVATE_OBJECT_DIR
+ */
+export const GetStorageObjectParams = zod.object({
+  objectPath: zod.coerce.string(),
+});
+
+/**
+ * @summary Get all polls with optional user response data
+ */
+export const GetPollHistoryQueryParams = zod.object({
+  userId: zod.coerce.string().optional(),
+});
+
+export const GetPollHistoryResponseItem = zod
+  .object({
+    id: zod.number(),
+    question: zod.string(),
+    category: zod.string(),
+    options: zod.array(
+      zod.object({
+        key: zod.string(),
+        label: zod.string(),
+      }),
+    ),
+    isActive: zod.boolean(),
+    startsAt: zod.string().nullish(),
+    endsAt: zod.string().nullish(),
+    createdAt: zod.string(),
+  })
+  .and(
+    zod.object({
+      hasResponded: zod.boolean(),
+      userOptionKey: zod.string().nullish(),
+      results: zod
+        .object({
+          totalResponses: zod.number(),
+          breakdown: zod.array(
+            zod.object({
+              optionKey: zod.string(),
+              count: zod.number(),
+              percentage: zod.number(),
+            }),
+          ),
+        })
+        .nullish(),
+    }),
+  );
+export const GetPollHistoryResponse = zod.array(GetPollHistoryResponseItem);
 
 /**
  * @summary Backfill all onboarding records to Google Sheets

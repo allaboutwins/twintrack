@@ -9,10 +9,16 @@ import {
   getListVideosQueryKey,
   getListBookmarkedVideosQueryKey,
   getListVideoNotesQueryKey,
+  useGetActivePoll,
+  getGetActivePollQueryKey,
+  useRespondToPoll,
+  useGetPollHistory,
+  getGetPollHistoryQueryKey,
+  useSubmitFeedback,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout from "@/components/Layout";
-import { Bookmark, BookmarkCheck, Search, Play, ExternalLink, StickyNote, Check, X, BookOpen, Sparkles } from "lucide-react";
+import { Bookmark, BookmarkCheck, Search, Play, ExternalLink, StickyNote, Check, X, BookOpen, Sparkles, ChevronRight, BarChart3 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Magazine cover images
@@ -338,13 +344,301 @@ function MagazineLibrary() {
   );
 }
 
+const ACADEMY_ARTICLES = [
+  { emoji: "💤", title: "Syncing Twin Sleep Schedules", subtitle: "The #1 game-changer for twin families", badge: "Sleep", url: "https://allaboutwins.com/twin-sleep-schedule" },
+  { emoji: "🍼", title: "Tandem Nursing: A Complete Guide", subtitle: "Feed both twins at once — step by step", badge: "Feeding", url: "https://allaboutwins.com/tandem-nursing" },
+  { emoji: "🧠", title: "Managing Twin Parent Burnout", subtitle: "Signs, tools, and real recovery strategies", badge: "Mindset", url: "https://allaboutwins.com/twin-parent-burnout" },
+  { emoji: "📅", title: "Building Your Daily Routine", subtitle: "Flexible structure that grows with your twins", badge: "Routines", url: "https://allaboutwins.com/twin-daily-routine" },
+  { emoji: "🤰", title: "Twin Pregnancy: What to Expect", subtitle: "Hospital prep, NICU plan & home setup", badge: "Pregnancy", url: "https://allaboutwins.com/twin-pregnancy" },
+  { emoji: "💛", title: "Navigating the NICU Journey", subtitle: "Support, milestones, and coming home", badge: "NICU", url: "https://allaboutwins.com/nicu-twins" },
+];
+
+const BADGE_COLORS: Record<string, string> = {
+  Sleep: "bg-blue-100 text-blue-700",
+  Feeding: "bg-rose-100 text-rose-700",
+  Mindset: "bg-purple-100 text-purple-700",
+  Routines: "bg-amber-100 text-amber-700",
+  Pregnancy: "bg-green-100 text-green-700",
+  NICU: "bg-yellow-100 text-yellow-700",
+};
+
+function AcademySection({ userId }: { userId: string }) {
+  const [feedback, setFeedback] = useState<"helpful" | "not-helpful" | null>(null);
+  const [learnMore, setLearnMore] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const submitFeedback = useSubmitFeedback();
+
+  function submitSuggestion() {
+    if (!learnMore.trim()) return;
+    submitFeedback.mutate(
+      {
+        data: {
+          userId: userId || null,
+          feedbackType: "feature",
+          message: `[Academy] ${learnMore}`,
+          metadata: JSON.stringify({ section: "academy", helpful: feedback }),
+        },
+      },
+      { onSuccess: () => setSubmitted(true), onError: () => setSubmitted(true) },
+    );
+  }
+
+  return (
+    <div className="px-4 pt-4 space-y-4 pb-6">
+      {/* Hero */}
+      <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-2xl border border-primary/20 p-5">
+        <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1.5">🎓 Twins Academy</p>
+        <h2 className="text-lg font-bold text-foreground mb-1.5">Your expert learning hub</h2>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          Curated guides and resources built specifically for twin parents — all in one place.
+        </p>
+      </div>
+
+      {/* Article cards */}
+      <div className="space-y-2.5">
+        {ACADEMY_ARTICLES.map((article) => (
+          <a
+            key={article.title}
+            href={article.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-3.5 p-4 bg-white rounded-2xl border border-border hover:bg-muted/20 active:bg-muted/40 transition-colors"
+            data-testid={`academy-article-${article.badge.toLowerCase()}`}
+          >
+            <div className="w-12 h-12 rounded-xl bg-primary/8 flex items-center justify-center text-2xl flex-shrink-0">
+              {article.emoji}
+            </div>
+            <div className="flex-1 min-w-0">
+              <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full mb-1 ${BADGE_COLORS[article.badge] ?? "bg-muted text-muted-foreground"}`}>
+                {article.badge}
+              </span>
+              <p className="font-semibold text-sm text-foreground leading-snug">{article.title}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{article.subtitle}</p>
+            </div>
+            <ChevronRight size={15} className="text-muted-foreground flex-shrink-0" />
+          </a>
+        ))}
+      </div>
+
+      {/* Feedback widget */}
+      <div className="bg-white rounded-2xl border border-border p-5 space-y-4">
+        {!submitted ? (
+          <>
+            <p className="font-semibold text-sm text-foreground">Was this section helpful? 🎓</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setFeedback("helpful")}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all ${
+                  feedback === "helpful" ? "border-green-500 bg-green-50 text-green-700" : "border-border bg-muted text-foreground"
+                }`}
+                data-testid="academy-feedback-helpful"
+              >
+                👍 Yes!
+              </button>
+              <button
+                onClick={() => setFeedback("not-helpful")}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-semibold border-2 transition-all ${
+                  feedback === "not-helpful" ? "border-red-400 bg-red-50 text-red-700" : "border-border bg-muted text-foreground"
+                }`}
+                data-testid="academy-feedback-not-helpful"
+              >
+                👎 Not really
+              </button>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-semibold text-foreground">What would you love to learn more about?</p>
+              <textarea
+                value={learnMore}
+                onChange={(e) => setLearnMore(e.target.value)}
+                placeholder="e.g. 'Sleep regression with twins', 'Returning to work as a twin mom'..."
+                rows={3}
+                className="w-full px-3 py-2.5 rounded-xl bg-muted border border-border text-sm outline-none focus:ring-2 ring-primary/30 resize-none placeholder:text-muted-foreground"
+                data-testid="academy-learn-more-input"
+              />
+              <button
+                onClick={submitSuggestion}
+                disabled={!learnMore.trim() || submitFeedback.isPending}
+                className="w-full py-2.5 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50 transition-all active:scale-[0.98]"
+                data-testid="academy-submit-suggestion"
+              >
+                Send Suggestion 💕
+              </button>
+            </div>
+          </>
+        ) : (
+          <div className="text-center py-2">
+            <p className="text-3xl mb-2">💕</p>
+            <p className="font-bold text-foreground text-sm">Thank you for your feedback!</p>
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+              Your suggestion helps us build a better Academy for twin families.
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+type PollOption = { key: string; label: string };
+type PollBreakdown = { optionKey: string; count: number; percentage: number };
+type PollResult = { totalResponses: number; breakdown: PollBreakdown[] };
+type PollItem = {
+  id: number;
+  question: string;
+  category: string;
+  options: PollOption[];
+  isActive: boolean;
+  hasResponded: boolean;
+  userOptionKey: string | null;
+  results: PollResult | null;
+  createdAt: string;
+};
+
+function PollCard({
+  poll,
+  userId,
+  onVoted,
+}: {
+  poll: PollItem;
+  userId: string;
+  onVoted: (updated: PollItem) => void;
+}) {
+  const respondMutation = useRespondToPoll();
+  const [localPoll, setLocalPoll] = useState(poll);
+
+  function vote(optionKey: string) {
+    if (localPoll.hasResponded || !userId) return;
+    respondMutation.mutate(
+      { id: localPoll.id, data: { userId, optionKey } },
+      {
+        onSuccess: (data) => {
+          const updated = data as unknown as PollItem;
+          setLocalPoll(updated);
+          onVoted(updated);
+        },
+      },
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl border border-border overflow-hidden">
+      <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+        <span className="text-[10px] font-bold text-primary uppercase tracking-wide">{localPoll.category}</span>
+        {localPoll.isActive && (
+          <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Live</span>
+        )}
+      </div>
+      <div className="p-4 space-y-3">
+        <p className="font-semibold text-sm text-foreground leading-snug">{localPoll.question}</p>
+        {!localPoll.hasResponded ? (
+          <div className="space-y-2">
+            {localPoll.options.map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() => vote(opt.key)}
+                disabled={respondMutation.isPending}
+                className="w-full text-left px-4 py-2.5 rounded-xl border-2 border-border bg-muted/30 text-sm font-medium hover:border-primary/40 hover:bg-primary/5 active:bg-primary/10 transition-all disabled:opacity-60"
+                data-testid={`poll-option-${opt.key}`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {localPoll.options.map((opt) => {
+              const bd = localPoll.results?.breakdown.find((b) => b.optionKey === opt.key);
+              const pct = bd?.percentage ?? 0;
+              const isChosen = localPoll.userOptionKey === opt.key;
+              return (
+                <div key={opt.key} className="space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className={`font-medium ${isChosen ? "text-primary" : "text-foreground"}`}>
+                      {isChosen && <Check size={11} className="inline mr-1" />}
+                      {opt.label}
+                    </span>
+                    <span className="font-bold text-muted-foreground">{pct}%</span>
+                  </div>
+                  <div className="h-2 bg-muted rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${isChosen ? "bg-primary" : "bg-muted-foreground/40"}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+            <p className="text-[11px] text-muted-foreground text-right pt-1">
+              {localPoll.results?.totalResponses ?? 0} twin moms voted
+            </p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function CommunityPollsSection({ userId }: { userId: string }) {
+  const qc = useQueryClient();
+  const { data: activePoll, isLoading: activePollLoading } = useGetActivePoll(
+    { userId },
+    { query: { enabled: !!userId, queryKey: getGetActivePollQueryKey({ userId }) } },
+  );
+  const { data: pollHistory = [], isLoading: historyLoading } = useGetPollHistory(
+    { userId },
+    { query: { enabled: !!userId, queryKey: getGetPollHistoryQueryKey({ userId }) } },
+  );
+
+  const pastPolls = (pollHistory as unknown as PollItem[]).filter((p) => !p.isActive);
+
+  function handleVoted(updated: PollItem) {
+    qc.invalidateQueries({ queryKey: getGetActivePollQueryKey({ userId }) });
+    qc.invalidateQueries({ queryKey: getGetPollHistoryQueryKey({ userId }) });
+  }
+
+  return (
+    <div className="px-4 pt-4 space-y-4 pb-4">
+      {/* Active Poll */}
+      <div>
+        <div className="flex items-center gap-2 mb-3">
+          <BarChart3 size={15} className="text-primary" />
+          <p className="font-bold text-sm text-foreground">Twin Mom Poll</p>
+        </div>
+        {activePollLoading ? (
+          <Skeleton className="h-40 w-full rounded-2xl" />
+        ) : activePoll ? (
+          <PollCard poll={activePoll as unknown as PollItem} userId={userId} onVoted={handleVoted} />
+        ) : (
+          <div className="bg-muted/30 rounded-2xl border border-border p-6 text-center">
+            <p className="text-2xl mb-2">🗳️</p>
+            <p className="font-semibold text-sm text-foreground">No active poll right now</p>
+            <p className="text-xs text-muted-foreground mt-1">Check back soon for the next community poll!</p>
+          </div>
+        )}
+      </div>
+
+      {/* Poll History */}
+      {!historyLoading && pastPolls.length > 0 && (
+        <div>
+          <p className="font-bold text-sm text-foreground mb-3">Past Polls</p>
+          <div className="space-y-3">
+            {pastPolls.map((poll) => (
+              <PollCard key={poll.id} poll={poll} userId={userId} onVoted={handleVoted} />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function Learn() {
   const { user } = useUser();
   const qc = useQueryClient();
   const [activeCategory, setActiveCategory] = useState("");
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
-  const [activeTab, setActiveTab] = useState<"library" | "saved" | "magazines" | "community">("library");
+  const [activeTab, setActiveTab] = useState<"library" | "saved" | "magazines" | "academy" | "community">("library");
 
   const { data: videos = [], isLoading } = useListVideos(
     { category: activeCategory || undefined, search: search || undefined },
@@ -391,7 +685,7 @@ export default function Learn() {
           <h1 className="text-xl font-bold text-foreground">Learn</h1>
           <p className="text-sm text-muted-foreground">Your twin parenting library</p>
         </div>
-        {activeTab !== "magazines" && activeTab !== "community" && (
+        {activeTab !== "magazines" && activeTab !== "community" && activeTab !== "academy" && (
           <button
             onClick={() => { setShowSearch((v) => !v); if (showSearch) setSearch(""); }}
             className={`p-2.5 rounded-xl transition-all ${showSearch ? "bg-primary text-white" : "bg-muted text-muted-foreground"}`}
@@ -403,7 +697,7 @@ export default function Learn() {
       </div>
 
       {/* Search */}
-      {showSearch && activeTab !== "magazines" && activeTab !== "community" && (
+      {showSearch && activeTab !== "magazines" && activeTab !== "community" && activeTab !== "academy" && (
         <div className="px-4 pb-3">
           <div className="flex items-center gap-2 bg-white border border-border rounded-xl px-3 py-2.5 shadow-sm">
             <Search size={15} className="text-muted-foreground flex-shrink-0" />
@@ -430,6 +724,7 @@ export default function Learn() {
           { key: "library", label: "Videos" },
           { key: "saved", label: `Saved${bookmarked.length > 0 ? ` (${bookmarked.length})` : ""}` },
           { key: "magazines", label: "📚 Magazine" },
+          { key: "academy", label: "🎓 Academy" },
           { key: "community", label: "Community" },
         ].map(({ key, label }) => (
           <button
@@ -448,9 +743,18 @@ export default function Learn() {
       {/* Magazine Tab */}
       {activeTab === "magazines" && <MagazineLibrary />}
 
+      {/* Academy Tab */}
+      {activeTab === "academy" && <AcademySection userId={user?.id ?? ""} />}
+
       {/* Community Tab */}
       {activeTab === "community" && (
         <div className="px-4 pt-4 space-y-4 pb-4">
+          {/* Polls section */}
+          <CommunityPollsSection userId={user?.id ?? ""} />
+
+          {/* Divider */}
+          <div className="border-t border-border pt-4" />
+
           <div className="bg-gradient-to-br from-primary/10 to-secondary/10 rounded-2xl border border-primary/20 p-5">
             <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1.5">💡 Tip of the Day</p>
             <p className="text-sm text-foreground leading-relaxed">{getDayTip()}</p>
@@ -499,7 +803,7 @@ export default function Learn() {
       )}
 
       {/* Library / Saved */}
-      {activeTab !== "community" && activeTab !== "magazines" && (
+      {activeTab !== "community" && activeTab !== "magazines" && activeTab !== "academy" && (
         <div className="pb-6">
           {/* Category pills */}
           {activeTab === "library" && (

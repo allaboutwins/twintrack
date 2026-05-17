@@ -57,6 +57,8 @@ router.post("/onboarding/:userId", async (req, res): Promise<void> => {
     discoverySource: record.discoverySource,
     instagramHandle: record.instagramHandle,
     isAmbassador: record.isAmbassador,
+    email: record.email,
+    newsletterConsent: record.newsletterConsent,
     completedAt: record.completedAt?.toISOString() ?? null,
     createdAt: record.createdAt.toISOString(),
   }).catch((err: unknown) => req.log.warn({ err }, "sheets: fire-and-forget failed"));

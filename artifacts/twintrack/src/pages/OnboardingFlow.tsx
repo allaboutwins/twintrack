@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useSaveOnboarding, getGetOnboardingQueryKey } from "@workspace/api-client-react";
 import { Check } from "lucide-react";
 
-type Step = "welcome" | "family" | "age" | "prematurity" | "journey" | "discovery" | "ambassador" | "done";
+type Step = "welcome" | "family" | "age" | "prematurity" | "journey" | "discovery" | "ambassador" | "newsletter" | "done";
 
 interface FormState {
   parentStatus: string;
@@ -18,6 +18,8 @@ interface FormState {
   discoverySource: string;
   instagramHandle: string;
   isAmbassador: boolean | null;
+  email: string;
+  newsletterConsent: boolean;
 }
 
 const CHALLENGES = [
@@ -60,15 +62,18 @@ function getSteps(parentStatus: string): Step[] {
   steps.push("journey");
   steps.push("discovery");
   steps.push("ambassador");
+  steps.push("newsletter");
   steps.push("done");
   return steps;
 }
 
 export default function OnboardingFlow({
   userId,
+  userEmail = "",
   onComplete,
 }: {
   userId: string;
+  userEmail?: string;
   onComplete: () => void;
 }) {
   const [form, setForm] = useState<FormState>({
@@ -84,6 +89,8 @@ export default function OnboardingFlow({
     discoverySource: "",
     instagramHandle: "",
     isAmbassador: null,
+    email: userEmail,
+    newsletterConsent: false,
   });
   const [stepIndex, setStepIndex] = useState(0);
   const qc = useQueryClient();
@@ -119,6 +126,8 @@ export default function OnboardingFlow({
           discoverySource: form.discoverySource || null,
           instagramHandle: form.instagramHandle || null,
           isAmbassador: form.isAmbassador,
+          email: form.email || null,
+          newsletterConsent: form.newsletterConsent || null,
         },
       },
       {
@@ -131,7 +140,7 @@ export default function OnboardingFlow({
     );
   }
 
-  const isLastContentStep = currentStep === "ambassador";
+  const isLastContentStep = currentStep === "newsletter";
 
   return (
     <div className="fixed inset-0 z-[100] bg-background flex flex-col max-w-[430px] mx-auto overflow-hidden">
@@ -501,6 +510,58 @@ export default function OnboardingFlow({
                 Maybe later
               </button>
             </div>
+          </div>
+        )}
+
+        {/* ── NEWSLETTER ── */}
+        {currentStep === "newsletter" && (
+          <div className="p-6 space-y-6">
+            <div>
+              <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1">
+                Step {contentSteps.indexOf("newsletter") + 1} of {contentSteps.length}
+              </p>
+              <h2 className="text-xl font-bold text-foreground">Stay in the loop 💌</h2>
+            </div>
+            <div className="bg-gradient-to-br from-primary/8 to-accent/8 border border-primary/20 rounded-2xl p-5">
+              <p className="text-2xl mb-3">📬</p>
+              <h3 className="font-bold text-foreground text-base mb-2">Twin parenting tips, right to your inbox</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                Weekly tips, milestone reminders, and expert resources for twin parents — only the good stuff. No spam, ever. 💕
+              </p>
+            </div>
+            <div>
+              <p className="font-semibold text-sm mb-2">
+                Your email address <span className="text-muted-foreground font-normal">(optional)</span>
+              </p>
+              <input
+                type="email"
+                placeholder="your@email.com"
+                value={form.email}
+                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                className="w-full px-4 py-3 rounded-xl border-2 border-border bg-white text-sm font-medium focus:border-primary focus:outline-none transition-colors"
+              />
+            </div>
+            <button
+              onClick={() => setForm((f) => ({ ...f, newsletterConsent: !f.newsletterConsent }))}
+              className={`flex items-center gap-3 w-full p-4 rounded-2xl border-2 text-left transition-all ${
+                form.newsletterConsent
+                  ? "border-primary bg-primary/8 text-primary"
+                  : "border-border bg-white text-foreground"
+              }`}
+              data-testid="newsletter-consent-toggle"
+            >
+              <div
+                className={`w-5 h-5 rounded-md border-2 flex-shrink-0 flex items-center justify-center transition-all ${
+                  form.newsletterConsent ? "border-primary bg-primary" : "border-border"
+                }`}
+              >
+                {form.newsletterConsent && <Check size={12} className="text-white" />}
+              </div>
+              <div>
+                <p className="font-semibold text-sm">Yes! Send me twin parenting tips 💕</p>
+                <p className="text-xs text-muted-foreground mt-0.5">You can unsubscribe anytime.</p>
+              </div>
+            </button>
           </div>
         )}
 

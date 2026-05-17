@@ -3,7 +3,7 @@ import { logger } from "./lib/logger";
 
 const connectors = new ReplitConnectors();
 
-const ONBOARDING_RANGE = "Onboarding!A:N";
+const ONBOARDING_RANGE = "Onboarding!A:P";
 const ONBOARDING_HEADERS = [
   "Signup Date",
   "User ID",
@@ -17,6 +17,8 @@ const ONBOARDING_HEADERS = [
   "Discovery Source",
   "Instagram Handle",
   "Ambassador",
+  "Email",
+  "Newsletter Consent",
   "Onboarding Completed",
   "Created At",
 ];
@@ -68,6 +70,8 @@ export type OnboardingRowData = {
   discoverySource?: string | null;
   instagramHandle?: string | null;
   isAmbassador?: boolean | null;
+  email?: string | null;
+  newsletterConsent?: boolean | null;
   completedAt?: string | null;
   createdAt: string;
 };
@@ -102,6 +106,8 @@ export async function appendOnboardingRow(data: OnboardingRowData): Promise<void
       data.discoverySource ?? "",
       data.instagramHandle ?? "",
       data.isAmbassador != null ? (data.isAmbassador ? "Yes 💕" : "No") : "",
+      data.email ?? "",
+      data.newsletterConsent != null ? (data.newsletterConsent ? "Yes 💌" : "No") : "",
       data.completedAt ?? "",
       data.createdAt,
     ];
