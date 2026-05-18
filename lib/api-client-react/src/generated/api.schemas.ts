@@ -126,6 +126,26 @@ export interface FeedingEntry {
   twinId: number;
   /** breastfeeding, bottle, formula, solids */
   feedingType: string;
+  /**
+   * left or right (breastfeeding only)
+   * @nullable
+   */
+  side?: string | null;
+  /**
+   * Feeding duration in minutes
+   * @nullable
+   */
+  durationMinutes?: number | null;
+  /**
+   * Amount in ml (bottle/formula)
+   * @nullable
+   */
+  amountMl?: number | null;
+  /**
+   * Food name (solids only)
+   * @nullable
+   */
+  foodName?: string | null;
   time: string;
   /** @nullable */
   quantity?: string | null;
@@ -137,6 +157,14 @@ export interface FeedingEntry {
 export interface CreateFeedingEntryBody {
   twinId: number;
   feedingType: string;
+  /** @nullable */
+  side?: string | null;
+  /** @nullable */
+  durationMinutes?: number | null;
+  /** @nullable */
+  amountMl?: number | null;
+  /** @nullable */
+  foodName?: string | null;
   time: string;
   /** @nullable */
   quantity?: string | null;
@@ -147,6 +175,14 @@ export interface CreateFeedingEntryBody {
 export interface UpdateFeedingEntryBody {
   /** @nullable */
   feedingType?: string | null;
+  /** @nullable */
+  side?: string | null;
+  /** @nullable */
+  durationMinutes?: number | null;
+  /** @nullable */
+  amountMl?: number | null;
+  /** @nullable */
+  foodName?: string | null;
   /** @nullable */
   time?: string | null;
   /** @nullable */
@@ -163,6 +199,41 @@ export interface FeedingSummary {
   bottleCount: number;
   formulaCount: number;
   solidsCount: number;
+  totalAmountMl: number;
+  totalDurationMinutes: number;
+}
+
+export interface FoodIntroduced {
+  id: number;
+  twinId: number;
+  foodName: string;
+  /** fruits, vegetables, proteins, dairy, grains, other */
+  category: string;
+  /** YYYY-MM-DD */
+  firstIntroduced: string;
+  /**
+   * none, mild, moderate, severe
+   * @nullable
+   */
+  reaction?: string | null;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface CreateFoodIntroducedBody {
+  twinId: number;
+  foodName: string;
+  category: string;
+  firstIntroduced: string;
+  /** @nullable */
+  reaction?: string | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface DeleteFoodIntroducedParams {
+  id: number;
 }
 
 export interface DiaperEntry {
@@ -567,11 +638,25 @@ export type ListFeedingEntriesParams = {
    * @nullable
    */
   date?: string | null;
+  /**
+   * IANA timezone name e.g. America/New_York
+   * @nullable
+   */
+  timezone?: string | null;
 };
 
 export type GetFeedingSummaryParams = {
   twinId: number;
   date: string;
+  /**
+   * IANA timezone name e.g. America/New_York
+   * @nullable
+   */
+  timezone?: string | null;
+};
+
+export type ListFoodsIntroducedParams = {
+  twinId: number;
 };
 
 export type ListDiaperEntriesParams = {

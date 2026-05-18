@@ -208,12 +208,23 @@ export const GetSleepSummaryResponse = zod.object({
 export const ListFeedingEntriesQueryParams = zod.object({
   twinId: zod.coerce.number(),
   date: zod.coerce.string().nullish(),
+  timezone: zod.coerce
+    .string()
+    .nullish()
+    .describe("IANA timezone name e.g. America\/New_York"),
 });
 
 export const ListFeedingEntriesResponseItem = zod.object({
   id: zod.number(),
   twinId: zod.number(),
   feedingType: zod.string().describe("breastfeeding, bottle, formula, solids"),
+  side: zod.string().nullish().describe("left or right (breastfeeding only)"),
+  durationMinutes: zod
+    .number()
+    .nullish()
+    .describe("Feeding duration in minutes"),
+  amountMl: zod.number().nullish().describe("Amount in ml (bottle\/formula)"),
+  foodName: zod.string().nullish().describe("Food name (solids only)"),
   time: zod.string(),
   quantity: zod.string().nullish(),
   notes: zod.string().nullish(),
@@ -229,6 +240,10 @@ export const ListFeedingEntriesResponse = zod.array(
 export const CreateFeedingEntryBody = zod.object({
   twinId: zod.number(),
   feedingType: zod.string(),
+  side: zod.string().nullish(),
+  durationMinutes: zod.number().nullish(),
+  amountMl: zod.number().nullish(),
+  foodName: zod.string().nullish(),
   time: zod.string(),
   quantity: zod.string().nullish(),
   notes: zod.string().nullish(),
@@ -243,6 +258,10 @@ export const UpdateFeedingEntryParams = zod.object({
 
 export const UpdateFeedingEntryBody = zod.object({
   feedingType: zod.string().nullish(),
+  side: zod.string().nullish(),
+  durationMinutes: zod.number().nullish(),
+  amountMl: zod.number().nullish(),
+  foodName: zod.string().nullish(),
   time: zod.string().nullish(),
   quantity: zod.string().nullish(),
   notes: zod.string().nullish(),
@@ -252,6 +271,13 @@ export const UpdateFeedingEntryResponse = zod.object({
   id: zod.number(),
   twinId: zod.number(),
   feedingType: zod.string().describe("breastfeeding, bottle, formula, solids"),
+  side: zod.string().nullish().describe("left or right (breastfeeding only)"),
+  durationMinutes: zod
+    .number()
+    .nullish()
+    .describe("Feeding duration in minutes"),
+  amountMl: zod.number().nullish().describe("Amount in ml (bottle\/formula)"),
+  foodName: zod.string().nullish().describe("Food name (solids only)"),
   time: zod.string(),
   quantity: zod.string().nullish(),
   notes: zod.string().nullish(),
@@ -271,6 +297,10 @@ export const DeleteFeedingEntryParams = zod.object({
 export const GetFeedingSummaryQueryParams = zod.object({
   twinId: zod.coerce.number(),
   date: zod.coerce.string(),
+  timezone: zod.coerce
+    .string()
+    .nullish()
+    .describe("IANA timezone name e.g. America\/New_York"),
 });
 
 export const GetFeedingSummaryResponse = zod.object({
@@ -281,6 +311,50 @@ export const GetFeedingSummaryResponse = zod.object({
   bottleCount: zod.number(),
   formulaCount: zod.number(),
   solidsCount: zod.number(),
+  totalAmountMl: zod.number(),
+  totalDurationMinutes: zod.number(),
+});
+
+/**
+ * @summary List foods introduced for a twin
+ */
+export const ListFoodsIntroducedQueryParams = zod.object({
+  twinId: zod.coerce.number(),
+});
+
+export const ListFoodsIntroducedResponseItem = zod.object({
+  id: zod.number(),
+  twinId: zod.number(),
+  foodName: zod.string(),
+  category: zod
+    .string()
+    .describe("fruits, vegetables, proteins, dairy, grains, other"),
+  firstIntroduced: zod.string().describe("YYYY-MM-DD"),
+  reaction: zod.string().nullish().describe("none, mild, moderate, severe"),
+  notes: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+export const ListFoodsIntroducedResponse = zod.array(
+  ListFoodsIntroducedResponseItem,
+);
+
+/**
+ * @summary Log a new food introduction
+ */
+export const CreateFoodIntroducedBody = zod.object({
+  twinId: zod.number(),
+  foodName: zod.string(),
+  category: zod.string(),
+  firstIntroduced: zod.string(),
+  reaction: zod.string().nullish(),
+  notes: zod.string().nullish(),
+});
+
+/**
+ * @summary Delete a food introduction record
+ */
+export const DeleteFoodIntroducedParams = zod.object({
+  id: zod.coerce.number(),
 });
 
 /**
@@ -728,6 +802,19 @@ export const GetDashboardSummaryResponse = zod.object({
           feedingType: zod
             .string()
             .describe("breastfeeding, bottle, formula, solids"),
+          side: zod
+            .string()
+            .nullish()
+            .describe("left or right (breastfeeding only)"),
+          durationMinutes: zod
+            .number()
+            .nullish()
+            .describe("Feeding duration in minutes"),
+          amountMl: zod
+            .number()
+            .nullish()
+            .describe("Amount in ml (bottle\/formula)"),
+          foodName: zod.string().nullish().describe("Food name (solids only)"),
           time: zod.string(),
           quantity: zod.string().nullish(),
           notes: zod.string().nullish(),

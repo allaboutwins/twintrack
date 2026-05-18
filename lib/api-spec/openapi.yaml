@@ -277,6 +277,12 @@ paths:
           required: false
           schema:
             type: ["string", "null"]
+        - in: query
+          name: timezone
+          required: false
+          schema:
+            type: ["string", "null"]
+          description: "IANA timezone name e.g. America/New_York"
       responses:
         "200":
           description: List of feeding entries
@@ -360,6 +366,12 @@ paths:
           required: true
           schema:
             type: string
+        - in: query
+          name: timezone
+          required: false
+          schema:
+            type: ["string", "null"]
+          description: "IANA timezone name e.g. America/New_York"
       responses:
         "200":
           description: Feeding summary
@@ -367,6 +379,60 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/FeedingSummary"
+
+  # --- FOODS INTRODUCED ---
+  /foods-introduced:
+    get:
+      operationId: listFoodsIntroduced
+      tags: [feeding]
+      summary: List foods introduced for a twin
+      parameters:
+        - in: query
+          name: twinId
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of foods introduced
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FoodIntroduced"
+    post:
+      operationId: createFoodIntroduced
+      tags: [feeding]
+      summary: Log a new food introduction
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFoodIntroducedBody"
+      responses:
+        "201":
+          description: Created food introduction
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodIntroduced"
+
+  /foods-introduced/{id}:
+    delete:
+      operationId: deleteFoodIntroduced
+      tags: [feeding]
+      summary: Delete a food introduction record
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
 
   # --- DIAPER TRACKING ---
   /diapers:
@@ -1255,6 +1321,18 @@ components:
         feedingType:
           type: string
           description: "breastfeeding, bottle, formula, solids"
+        side:
+          type: ["string", "null"]
+          description: "left or right (breastfeeding only)"
+        durationMinutes:
+          type: ["integer", "null"]
+          description: "Feeding duration in minutes"
+        amountMl:
+          type: ["number", "null"]
+          description: "Amount in ml (bottle/formula)"
+        foodName:
+          type: ["string", "null"]
+          description: "Food name (solids only)"
         time:
           type: string
         quantity:
@@ -1277,6 +1355,14 @@ components:
           type: integer
         feedingType:
           type: string
+        side:
+          type: ["string", "null"]
+        durationMinutes:
+          type: ["integer", "null"]
+        amountMl:
+          type: ["number", "null"]
+        foodName:
+          type: ["string", "null"]
         time:
           type: string
         quantity:
@@ -1292,6 +1378,14 @@ components:
       type: object
       properties:
         feedingType:
+          type: ["string", "null"]
+        side:
+          type: ["string", "null"]
+        durationMinutes:
+          type: ["integer", "null"]
+        amountMl:
+          type: ["number", "null"]
+        foodName:
           type: ["string", "null"]
         time:
           type: ["string", "null"]
@@ -1317,6 +1411,10 @@ components:
           type: integer
         solidsCount:
           type: integer
+        totalAmountMl:
+          type: number
+        totalDurationMinutes:
+          type: integer
       required:
         - twinId
         - date
@@ -1325,6 +1423,67 @@ components:
         - bottleCount
         - formulaCount
         - solidsCount
+        - totalAmountMl
+        - totalDurationMinutes
+
+    FoodIntroduced:
+      type: object
+      properties:
+        id:
+          type: integer
+        twinId:
+          type: integer
+        foodName:
+          type: string
+        category:
+          type: string
+          description: "fruits, vegetables, proteins, dairy, grains, other"
+        firstIntroduced:
+          type: string
+          description: "YYYY-MM-DD"
+        reaction:
+          type: ["string", "null"]
+          description: "none, mild, moderate, severe"
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - twinId
+        - foodName
+        - category
+        - firstIntroduced
+        - createdAt
+
+    CreateFoodIntroducedBody:
+      type: object
+      properties:
+        twinId:
+          type: integer
+        foodName:
+          type: string
+        category:
+          type: string
+        firstIntroduced:
+          type: string
+        reaction:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+      required:
+        - twinId
+        - foodName
+        - category
+        - firstIntroduced
+
+    DeleteFoodIntroducedParams:
+      type: object
+      properties:
+        id:
+          type: integer
+      required:
+        - id
 
     DiaperEntry:
       type: object

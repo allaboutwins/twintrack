@@ -23,6 +23,7 @@ import type {
   BookmarkVideoBody,
   CreateDiaperEntryBody,
   CreateFeedingEntryBody,
+  CreateFoodIntroducedBody,
   CreateMilestoneBody,
   CreateRoutineBody,
   CreateSleepEntryBody,
@@ -34,6 +35,7 @@ import type {
   Feedback,
   FeedingEntry,
   FeedingSummary,
+  FoodIntroduced,
   GetActivePollParams,
   GetDashboardSummaryParams,
   GetFeedingSummaryParams,
@@ -43,6 +45,7 @@ import type {
   ListBookmarkedVideosParams,
   ListDiaperEntriesParams,
   ListFeedingEntriesParams,
+  ListFoodsIntroducedParams,
   ListMilestonesParams,
   ListRoutinesParams,
   ListSleepEntriesParams,
@@ -1484,6 +1487,277 @@ export function useGetFeedingSummary<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary List foods introduced for a twin
+ */
+export const getListFoodsIntroducedUrl = (
+  params: ListFoodsIntroducedParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/foods-introduced?${stringifiedParams}`
+    : `/api/foods-introduced`;
+};
+
+export const listFoodsIntroduced = async (
+  params: ListFoodsIntroducedParams,
+  options?: RequestInit,
+): Promise<FoodIntroduced[]> => {
+  return customFetch<FoodIntroduced[]>(getListFoodsIntroducedUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListFoodsIntroducedQueryKey = (
+  params?: ListFoodsIntroducedParams,
+) => {
+  return [`/api/foods-introduced`, ...(params ? [params] : [])] as const;
+};
+
+export const getListFoodsIntroducedQueryOptions = <
+  TData = Awaited<ReturnType<typeof listFoodsIntroduced>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListFoodsIntroducedParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listFoodsIntroduced>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListFoodsIntroducedQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listFoodsIntroduced>>
+  > = ({ signal }) =>
+    listFoodsIntroduced(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listFoodsIntroduced>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListFoodsIntroducedQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listFoodsIntroduced>>
+>;
+export type ListFoodsIntroducedQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List foods introduced for a twin
+ */
+
+export function useListFoodsIntroduced<
+  TData = Awaited<ReturnType<typeof listFoodsIntroduced>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListFoodsIntroducedParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listFoodsIntroduced>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListFoodsIntroducedQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Log a new food introduction
+ */
+export const getCreateFoodIntroducedUrl = () => {
+  return `/api/foods-introduced`;
+};
+
+export const createFoodIntroduced = async (
+  createFoodIntroducedBody: CreateFoodIntroducedBody,
+  options?: RequestInit,
+): Promise<FoodIntroduced> => {
+  return customFetch<FoodIntroduced>(getCreateFoodIntroducedUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createFoodIntroducedBody),
+  });
+};
+
+export const getCreateFoodIntroducedMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createFoodIntroduced>>,
+    TError,
+    { data: BodyType<CreateFoodIntroducedBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createFoodIntroduced>>,
+  TError,
+  { data: BodyType<CreateFoodIntroducedBody> },
+  TContext
+> => {
+  const mutationKey = ["createFoodIntroduced"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createFoodIntroduced>>,
+    { data: BodyType<CreateFoodIntroducedBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createFoodIntroduced(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateFoodIntroducedMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createFoodIntroduced>>
+>;
+export type CreateFoodIntroducedMutationBody =
+  BodyType<CreateFoodIntroducedBody>;
+export type CreateFoodIntroducedMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Log a new food introduction
+ */
+export const useCreateFoodIntroduced = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createFoodIntroduced>>,
+    TError,
+    { data: BodyType<CreateFoodIntroducedBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createFoodIntroduced>>,
+  TError,
+  { data: BodyType<CreateFoodIntroducedBody> },
+  TContext
+> => {
+  return useMutation(getCreateFoodIntroducedMutationOptions(options));
+};
+
+/**
+ * @summary Delete a food introduction record
+ */
+export const getDeleteFoodIntroducedUrl = (id: number) => {
+  return `/api/foods-introduced/${id}`;
+};
+
+export const deleteFoodIntroduced = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteFoodIntroducedUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteFoodIntroducedMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteFoodIntroduced>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteFoodIntroduced>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteFoodIntroduced"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteFoodIntroduced>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteFoodIntroduced(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteFoodIntroducedMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteFoodIntroduced>>
+>;
+
+export type DeleteFoodIntroducedMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a food introduction record
+ */
+export const useDeleteFoodIntroduced = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteFoodIntroduced>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteFoodIntroduced>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteFoodIntroducedMutationOptions(options));
+};
 
 /**
  * @summary List diaper entries for a twin

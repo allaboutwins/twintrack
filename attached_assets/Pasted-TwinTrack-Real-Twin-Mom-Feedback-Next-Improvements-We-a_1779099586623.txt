@@ -1,0 +1,289 @@
+TwinTrack — Real Twin Mom Feedback & Next Improvements 💕🚀
+
+We are now getting extremely valuable real-world feedback from twin moms using TwinTrack.
+
+These insights are GOLD and should help shape the app into something truly unique for multiple families.
+
+Please work on the following improvements carefully:
+
+---
+
+1. SOLIDS TRACKING — ADVANCED FOOD LOGGING 🥣
+
+Right now solids tracking is too basic.
+
+Please improve the solids feature so parents can:
+
+* record the exact food eaten
+* track ingredients/foods introduced
+* save reactions/allergies/symptoms
+* track when a food was first introduced
+* create a “Foods Tried” checklist/history
+
+Examples:
+
+* avocado
+* banana
+* eggs
+* peanut butter
+* yogurt
+
+Please make this:
+
+* easy to use
+* mobile friendly
+* visually clean
+
+Goal:
+Twin parents should be able to track solids confidently and safely.
+
+This feature can become VERY valuable later.
+
+---
+
+2. SUPPORT FOR MULTIPLE SETS OF MULTIPLES 👶👶👶👶
+
+Right now TwinTrack assumes only one set of twins.
+
+Please improve account structure so families can eventually support:
+
+* twins
+* triplets
+* quads
+* multiple sets of multiples
+
+Examples:
+
+* older twins + newborn twins
+* twins + singleton
+* triplets
+
+This is a major opportunity to differentiate TwinTrack from other parenting apps.
+
+Please begin planning/scaffolding the architecture now even if the full UX comes later.
+
+---
+
+3. TWIN/TRIPLET/QUAD PREGNANCY MODE 🤰
+
+This feedback is extremely important.
+
+Most pregnancy apps only support singleton pregnancies.
+
+Please begin planning a future:
+👉 Multiple Pregnancy Mode
+
+Ideas:
+
+* weekly development for twins/triplets/quads
+* side-by-side baby growth visualization
+* pregnancy milestones
+* NICU/preemie preparation
+* adjusted age support
+* twin-specific education
+
+This could become one of TwinTrack’s strongest differentiators long-term.
+
+No need to fully build now — but please architect future support properly.
+
+---
+
+4. BREASTFEEDING TRACKING IMPROVEMENTS 🍼
+
+Please improve breastfeeding logging.
+
+Parents need ability to track:
+
+* left/right side
+* feeding duration
+* start/end time
+* manual edits
+
+Examples:
+
+* Left breast — 12 min
+* Right breast — 8 min
+
+This is very important usability feedback.
+
+---
+
+5. BOTTLE/FORMULA AMOUNT TRACKING 📏
+
+Please add ability to record:
+
+* ml
+* oz
+
+for:
+
+* bottles
+* pumped milk
+* formula feeds
+
+Parents are constantly asked by doctors/health visitors how much babies drank. Need to show a quick weekly/monthly view to show the doctor (later on will probably be a part of the premium feature)
+
+This should feel:
+
+* quick
+* simple
+* mobile-friendly
+
+---
+
+6. TIMEZONE + DATE BUG FIX 🌍
+
+A user reported timezone/date issues.
+
+Example:
+
+* wet diaper entered at 7:42 AWST
+* app failed to save correctly for that date
+
+Please investigate:
+
+* timezone handling
+* local device timezone detection
+* UTC conversion/storage
+* cross-country support
+
+Users should always see/save logs in their LOCAL timezone correctly.
+
+This is extremely important for international users.
+
+---
+
+7. HISTORY / TRENDS VIEW 📊
+
+Twin moms are asking for:
+
+* past day view
+* weekly trends
+* sleep/feed history
+* patterns over time
+
+Please add lightweight trend/history support.
+
+Examples:
+
+* daily summaries
+* weekly summaries
+* sleep averages
+* feeding trends
+* diaper counts
+
+Goal:
+Parents should feel:
+“TwinTrack helps me understand my babies.”
+
+---
+
+8. YOUTUBE VIDEO TITLES — FIX TO MATCH REAL VIDEOS 🎥
+
+Many current video titles do NOT match the actual video content.
+
+Please stop manually rewriting titles.
+
+Instead:
+
+* pull the ORIGINAL YouTube Shorts/video titles directly from the YouTube channel metadata
+* preserve original titles exactly as shown on YouTube
+
+Goal:
+
+* consistency
+* trust
+* less confusion
+* easier content management
+
+Please also ensure:
+
+* new YouTube shorts are uploading daily
+* Shorts videos playback open in the app  
+* categories/tags still function correctly
+
+9. ADMIN DASHBOARD — MISSING FEATURES / VISIBILITY ISSUES 📊
+
+Thank you — many improvements are now live and working well.
+
+However, there are still several important admin/dashboard items that I still cannot properly see or access.
+
+Please investigate and fix the following:
+
+---
+
+A) EMAIL LIST NOT VISIBLE
+
+Although you mentioned:
+
+* “Email list”
+* captured emails
+* newsletter consent
+* Export CSV
+
+…I still cannot actually SEE the email list inside the Admin Dashboard.
+
+Please verify:
+
+* the Email List section is rendering correctly
+* admin users can access/view it
+* captured emails display properly
+* newsletter consent status appears correctly
+* Export CSV button is visible and working
+
+I should be able to clearly see:
+
+* all user emails
+* signup dates
+* newsletter consent
+* onboarding status
+
+---
+
+B) NEWSLETTER STATS NOT VISIBLE
+
+You mentioned:
+
+* “Emails captured”
+* “Newsletter subscribers”
+
+as stat cards.
+
+I currently cannot see these stats anywhere.
+
+Please verify:
+
+* the stat cards are rendering correctly
+* they appear in the Users/Admin dashboard section
+* production deployment includes them
+* responsive/mobile layout is not hiding them
+
+---
+
+C) GOOGLE SHEETS BACKFILL STILL NOT VISIBLE
+
+You mentioned:
+
+* “Backfill fix”
+* email + newsletter consent fields now included
+
+However:
+I still cannot verify this in the actual Google Sheet.
+
+Please verify:
+
+* emails sync correctly into the sheet
+* newsletter consent syncs correctly
+* existing users are properly backfilled
+* production sync is working
+* the correct Google Sheet/tab is being used
+
+I should be able to clearly see:
+
+* user email
+* newsletter consent
+* onboarding info
+
+inside the TwinTrack Google Sheet.
+
+Please test this end-to-end directly in production.
