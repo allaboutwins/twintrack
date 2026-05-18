@@ -1082,3 +1082,18 @@ export const BackfillSheetsOnboardingResponse = zod.object({
   failed: zod.number(),
   skipped: zod.number(),
 });
+
+/**
+ * @summary Send a message to Twin AI (streaming SSE)
+ */
+
+export const TwinAiChatBody = zod.object({
+  messages: zod
+    .array(
+      zod.object({
+        role: zod.string().describe("user or assistant"),
+        content: zod.string(),
+      }),
+    )
+    .min(1),
+});

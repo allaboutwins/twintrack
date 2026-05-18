@@ -607,6 +607,17 @@ export interface UploadUrlResponse {
   objectPath: string;
 }
 
+export interface TwinAiMessage {
+  /** user or assistant */
+  role: string;
+  content: string;
+}
+
+export interface TwinAiChatRequest {
+  /** @minItems 1 */
+  messages: TwinAiMessage[];
+}
+
 export interface ErrorEnvelope {
   error: string;
 }

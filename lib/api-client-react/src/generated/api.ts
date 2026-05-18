@@ -63,6 +63,7 @@ import type {
   SleepSummary,
   SubmitFeedbackBody,
   Twin,
+  TwinAiChatRequest,
   UpdateDiaperEntryBody,
   UpdateFeedingEntryBody,
   UpdateRoutineBody,
@@ -4545,4 +4546,90 @@ export const useBackfillSheetsOnboarding = <
   TContext
 > => {
   return useMutation(getBackfillSheetsOnboardingMutationOptions(options));
+};
+
+/**
+ * @summary Send a message to Twin AI (streaming SSE)
+ */
+export const getTwinAiChatUrl = () => {
+  return `/api/twin-ai/chat`;
+};
+
+export const twinAiChat = async (
+  twinAiChatRequest: TwinAiChatRequest,
+  options?: RequestInit,
+): Promise<string> => {
+  return customFetch<string>(getTwinAiChatUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(twinAiChatRequest),
+  });
+};
+
+export const getTwinAiChatMutationOptions = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof twinAiChat>>,
+    TError,
+    { data: BodyType<TwinAiChatRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof twinAiChat>>,
+  TError,
+  { data: BodyType<TwinAiChatRequest> },
+  TContext
+> => {
+  const mutationKey = ["twinAiChat"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof twinAiChat>>,
+    { data: BodyType<TwinAiChatRequest> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return twinAiChat(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type TwinAiChatMutationResult = NonNullable<
+  Awaited<ReturnType<typeof twinAiChat>>
+>;
+export type TwinAiChatMutationBody = BodyType<TwinAiChatRequest>;
+export type TwinAiChatMutationError = ErrorType<ErrorEnvelope>;
+
+/**
+ * @summary Send a message to Twin AI (streaming SSE)
+ */
+export const useTwinAiChat = <
+  TError = ErrorType<ErrorEnvelope>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof twinAiChat>>,
+    TError,
+    { data: BodyType<TwinAiChatRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof twinAiChat>>,
+  TError,
+  { data: BodyType<TwinAiChatRequest> },
+  TContext
+> => {
+  return useMutation(getTwinAiChatMutationOptions(options));
 };

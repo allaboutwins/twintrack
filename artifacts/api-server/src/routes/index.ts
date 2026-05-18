@@ -13,6 +13,7 @@ import feedbackRouter from "./feedback";
 import adminRouter from "./admin";
 import pollsRouter from "./polls";
 import storageRouter from "./storage";
+import twinAiRouter from "./twin-ai";
 
 const router: IRouter = Router();
 
@@ -30,5 +31,6 @@ router.use(feedbackRouter);
 router.use(adminRouter);
 router.use(pollsRouter);
 router.use(storageRouter);
+router.use(twinAiRouter);
 
 export default router;

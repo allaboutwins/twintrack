@@ -8,6 +8,8 @@ servers:
   - url: /api
     description: Base API path
 tags:
+  - name: twin-ai
+    description: Twin AI chat assistant operations
   - name: health
     description: Health operations
   - name: twins
@@ -1129,6 +1131,32 @@ paths:
         "403":
           description: Forbidden — admin only
 
+  # --- TWIN AI ---
+  /twin-ai/chat:
+    post:
+      operationId: twinAiChat
+      tags: [twin-ai]
+      summary: Send a message to Twin AI (streaming SSE)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TwinAiChatRequest"
+      responses:
+        "200":
+          description: Server-sent events stream of AI response chunks
+          content:
+            text/event-stream:
+              schema:
+                type: string
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
 components:
   schemas:
     HealthStatus:
@@ -2110,6 +2138,26 @@ components:
           format: uri
         objectPath:
           type: string
+
+    TwinAiMessage:
+      type: object
+      required: [role, content]
+      properties:
+        role:
+          type: string
+          description: "user or assistant"
+        content:
+          type: string
+
+    TwinAiChatRequest:
+      type: object
+      required: [messages]
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/TwinAiMessage"
+          minItems: 1
 
     ErrorEnvelope:
       type: object

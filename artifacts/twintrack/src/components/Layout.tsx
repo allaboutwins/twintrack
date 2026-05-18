@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Home, Moon, Utensils, BookOpen, GraduationCap, Heart, Settings, MessageCircle, X } from "lucide-react";
+import { Home, Moon, Utensils, BookOpen, GraduationCap, Heart, Settings, MessageCircle, X, Sparkles } from "lucide-react";
 import { useUser } from "@clerk/react";
 import { useSubmitFeedback } from "@workspace/api-client-react";
 
@@ -133,6 +133,7 @@ const tabs = [
   { path: "/feeding", icon: Utensils, label: "Feed" },
   { path: "/routines", icon: BookOpen, label: "Routines" },
   { path: "/milestones", icon: Heart, label: "Memories" },
+  { path: "/twin-ai", icon: Sparkles, label: "Twin AI", highlight: true },
   { path: "/learn", icon: GraduationCap, label: "Learn" },
 ];
 
@@ -148,7 +149,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {/* Bottom Navigation */}
       <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-border safe-area-pb">
         <div className="flex items-center justify-around px-1 py-1.5">
-          {tabs.map(({ path, icon: Icon, label }) => {
+          {tabs.map(({ path, icon: Icon, label, highlight }) => {
             const active = location === path || location.startsWith(path + "/");
             return (
               <Link
@@ -157,15 +158,28 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 className={`flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-xl transition-all flex-1 ${
                   active
                     ? "text-primary"
-                    : "text-muted-foreground hover:text-foreground"
+                    : highlight
+                      ? "text-violet-400 hover:text-violet-500"
+                      : "text-muted-foreground hover:text-foreground"
                 }`}
-                data-testid={`nav-${label.toLowerCase()}`}
+                data-testid={`nav-${label.toLowerCase().replace(/\s+/g, "-")}`}
               >
-                <Icon
-                  size={20}
-                  className={`transition-transform ${active ? "scale-110" : ""}`}
-                  strokeWidth={active ? 2.5 : 1.8}
-                />
+                {highlight && !active ? (
+                  <div className="relative">
+                    <Icon
+                      size={20}
+                      className="transition-transform"
+                      strokeWidth={1.8}
+                    />
+                    <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-violet-400" />
+                  </div>
+                ) : (
+                  <Icon
+                    size={20}
+                    className={`transition-transform ${active ? "scale-110" : ""}`}
+                    strokeWidth={active ? 2.5 : 1.8}
+                  />
+                )}
                 <span className={`text-[9px] font-medium leading-none ${active ? "font-semibold" : ""}`}>
                   {label}
                 </span>

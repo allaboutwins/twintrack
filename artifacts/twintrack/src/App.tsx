@@ -20,6 +20,7 @@ import Routines from "@/pages/Routines";
 import Learn from "@/pages/Learn";
 import Milestones from "@/pages/Milestones";
 import Settings from "@/pages/Settings";
+import TwinAI from "@/pages/TwinAI";
 import VideoAdmin from "@/pages/VideoAdmin";
 import Admin from "@/pages/Admin";
 
@@ -283,6 +284,9 @@ function ClerkProviderWithRoutes() {
             </Route>
             <Route path="/admin">
               <AdminRoute component={Admin} />
+            </Route>
+            <Route path="/twin-ai">
+              <ProtectedRoute component={TwinAI} />
             </Route>
             <Route path="/settings">
               <ProtectedRoute component={Settings} />
