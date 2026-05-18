@@ -1,0 +1,131 @@
+TwinTrack — Fixes & Improvements Needed 💕🚀
+
+Please work on the following important fixes and improvements:
+
+MEMORIES TAB — PHOTO UPLOAD FIXES 📸
+
+Right now in the Memories tab:
+
+I can take a photo directly from the mobile camera
+BUT I cannot upload/select a photo from the mobile gallery
+
+Please add:
+👉 “Choose from Gallery / Photo Library” option
+
+Also:
+
+after taking/uploading a photo, I cannot properly preview/open the image afterward
+when trying to share on social media, the image itself is missing from the shared post
+
+Please fully fix the Memories media system so:
+
+uploaded photos display correctly
+photos can be opened/viewed later
+photos are included properly in social sharing
+shared milestone cards include:
+Made with #TwinTrack 💕
+
+Goal:
+Make Memories feel emotional, beautiful, and truly shareable.
+
+TWINS ACADEMY — WRONG PAGE SHOWING 🎓
+
+The Twins Academy section is currently not displaying correctly.
+
+This is the correct Twins Academy video library link:
+👉 https://allaboutwins.com/courses
+
+Right now TwinTrack is showing a completely different page/content.
+
+Please fix the Academy integration so:
+
+the correct courses page loads
+the experience feels clean and embedded properly
+the CTA/button works correctly
+mobile display works beautifully
+
+Placement should remain:
+
+AFTER Twins Magazines
+BEFORE YouTube Shorts/videos
+LEARN TAB ORDER FIX 📚
+
+Inside the Learn tab:
+Move the YouTube Shorts/videos section AFTER the Twins Academy section.
+
+Correct order should be:
+
+Twins Magazines
+Twins Academy
+Community Polls
+YouTube Shorts/videos
+
+This structure feels much cleaner and more premium.
+
+COMMUNITY POLLS — SHOW REAL COMMUNITY RESULTS 💕
+
+Right now the Community section only shows:
+
+one poll
+only my own vote
+
+Please improve this system.
+
+Need:
+
+multiple active polls
+poll history/archive
+show total votes from ALL twin moms
+show percentages correctly
+show real community participation
+
+IMPORTANT:
+Users should still only see results AFTER answering.
+
+Please also begin adding twice a week:
+
+more engaging twin parenting polls
+seasonal/holiday polls
+emotional/community-driven questions
+
+Goal:
+Twin moms should feel: I’m not alone.
+
+SOCIAL MEDIA LINKS — ADD BEAUTIFUL ICONS ✨
+
+Inside the Learn → Community section:
+the social media links currently look plain.
+
+Please add beautiful branded modern icons/logos for:
+
+Instagram
+YouTube
+Facebook
+TikTok
+Pinterest
+GOOGLE SHEET — ADD USER EMAILS ✉️
+
+The TwinTrack Google Sheet is still not showing user email addresses.
+
+Please make sure:
+
+ALL signup emails are saved
+ALL onboarding emails sync correctly
+emails appear inside the Google Sheet automatically
+existing users are backfilled into the sheet as well
+
+This is extremely important for:
+
+newsletters
+updates
+community growth
+future premium launches
+
+Please verify:
+
+email field mapping
+Clerk email syncing
+Google Sheets column mapping
+production sync/backfill
+
+I should be able to see all user emails inside the TwinTrack Google Sheet.

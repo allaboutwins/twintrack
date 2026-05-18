@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useUser } from "@clerk/react";
 import { useLocation } from "wouter";
-import { RefreshCw, Users, MessageCircle, BarChart2, Activity, Copy, Check, Star, CheckCircle2, Filter, Sheet, Plus, Trash2 } from "lucide-react";
+import { RefreshCw, Users, MessageCircle, BarChart2, Activity, Copy, Check, Star, CheckCircle2, Filter, Sheet, Plus, Trash2, Mail, Lock, Download, BarChart } from "lucide-react";
 
 interface Breakdown { key: string; value: number; }
 interface FeedbackEntry {
@@ -14,8 +14,30 @@ interface FeedbackEntry {
   isResolved: boolean;
   createdAt: string;
 }
+interface EmailEntry {
+  userId: string;
+  email: string;
+  newsletterConsent: boolean;
+  createdAt: string;
+}
+interface PollStat {
+  id: number;
+  question: string;
+  category: string;
+  options: string;
+  isActive: boolean;
+  createdAt: string;
+  totalResponses: number;
+}
 interface AdminStats {
-  users: { uniqueUsersWithTwins: number; onboardingTotal: number; onboardingCompleted: number; ambassadors: number; };
+  users: {
+    uniqueUsersWithTwins: number;
+    onboardingTotal: number;
+    onboardingCompleted: number;
+    ambassadors: number;
+    emailsCaptured: number;
+    newsletterSubscribers: number;
+  };
   onboarding: {
     parentStatus: Breakdown[]; multipleType: Breakdown[]; babyAgeGroup: Breakdown[];
     isPremature: Breakdown[]; biggestChallenge: Breakdown[]; featureInterest: Breakdown[];
@@ -23,10 +45,11 @@ interface AdminStats {
   };
   feedback: FeedbackEntry[];
   activity: { sleepEntries: number; feedingEntries: number; diaperEntries: number; milestones: number; bookmarks: number; videoNotes: number; };
+  emails: EmailEntry[];
+  polls: PollStat[];
 }
 
 interface BackfillResult { success: number; failed: number; skipped: number; }
-
 interface PollOption { key: string; label: string; }
 
 const LABELS: Record<string, Record<string, string>> = {
@@ -98,12 +121,37 @@ function CopyBtn({ text }: { text: string }) {
   );
 }
 
+function exportEmailsCSV(emails: EmailEntry[]) {
+  const header = "Email,Newsletter Consent,Joined";
+  const rows = emails.map((e) => `${e.email},${e.newsletterConsent ? "Yes" : "No"},${new Date(e.createdAt).toLocaleDateString()}`);
+  const csv = [header, ...rows].join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `twintrack-emails-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 export default function Admin() {
   const { user } = useUser();
   const [, setLocation] = useLocation();
   const userId = user?.id ?? "";
   const adminIds = (import.meta.env.VITE_ADMIN_USER_IDS ?? "").split(",").map((s: string) => s.trim()).filter(Boolean);
-  const isAdmin = !!userId && adminIds.includes(userId);
+  const isAdminById = !!userId && adminIds.includes(userId);
+
+  const [adminPassword, setAdminPassword] = useState<string>(() => sessionStorage.getItem("tt_admin_pw") ?? "");
+  const [passwordInput, setPasswordInput] = useState("");
+  const [passwordError, setPasswordError] = useState(false);
+
+  const envPassword = import.meta.env.VITE_ADMIN_PASSWORD ?? "";
+  const isAdminByPassword = !!adminPassword && !!envPassword && adminPassword === envPassword;
+  const isAdmin = isAdminById || isAdminByPassword;
+
+  const authQuery = isAdminById
+    ? `userId=${encodeURIComponent(userId)}`
+    : `adminPassword=${encodeURIComponent(adminPassword)}`;
 
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(false);
@@ -112,20 +160,17 @@ export default function Admin() {
   const [fbFilter, setFbFilter] = useState<string>("all");
   const [showStarredOnly, setShowStarredOnly] = useState(false);
   const [showUnresolvedOnly, setShowUnresolvedOnly] = useState(false);
+  const [showAllEmails, setShowAllEmails] = useState(false);
 
-  // Sheets backfill state
   const [isBackfilling, setIsBackfilling] = useState(false);
   const [backfillResult, setBackfillResult] = useState<BackfillResult | null>(null);
   const [backfillError, setBackfillError] = useState<string | null>(null);
 
-  // Poll creation state
   const [showPollForm, setShowPollForm] = useState(false);
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollCategory, setPollCategory] = useState("community");
   const [pollOptions, setPollOptions] = useState<PollOption[]>([
-    { key: "a", label: "" },
-    { key: "b", label: "" },
-    { key: "c", label: "" },
+    { key: "a", label: "" }, { key: "b", label: "" }, { key: "c", label: "" },
   ]);
   const [isCreatingPoll, setIsCreatingPoll] = useState(false);
   const [pollSuccess, setPollSuccess] = useState(false);
@@ -133,10 +178,10 @@ export default function Admin() {
   const baseUrl = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
 
   const fetchStats = useCallback(async () => {
-    if (!isAdmin || !userId) return;
+    if (!isAdmin) return;
     setLoading(true);
     try {
-      const r = await fetch(`${baseUrl}/api/admin/stats?userId=${encodeURIComponent(userId)}`);
+      const r = await fetch(`${baseUrl}/api/admin/stats?${authQuery}`);
       if (!r.ok) throw new Error(`${r.status}`);
       const data: AdminStats = await r.json();
       setStats(data);
@@ -144,19 +189,29 @@ export default function Admin() {
       setLastUpdated(new Date());
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
-  }, [isAdmin, userId, baseUrl]);
+  }, [isAdmin, authQuery, baseUrl]);
 
   useEffect(() => { if (isAdmin) fetchStats(); }, [fetchStats]);
+
+  function handlePasswordSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (passwordInput.trim() === envPassword) {
+      setAdminPassword(passwordInput.trim());
+      sessionStorage.setItem("tt_admin_pw", passwordInput.trim());
+    } else {
+      setPasswordError(true);
+      setTimeout(() => setPasswordError(false), 2500);
+    }
+  }
 
   async function backfillSheets() {
     setIsBackfilling(true);
     setBackfillResult(null);
     setBackfillError(null);
     try {
-      const r = await fetch(`${baseUrl}/api/admin/backfill-sheets?userId=${encodeURIComponent(userId)}`, { method: "POST" });
+      const r = await fetch(`${baseUrl}/api/admin/backfill-sheets?${authQuery}`, { method: "POST" });
       if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      const result: BackfillResult = await r.json();
-      setBackfillResult(result);
+      setBackfillResult(await r.json());
     } catch (e) {
       setBackfillError(String(e));
     } finally {
@@ -169,7 +224,7 @@ export default function Admin() {
     if (!pollQuestion.trim() || validOptions.length < 2) return;
     setIsCreatingPoll(true);
     try {
-      const r = await fetch(`${baseUrl}/api/admin/polls?userId=${encodeURIComponent(userId)}`, {
+      const r = await fetch(`${baseUrl}/api/admin/polls?${authQuery}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -185,6 +240,7 @@ export default function Admin() {
       setPollOptions([{ key: "a", label: "" }, { key: "b", label: "" }, { key: "c", label: "" }]);
       setShowPollForm(false);
       setTimeout(() => setPollSuccess(false), 3000);
+      await fetchStats();
     } catch (e) {
       console.error(e);
     } finally {
@@ -193,7 +249,7 @@ export default function Admin() {
   }
 
   async function toggleStar(id: number) {
-    const r = await fetch(`${baseUrl}/api/feedback/${id}/star?userId=${encodeURIComponent(userId)}`, { method: "PATCH" });
+    const r = await fetch(`${baseUrl}/api/feedback/${id}/star?${authQuery}`, { method: "PATCH" });
     if (r.ok) {
       const updated: FeedbackEntry = await r.json();
       setFeedback((prev) => prev.map((f) => f.id === id ? updated : f));
@@ -201,7 +257,7 @@ export default function Admin() {
   }
 
   async function toggleResolve(id: number) {
-    const r = await fetch(`${baseUrl}/api/feedback/${id}/resolve?userId=${encodeURIComponent(userId)}`, { method: "PATCH" });
+    const r = await fetch(`${baseUrl}/api/feedback/${id}/resolve?${authQuery}`, { method: "PATCH" });
     if (r.ok) {
       const updated: FeedbackEntry = await r.json();
       setFeedback((prev) => prev.map((f) => f.id === id ? updated : f));
@@ -212,20 +268,45 @@ export default function Admin() {
 
   if (!isAdmin) {
     return (
-      <div className="min-h-[100dvh] bg-background flex flex-col items-center justify-center p-6 text-center max-w-[430px] mx-auto">
-        <div className="text-5xl mb-4">🔒</div>
-        <h1 className="text-xl font-bold text-foreground mb-2">Admin Access Required</h1>
-        <p className="text-sm text-muted-foreground mb-6 leading-relaxed">
-          Your user ID is not on the admin list. Add it to <code className="bg-muted px-1 rounded text-xs">VITE_ADMIN_USER_IDS</code> and <code className="bg-muted px-1 rounded text-xs">ADMIN_USER_IDS</code>.
-        </p>
-        <div className="bg-muted/50 border border-border rounded-2xl p-4 w-full text-left mb-6">
-          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Your User ID</p>
-          <div className="flex items-center justify-between gap-2">
-            <code className="text-xs font-mono text-foreground break-all">{userId}</code>
-            <CopyBtn text={userId} />
+      <div className="min-h-[100dvh] bg-gradient-to-br from-primary/5 to-accent/5 flex flex-col items-center justify-center p-6 max-w-[430px] mx-auto">
+        <div className="w-full bg-white rounded-3xl border border-border shadow-sm p-8 space-y-6">
+          <div className="text-center space-y-2">
+            <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto">
+              <Lock size={24} className="text-primary" />
+            </div>
+            <h1 className="text-xl font-bold text-foreground">Admin Access</h1>
+            <p className="text-sm text-muted-foreground">Enter the admin password to continue</p>
           </div>
+
+          <form onSubmit={handlePasswordSubmit} className="space-y-3">
+            <input
+              type="password"
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              placeholder="Admin password"
+              autoFocus
+              className={`w-full px-4 py-3 rounded-xl border-2 text-sm outline-none transition-all ${
+                passwordError ? "border-red-400 bg-red-50" : "border-border bg-muted/30 focus:border-primary"
+              }`}
+              data-testid="admin-password-input"
+            />
+            {passwordError && (
+              <p className="text-xs text-red-600 font-medium text-center">Incorrect password — try again</p>
+            )}
+            <button
+              type="submit"
+              disabled={!passwordInput.trim()}
+              className="w-full py-3 rounded-xl bg-primary text-white font-semibold text-sm disabled:opacity-40 transition-all active:scale-[0.98]"
+              data-testid="admin-password-submit"
+            >
+              Sign In
+            </button>
+          </form>
+
+          <button onClick={() => setLocation("/dashboard")} className="w-full text-center text-sm text-muted-foreground hover:text-foreground transition-colors">
+            ← Back to app
+          </button>
         </div>
-        <button onClick={() => setLocation("/dashboard")} className="text-sm text-primary font-semibold">← Back to app</button>
       </div>
     );
   }
@@ -239,6 +320,10 @@ export default function Admin() {
 
   const fbTypeCounts = feedback.reduce((acc, f) => { acc[f.feedbackType] = (acc[f.feedbackType] || 0) + 1; return acc; }, {} as Record<string, number>);
 
+  const emails = stats?.emails ?? [];
+  const shownEmails = showAllEmails ? emails : emails.slice(0, 25);
+  const polls = stats?.polls ?? [];
+
   return (
     <div className="min-h-[100dvh] bg-muted/30 pb-10">
       {/* Header */}
@@ -251,10 +336,20 @@ export default function Admin() {
             </div>
             {lastUpdated && <p className="text-xs text-muted-foreground">Updated {lastUpdated.toLocaleTimeString()}</p>}
           </div>
-          <button onClick={fetchStats} disabled={loading}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary/10 text-primary text-xs font-semibold disabled:opacity-50 transition-all">
-            <RefreshCw size={13} className={loading ? "animate-spin" : ""} />Refresh
-          </button>
+          <div className="flex items-center gap-2">
+            {isAdminByPassword && (
+              <button
+                onClick={() => { sessionStorage.removeItem("tt_admin_pw"); setAdminPassword(""); }}
+                className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5 rounded-lg transition-colors"
+              >
+                Sign out
+              </button>
+            )}
+            <button onClick={fetchStats} disabled={loading}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary/10 text-primary text-xs font-semibold disabled:opacity-50 transition-all">
+              <RefreshCw size={13} className={loading ? "animate-spin" : ""} />Refresh
+            </button>
+          </div>
         </div>
       </div>
 
@@ -268,11 +363,75 @@ export default function Admin() {
           {/* ── USERS ── */}
           <section>
             <SectionHeader icon={<Users size={16} />} title="Users" />
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <StatCard label="Users with twins" value={stats.users.uniqueUsersWithTwins} sub="unique accounts" />
               <StatCard label="Onboarding done" value={stats.users.onboardingCompleted} sub={`of ${stats.users.onboardingTotal} started`} />
               <StatCard label="Completion rate" value={stats.users.onboardingTotal ? `${Math.round((stats.users.onboardingCompleted / stats.users.onboardingTotal) * 100)}%` : "—"} sub="onboarding" />
               <StatCard label="Ambassadors 💕" value={stats.users.ambassadors} sub="want to help" accent />
+              <StatCard label="Emails captured" value={stats.users.emailsCaptured} sub="have email" />
+              <StatCard label="Newsletter 📧" value={stats.users.newsletterSubscribers} sub="subscribed" accent />
+            </div>
+          </section>
+
+          {/* ── EMAIL LIST ── */}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                  <Mail size={16} />
+                </div>
+                <h2 className="font-bold text-foreground text-base">Email List</h2>
+              </div>
+              {emails.length > 0 && (
+                <button
+                  onClick={() => exportEmailsCSV(emails)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-green-50 text-green-700 border border-green-200 text-xs font-semibold hover:bg-green-100 transition-colors"
+                >
+                  <Download size={12} /> Export CSV
+                </button>
+              )}
+            </div>
+
+            <div className="bg-white rounded-2xl border border-border overflow-hidden">
+              {emails.length === 0 ? (
+                <div className="p-6 text-center text-sm text-muted-foreground">No emails captured yet 🍒</div>
+              ) : (
+                <>
+                  <div className="px-5 py-3 border-b border-border flex items-center justify-between bg-muted/20">
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+                      {emails.length} emails · {emails.filter((e) => e.newsletterConsent).length} newsletter
+                    </p>
+                  </div>
+                  <div className="divide-y divide-border">
+                    {shownEmails.map((entry) => (
+                      <div key={entry.userId} className="px-5 py-3 flex items-center justify-between gap-3">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm text-foreground font-medium truncate">{entry.email}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(entry.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          {entry.newsletterConsent && (
+                            <span className="text-[10px] font-bold bg-green-50 text-green-700 border border-green-200 px-2 py-0.5 rounded-full">
+                              Newsletter ✓
+                            </span>
+                          )}
+                          <CopyBtn text={entry.email} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {emails.length > 25 && (
+                    <button
+                      onClick={() => setShowAllEmails((v) => !v)}
+                      className="w-full py-3 text-xs font-semibold text-primary bg-muted/20 hover:bg-muted/40 transition-colors border-t border-border"
+                    >
+                      {showAllEmails ? "Show less" : `Show all ${emails.length} emails`}
+                    </button>
+                  )}
+                </>
+              )}
             </div>
           </section>
 
@@ -283,8 +442,7 @@ export default function Admin() {
               <div>
                 <p className="text-sm text-foreground font-medium mb-1">Backfill Onboarding Records</p>
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  Syncs all completed onboarding records to the Google Sheet tab "Onboarding". 
-                  Use this if new signups aren't appearing in the sheet. Check API server logs for details.
+                  Syncs all completed onboarding records (including emails &amp; newsletter consent) to the Google Sheet. Use if signups aren't appearing.
                 </p>
               </div>
 
@@ -313,8 +471,7 @@ export default function Admin() {
               </button>
 
               <p className="text-xs text-muted-foreground">
-                ⚡ Requires <code className="bg-muted px-1 rounded">GOOGLE_SHEET_ID</code> env var. 
-                Watch the API server logs for step-by-step output.
+                ⚡ Requires <code className="bg-muted px-1 rounded">GOOGLE_SHEET_ID</code> env var. Watch API server logs for output.
               </p>
             </div>
           </section>
@@ -414,13 +571,48 @@ export default function Admin() {
               </div>
             )}
 
-            <div className="bg-white rounded-2xl border border-border p-5">
-              <p className="text-sm text-muted-foreground">
-                Active polls appear on the Dashboard for all users. 
-                Creating a new poll here will mark it active. 
-                Use the database to deactivate old polls when rotating new ones.
-              </p>
-            </div>
+            {/* Poll results */}
+            {polls.length > 0 ? (
+              <div className="space-y-3">
+                {polls.map((poll) => {
+                  let options: { key: string; label: string }[] = [];
+                  try { options = JSON.parse(poll.options); } catch { /* */ }
+                  return (
+                    <div key={poll.id} className="bg-white rounded-2xl border border-border overflow-hidden">
+                      <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-bold text-primary uppercase tracking-wide">{poll.category}</span>
+                          {poll.isActive && (
+                            <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">Live</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                          <BarChart size={11} />
+                          <span className="font-semibold">{poll.totalResponses} votes</span>
+                        </div>
+                      </div>
+                      <div className="p-4 space-y-2">
+                        <p className="text-sm font-semibold text-foreground leading-snug">{poll.question}</p>
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {options.map((o) => (
+                            <span key={o.key} className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">{o.label}</span>
+                          ))}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground pt-1">
+                          Created {new Date(poll.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="bg-white rounded-2xl border border-border p-5">
+                <p className="text-sm text-muted-foreground">
+                  No polls yet. Create your first one above — it will appear on the Community tab for all users.
+                </p>
+              </div>
+            )}
           </section>
 
           {/* ── ONBOARDING INSIGHTS ── */}

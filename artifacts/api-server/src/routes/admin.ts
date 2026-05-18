@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { desc, count } from "drizzle-orm";
+import { desc, count, isNotNull, eq } from "drizzle-orm";
 import {
   db,
   twinsTable,
@@ -13,6 +13,7 @@ import {
   videoNotesTable,
 } from "@workspace/db";
 import { backfillOnboardingRows, type OnboardingRowData } from "../sheets";
+import type { Request } from "express";
 
 const router: IRouter = Router();
 
@@ -27,9 +28,17 @@ function isAdmin(userId: string | undefined): boolean {
   return !!userId && getAdminIds().includes(userId);
 }
 
-router.get("/admin/stats", async (req, res): Promise<void> => {
+function isAdminAuth(req: Request): boolean {
   const userId = req.query.userId as string | undefined;
-  if (!isAdmin(userId)) {
+  const adminPassword = req.query.adminPassword as string | undefined;
+  if (userId && isAdmin(userId)) return true;
+  const envPw = process.env.ADMIN_PASSWORD;
+  if (envPw && adminPassword && adminPassword === envPw) return true;
+  return false;
+}
+
+router.get("/admin/stats", async (req, res): Promise<void> => {
+  if (!isAdminAuth(req)) {
     res.status(403).json({ error: "Forbidden" });
     return;
   }
@@ -44,6 +53,8 @@ router.get("/admin/stats", async (req, res): Promise<void> => {
     [milestoneCount],
     [bookmarkCount],
     [noteCount],
+    emailRecords,
+    pollsData,
   ] = await Promise.all([
     db.selectDistinct({ userId: twinsTable.userId }).from(twinsTable),
     db.select().from(onboardingTable).orderBy(desc(onboardingTable.createdAt)),
@@ -54,6 +65,25 @@ router.get("/admin/stats", async (req, res): Promise<void> => {
     db.select({ count: count() }).from(milestonesTable),
     db.select({ count: count() }).from(videoBookmarksTable),
     db.select({ count: count() }).from(videoNotesTable),
+    db
+      .select({ userId: onboardingTable.userId, email: onboardingTable.email, newsletterConsent: onboardingTable.newsletterConsent, createdAt: onboardingTable.createdAt })
+      .from(onboardingTable)
+      .where(isNotNull(onboardingTable.email))
+      .orderBy(desc(onboardingTable.createdAt)),
+    (async () => {
+      const { pollsTable, pollResponsesTable } = await import("@workspace/db");
+      const polls = await db.select().from(pollsTable).orderBy(desc(pollsTable.createdAt));
+      const pollsWithCounts = await Promise.all(
+        polls.map(async (poll) => {
+          const [{ total }] = await db
+            .select({ total: count() })
+            .from(pollResponsesTable)
+            .where(eq(pollResponsesTable.pollId, poll.id));
+          return { ...poll, totalResponses: Number(total) };
+        }),
+      );
+      return pollsWithCounts;
+    })(),
   ]);
 
   const completed = onboardingRecords.filter((r) => r.completedAt);
@@ -73,12 +103,21 @@ router.get("/admin/stats", async (req, res): Promise<void> => {
       .map(([key, value]) => ({ key, value }));
   }
 
+  const emailList = emailRecords.map((r) => ({
+    userId: r.userId,
+    email: r.email ?? "",
+    newsletterConsent: r.newsletterConsent ?? false,
+    createdAt: r.createdAt.toISOString(),
+  }));
+
   res.json({
     users: {
       uniqueUsersWithTwins: uniqueUsers.length,
       onboardingTotal: onboardingRecords.length,
       onboardingCompleted: completed.length,
       ambassadors: completed.filter((r) => r.isAmbassador).length,
+      emailsCaptured: emailList.length,
+      newsletterSubscribers: emailList.filter((e) => e.newsletterConsent).length,
     },
     onboarding: {
       parentStatus: breakdown((r) => r.parentStatus),
@@ -98,17 +137,18 @@ router.get("/admin/stats", async (req, res): Promise<void> => {
       bookmarks: Number(bookmarkCount?.count ?? 0),
       videoNotes: Number(noteCount?.count ?? 0),
     },
+    emails: emailList,
+    polls: pollsData,
   });
 });
 
 router.post("/admin/backfill-sheets", async (req, res): Promise<void> => {
-  const userId = req.query.userId as string | undefined;
-  if (!isAdmin(userId)) {
+  if (!isAdminAuth(req)) {
     res.status(403).json({ error: "Forbidden" });
     return;
   }
 
-  req.log.info({ userId }, "admin: backfill-sheets triggered");
+  req.log.info("admin: backfill-sheets triggered");
 
   const allRecords = await db
     .select()
@@ -130,6 +170,8 @@ router.post("/admin/backfill-sheets", async (req, res): Promise<void> => {
     discoverySource: r.discoverySource,
     instagramHandle: r.instagramHandle,
     isAmbassador: r.isAmbassador,
+    email: r.email,
+    newsletterConsent: r.newsletterConsent,
     completedAt: r.completedAt?.toISOString() ?? null,
     createdAt: r.createdAt.toISOString(),
   }));
@@ -141,8 +183,7 @@ router.post("/admin/backfill-sheets", async (req, res): Promise<void> => {
 });
 
 router.post("/admin/polls", async (req, res): Promise<void> => {
-  const userId = req.query.userId as string | undefined;
-  if (!isAdmin(userId)) {
+  if (!isAdminAuth(req)) {
     res.status(403).json({ error: "Forbidden" });
     return;
   }

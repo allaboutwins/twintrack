@@ -596,7 +596,6 @@ export default function Milestones() {
                   ref={fileInputRef}
                   type="file"
                   accept="image/*"
-                  capture="environment"
                   className="hidden"
                   onChange={handlePhotoSelect}
                   data-testid="input-milestone-photo"

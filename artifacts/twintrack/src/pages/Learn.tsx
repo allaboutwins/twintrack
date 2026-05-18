@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useUser } from "@clerk/react";
+import { FaInstagram, FaYoutube, FaFacebook, FaTiktok, FaPinterest } from "react-icons/fa";
 import {
   useListVideos,
   useListBookmarkedVideos,
@@ -61,11 +62,11 @@ const CATEGORIES = [
 ];
 
 const SOCIAL_LINKS = [
-  { name: "Instagram", handle: "@allaboutwins", url: "https://www.instagram.com/allaboutwins", color: "#E1306C", icon: "IG", bg: "#fce4ec" },
-  { name: "YouTube", handle: "All About Twins", url: "https://www.youtube.com/@AllAboutTwins", color: "#FF0000", icon: "YT", bg: "#ffebee" },
-  { name: "Facebook", handle: "All About Twins", url: "https://tinyurl.com/m7efnvc8", color: "#1877F2", icon: "FB", bg: "#e3f2fd" },
-  { name: "TikTok", handle: "@allabouttwins", url: "https://www.tiktok.com/@allabouttwins", color: "#000000", icon: "TK", bg: "#f3e5f5" },
-  { name: "Pinterest", handle: "allabout2wins", url: "https://www.pinterest.com/allabout2wins", color: "#E60023", icon: "PT", bg: "#fce4ec" },
+  { name: "Instagram", handle: "@allaboutwins", url: "https://www.instagram.com/allaboutwins", color: "#fff", Icon: FaInstagram, bg: "#E1306C" },
+  { name: "YouTube", handle: "All About Twins", url: "https://www.youtube.com/@AllAboutTwins", color: "#fff", Icon: FaYoutube, bg: "#FF0000" },
+  { name: "Facebook", handle: "All About Twins", url: "https://tinyurl.com/m7efnvc8", color: "#fff", Icon: FaFacebook, bg: "#1877F2" },
+  { name: "TikTok", handle: "@allabouttwins", url: "https://www.tiktok.com/@allabouttwins", color: "#fff", Icon: FaTiktok, bg: "#000000" },
+  { name: "Pinterest", handle: "allabout2wins", url: "https://www.pinterest.com/allabout2wins", color: "#fff", Icon: FaPinterest, bg: "#E60023" },
 ];
 
 const TIPS = [
@@ -386,12 +387,23 @@ function AcademySection({ userId }: { userId: string }) {
   return (
     <div className="px-4 pt-4 space-y-4 pb-6">
       {/* Hero */}
-      <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-2xl border border-primary/20 p-5">
-        <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1.5">🎓 Twins Academy</p>
-        <h2 className="text-lg font-bold text-foreground mb-1.5">Your expert learning hub</h2>
-        <p className="text-sm text-muted-foreground leading-relaxed">
-          Curated guides and resources built specifically for twin parents — all in one place.
-        </p>
+      <div className="bg-gradient-to-br from-primary/10 to-accent/10 rounded-2xl border border-primary/20 p-5 space-y-3">
+        <div>
+          <p className="text-xs font-bold text-primary uppercase tracking-wide mb-1.5">🎓 Twins Academy</p>
+          <h2 className="text-lg font-bold text-foreground mb-1.5">Your expert learning hub</h2>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            Curated guides and resources built specifically for twin parents — all in one place.
+          </p>
+        </div>
+        <a
+          href="https://allaboutwins.com/courses"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-primary text-white text-sm font-bold active:scale-[0.98] transition-all shadow-sm"
+          data-testid="academy-browse-courses"
+        >
+          Browse Full Course Library <ExternalLink size={13} />
+        </a>
       </div>
 
       {/* Article cards */}
@@ -638,7 +650,7 @@ export default function Learn() {
   const [activeCategory, setActiveCategory] = useState("");
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
-  const [activeTab, setActiveTab] = useState<"library" | "saved" | "magazines" | "academy" | "community">("library");
+  const [activeTab, setActiveTab] = useState<"library" | "saved" | "magazines" | "academy" | "community">("magazines");
 
   const { data: videos = [], isLoading } = useListVideos(
     { category: activeCategory || undefined, search: search || undefined },
@@ -721,11 +733,11 @@ export default function Learn() {
       {/* Tabs */}
       <div className="px-4 pb-3 flex gap-2 border-b border-border overflow-x-auto no-scrollbar">
         {[
-          { key: "library", label: "Videos" },
-          { key: "saved", label: `Saved${bookmarked.length > 0 ? ` (${bookmarked.length})` : ""}` },
           { key: "magazines", label: "📚 Magazine" },
           { key: "academy", label: "🎓 Academy" },
-          { key: "community", label: "Community" },
+          { key: "community", label: "🌐 Community" },
+          { key: "library", label: "▶️ Videos" },
+          { key: "saved", label: `🔖 Saved${bookmarked.length > 0 ? ` (${bookmarked.length})` : ""}` },
         ].map(({ key, label }) => (
           <button
             key={key}
@@ -782,10 +794,10 @@ export default function Learn() {
                   data-testid={`social-${s.name.toLowerCase()}`}
                 >
                   <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
                     style={{ backgroundColor: s.bg, color: s.color }}
                   >
-                    {s.icon}
+                    <s.Icon size={20} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm text-foreground">{s.name}</p>
