@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/reac
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useGetOnboarding, getGetOnboardingQueryKey } from "@workspace/api-client-react";
+import InAppBrowserGate from "@/components/InAppBrowserGate";
 import NotFound from "@/pages/not-found";
 import OnboardingFlow from "@/pages/OnboardingFlow";
 import Landing from "@/pages/Landing";
@@ -297,9 +298,11 @@ function ClerkProviderWithRoutes() {
 
 function App() {
   return (
-    <WouterRouter base={basePath}>
-      <ClerkProviderWithRoutes />
-    </WouterRouter>
+    <InAppBrowserGate>
+      <WouterRouter base={basePath}>
+        <ClerkProviderWithRoutes />
+      </WouterRouter>
+    </InAppBrowserGate>
   );
 }
 
