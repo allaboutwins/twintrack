@@ -41,6 +41,7 @@ import type {
   GetFeedingSummaryParams,
   GetPollHistoryParams,
   GetSleepSummaryParams,
+  GetTwinAiAnalyticsParams,
   HealthStatus,
   ListBookmarkedVideosParams,
   ListDiaperEntriesParams,
@@ -63,7 +64,9 @@ import type {
   SleepSummary,
   SubmitFeedbackBody,
   Twin,
+  TwinAiAnalytics,
   TwinAiChatRequest,
+  TwinAiMessageFeedbackRequest,
   UpdateDiaperEntryBody,
   UpdateFeedingEntryBody,
   UpdateRoutineBody,
@@ -4633,3 +4636,188 @@ export const useTwinAiChat = <
 > => {
   return useMutation(getTwinAiChatMutationOptions(options));
 };
+
+/**
+ * @summary Submit helpful or not helpful feedback on an AI response
+ */
+export const getSubmitTwinAiMessageFeedbackUrl = (id: number) => {
+  return `/api/twin-ai/messages/${id}/feedback`;
+};
+
+export const submitTwinAiMessageFeedback = async (
+  id: number,
+  twinAiMessageFeedbackRequest: TwinAiMessageFeedbackRequest,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getSubmitTwinAiMessageFeedbackUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(twinAiMessageFeedbackRequest),
+  });
+};
+
+export const getSubmitTwinAiMessageFeedbackMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitTwinAiMessageFeedback>>,
+    TError,
+    { id: number; data: BodyType<TwinAiMessageFeedbackRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof submitTwinAiMessageFeedback>>,
+  TError,
+  { id: number; data: BodyType<TwinAiMessageFeedbackRequest> },
+  TContext
+> => {
+  const mutationKey = ["submitTwinAiMessageFeedback"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof submitTwinAiMessageFeedback>>,
+    { id: number; data: BodyType<TwinAiMessageFeedbackRequest> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return submitTwinAiMessageFeedback(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SubmitTwinAiMessageFeedbackMutationResult = NonNullable<
+  Awaited<ReturnType<typeof submitTwinAiMessageFeedback>>
+>;
+export type SubmitTwinAiMessageFeedbackMutationBody =
+  BodyType<TwinAiMessageFeedbackRequest>;
+export type SubmitTwinAiMessageFeedbackMutationError = ErrorType<void>;
+
+/**
+ * @summary Submit helpful or not helpful feedback on an AI response
+ */
+export const useSubmitTwinAiMessageFeedback = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitTwinAiMessageFeedback>>,
+    TError,
+    { id: number; data: BodyType<TwinAiMessageFeedbackRequest> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof submitTwinAiMessageFeedback>>,
+  TError,
+  { id: number; data: BodyType<TwinAiMessageFeedbackRequest> },
+  TContext
+> => {
+  return useMutation(getSubmitTwinAiMessageFeedbackMutationOptions(options));
+};
+
+/**
+ * @summary Get Twin AI usage analytics
+ */
+export const getGetTwinAiAnalyticsUrl = (params?: GetTwinAiAnalyticsParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/twin-ai-analytics?${stringifiedParams}`
+    : `/api/admin/twin-ai-analytics`;
+};
+
+export const getTwinAiAnalytics = async (
+  params?: GetTwinAiAnalyticsParams,
+  options?: RequestInit,
+): Promise<TwinAiAnalytics> => {
+  return customFetch<TwinAiAnalytics>(getGetTwinAiAnalyticsUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetTwinAiAnalyticsQueryKey = (
+  params?: GetTwinAiAnalyticsParams,
+) => {
+  return [`/api/admin/twin-ai-analytics`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetTwinAiAnalyticsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getTwinAiAnalytics>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetTwinAiAnalyticsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getTwinAiAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetTwinAiAnalyticsQueryKey(params);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getTwinAiAnalytics>>
+  > = ({ signal }) => getTwinAiAnalytics(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getTwinAiAnalytics>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetTwinAiAnalyticsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getTwinAiAnalytics>>
+>;
+export type GetTwinAiAnalyticsQueryError = ErrorType<void>;
+
+/**
+ * @summary Get Twin AI usage analytics
+ */
+
+export function useGetTwinAiAnalytics<
+  TData = Awaited<ReturnType<typeof getTwinAiAnalytics>>,
+  TError = ErrorType<void>,
+>(
+  params?: GetTwinAiAnalyticsParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getTwinAiAnalytics>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetTwinAiAnalyticsQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}

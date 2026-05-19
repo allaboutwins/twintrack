@@ -1,24 +1,28 @@
 import { useState, useRef, useEffect } from "react";
-import { Sparkles, Send, RotateCcw, AlertCircle } from "lucide-react";
+import { Sparkles, Send, RotateCcw, AlertCircle, ThumbsUp, ThumbsDown } from "lucide-react";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+  messageId?: number;
+  feedbackSubmitted?: boolean;
 }
 
 const SUGGESTION_CHIPS = [
-  { label: "💤 Sync twin naps", prompt: "How do I sync my twins' nap schedule? They keep waking each other up." },
-  { label: "🍼 Feeding twins", prompt: "What are tips for tandem feeding twins? Any advice for bottle feeding two babies at once?" },
-  { label: "🏥 NICU support", prompt: "My twins are in the NICU. What should I know and how can I support them?" },
-  { label: "📅 Twin schedules", prompt: "What does a good daily schedule look like for twin babies?" },
-  { label: "💪 Mental load", prompt: "I'm feeling overwhelmed and exhausted with twins. How do other twin parents cope?" },
-  { label: "🥛 Pumping support", prompt: "I'm pumping for two babies. How do I maintain my milk supply for twins?" },
-  { label: "🌙 Bedtime routine", prompt: "What's a good bedtime routine for twins that actually works?" },
-  { label: "📏 Adjusted age", prompt: "How do adjusted age and corrected age work for premature twins?" },
+  { label: "💤 Sync twin naps", category: "sleep", prompt: "How do I sync my twins' nap schedule? They keep waking each other up." },
+  { label: "🍼 Feeding twins", category: "feeding", prompt: "What are tips for tandem feeding twins? Any advice for bottle feeding two babies at once?" },
+  { label: "🏥 NICU support", category: "nicu", prompt: "My twins are in the NICU. What should I know and how can I support them?" },
+  { label: "📅 Twin schedules", category: "schedules", prompt: "What does a good daily schedule look like for twin babies?" },
+  { label: "💪 Mental load", category: "mental_load", prompt: "I'm feeling overwhelmed and exhausted with twins. How do other twin parents cope?" },
+  { label: "🥛 Pumping support", category: "pumping", prompt: "I'm pumping for two babies. How do I maintain my milk supply for twins?" },
+  { label: "🌙 Bedtime routine", category: "bedtime", prompt: "What's a good bedtime routine for twins that actually works?" },
+  { label: "📏 Adjusted age", category: "adjusted_age", prompt: "How do adjusted age and corrected age work for premature twins?" },
 ];
 
 const DISCLAIMER =
   "Twin AI is here for peer support and general information — not medical advice. Always consult your pediatrician or healthcare provider for medical guidance.";
+
+const baseUrl = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
 
 function TypingIndicator() {
   return (
@@ -37,29 +41,79 @@ function TypingIndicator() {
   );
 }
 
-function MessageBubble({ message }: { message: Message }) {
+function FeedbackButtons({
+  messageId,
+  feedbackSubmitted,
+  onFeedback,
+}: {
+  messageId: number;
+  feedbackSubmitted: boolean;
+  onFeedback: (messageId: number, helpful: boolean) => void;
+}) {
+  if (feedbackSubmitted) {
+    return (
+      <p className="text-[10px] text-muted-foreground ml-10 mt-1">Thanks for your feedback 💕</p>
+    );
+  }
+  return (
+    <div className="flex items-center gap-2 ml-10 mt-1.5">
+      <p className="text-[10px] text-muted-foreground">Was this helpful?</p>
+      <button
+        onClick={() => onFeedback(messageId, true)}
+        className="p-1 rounded-lg text-muted-foreground hover:text-green-500 hover:bg-green-50 transition-all"
+        aria-label="Helpful"
+      >
+        <ThumbsUp size={13} />
+      </button>
+      <button
+        onClick={() => onFeedback(messageId, false)}
+        className="p-1 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-50 transition-all"
+        aria-label="Not helpful"
+      >
+        <ThumbsDown size={13} />
+      </button>
+    </div>
+  );
+}
+
+function MessageBubble({
+  message,
+  onFeedback,
+}: {
+  message: Message;
+  onFeedback: (messageId: number, helpful: boolean) => void;
+}) {
   const isUser = message.role === "user";
   return (
-    <div className={`flex items-end gap-2 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
-      {!isUser && (
-        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-          <Sparkles size={14} className="text-primary" />
+    <div className={`flex flex-col ${isUser ? "items-end" : "items-start"}`}>
+      <div className={`flex items-end gap-2 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
+        {!isUser && (
+          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+            <Sparkles size={14} className="text-primary" />
+          </div>
+        )}
+        <div
+          className={`max-w-[78%] px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm ${
+            isUser
+              ? "bg-primary text-white rounded-br-sm"
+              : "bg-white border border-border text-foreground rounded-bl-sm"
+          }`}
+        >
+          {message.content.split("\n").map((line, i, arr) => (
+            <span key={i}>
+              {line}
+              {i < arr.length - 1 && <br />}
+            </span>
+          ))}
         </div>
-      )}
-      <div
-        className={`max-w-[78%] px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm ${
-          isUser
-            ? "bg-primary text-white rounded-br-sm"
-            : "bg-white border border-border text-foreground rounded-bl-sm"
-        }`}
-      >
-        {message.content.split("\n").map((line, i) => (
-          <span key={i}>
-            {line}
-            {i < message.content.split("\n").length - 1 && <br />}
-          </span>
-        ))}
       </div>
+      {!isUser && message.messageId != null && (
+        <FeedbackButtons
+          messageId={message.messageId}
+          feedbackSubmitted={message.feedbackSubmitted ?? false}
+          onFeedback={onFeedback}
+        />
+      )}
     </div>
   );
 }
@@ -69,6 +123,7 @@ export default function TwinAI() {
   const [input, setInput] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamError, setStreamError] = useState<string | null>(null);
+  const [limitReached, setLimitReached] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -84,9 +139,24 @@ export default function TwinAI() {
     el.style.height = Math.min(el.scrollHeight, 120) + "px";
   }
 
-  async function sendMessage(text: string) {
+  async function handleFeedback(messageId: number, helpful: boolean) {
+    setMessages((prev) =>
+      prev.map((m) => (m.messageId === messageId ? { ...m, feedbackSubmitted: true } : m)),
+    );
+    try {
+      await fetch(`${baseUrl}/api/twin-ai/messages/${messageId}/feedback`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ helpful }),
+      });
+    } catch {
+      // Silently ignore — feedback is best-effort
+    }
+  }
+
+  async function sendMessage(text: string, category?: string) {
     const trimmed = text.trim();
-    if (!trimmed || isStreaming) return;
+    if (!trimmed || isStreaming || limitReached) return;
 
     setStreamError(null);
     const userMessage: Message = { role: "user", content: trimmed };
@@ -102,20 +172,29 @@ export default function TwinAI() {
     let assistantContent = "";
 
     try {
-      const res = await fetch("/api/twin-ai/chat", {
+      const res = await fetch(`${baseUrl}/api/twin-ai/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: updatedMessages }),
+        body: JSON.stringify({ messages: updatedMessages, category: category ?? null }),
         signal: controller.signal,
       });
 
-      if (!res.ok || !res.body) {
-        throw new Error("Failed to connect to Twin AI");
+      if (!res.ok) {
+        if (res.status === 429) {
+          setLimitReached(true);
+        } else {
+          const data = await res.json().catch(() => ({}));
+          setStreamError((data as { error?: string }).error ?? "Something went wrong. Please try again.");
+        }
+        return;
       }
+
+      if (!res.body) throw new Error("No response body");
 
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
       let buffer = "";
+      let savedMessageId: number | null = null;
 
       setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
 
@@ -132,10 +211,13 @@ export default function TwinAI() {
           const payload = line.slice(6);
           if (!payload.trim()) continue;
           try {
-            const parsed = JSON.parse(payload);
-            if (parsed.done) break;
+            const parsed = JSON.parse(payload) as { content?: string; done?: boolean; messageId?: number; error?: string };
             if (parsed.error) {
               setStreamError(parsed.error);
+              break;
+            }
+            if (parsed.done) {
+              savedMessageId = parsed.messageId ?? null;
               break;
             }
             if (parsed.content) {
@@ -151,14 +233,23 @@ export default function TwinAI() {
           }
         }
       }
+
+      if (savedMessageId != null) {
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = {
+            ...updated[updated.length - 1],
+            messageId: savedMessageId!,
+          };
+          return updated;
+        });
+      }
     } catch (err: unknown) {
       if ((err as Error).name !== "AbortError") {
         setStreamError("Twin AI is taking a breather 💕 Please try again in a moment.");
         setMessages((prev) => {
           const last = prev[prev.length - 1];
-          if (last?.role === "assistant" && !last.content) {
-            return prev.slice(0, -1);
-          }
+          if (last?.role === "assistant" && !last.content) return prev.slice(0, -1);
           return prev;
         });
       }
@@ -181,6 +272,7 @@ export default function TwinAI() {
     setInput("");
     setStreamError(null);
     setIsStreaming(false);
+    setLimitReached(false);
     if (textareaRef.current) textareaRef.current.style.height = "auto";
   }
 
@@ -234,7 +326,7 @@ export default function TwinAI() {
                 {SUGGESTION_CHIPS.map((chip) => (
                   <button
                     key={chip.label}
-                    onClick={() => sendMessage(chip.prompt)}
+                    onClick={() => sendMessage(chip.prompt, chip.category)}
                     className="px-3.5 py-2 rounded-full bg-white border border-border text-sm font-medium text-foreground hover:border-primary/40 hover:bg-primary/5 active:scale-[0.97] transition-all shadow-sm"
                   >
                     {chip.label}
@@ -243,7 +335,6 @@ export default function TwinAI() {
               </div>
             </div>
 
-            {/* Disclaimer */}
             <div className="mt-6 w-full p-3.5 rounded-2xl bg-amber-50 border border-amber-200/80 flex gap-2.5">
               <AlertCircle size={15} className="text-amber-500 flex-shrink-0 mt-0.5" />
               <p className="text-xs text-amber-700 leading-relaxed">{DISCLAIMER}</p>
@@ -252,7 +343,7 @@ export default function TwinAI() {
         ) : (
           <>
             {messages.map((msg, i) => (
-              <MessageBubble key={i} message={msg} />
+              <MessageBubble key={i} message={msg} onFeedback={handleFeedback} />
             ))}
             {isStreaming && messages[messages.length - 1]?.role !== "assistant" && <TypingIndicator />}
           </>
@@ -268,8 +359,16 @@ export default function TwinAI() {
         <div ref={messagesEndRef} />
       </div>
 
+      {/* Daily limit reached */}
+      {limitReached && (
+        <div className="flex-shrink-0 mx-4 mb-2 px-4 py-3.5 rounded-2xl bg-violet-50 border border-violet-200/60 text-center">
+          <p className="text-sm font-semibold text-violet-700">You've reached today's Twin AI limit 💕</p>
+          <p className="text-xs text-violet-500 mt-0.5">Check back tomorrow for more support. You're doing amazing! 🌙</p>
+        </div>
+      )}
+
       {/* Disclaimer (in-chat) */}
-      {messages.length > 0 && (
+      {messages.length > 0 && !limitReached && (
         <div className="flex-shrink-0 mx-4 mb-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200/60 flex gap-2">
           <AlertCircle size={12} className="text-amber-400 flex-shrink-0 mt-0.5" />
           <p className="text-[10px] text-amber-600 leading-relaxed">{DISCLAIMER}</p>
@@ -278,35 +377,43 @@ export default function TwinAI() {
 
       {/* Input */}
       <div className="flex-shrink-0 px-4 pb-24 pt-2 bg-white border-t border-border">
-        <div className="flex items-end gap-2">
-          <div className="flex-1 relative">
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => {
-                setInput(e.target.value);
-                autoResize();
-              }}
-              onKeyDown={handleKeyDown}
-              placeholder="Ask anything about twins…"
-              rows={1}
-              disabled={isStreaming}
-              className="w-full px-4 py-3 pr-4 rounded-2xl bg-muted/40 border border-border text-sm outline-none focus:ring-2 ring-primary/30 resize-none leading-relaxed transition-all disabled:opacity-60"
-              style={{ minHeight: 44 }}
-            />
-          </div>
-          <button
-            onClick={() => sendMessage(input)}
-            disabled={!input.trim() || isStreaming}
-            className="w-11 h-11 rounded-2xl bg-primary text-white flex items-center justify-center flex-shrink-0 disabled:opacity-40 active:scale-95 transition-all shadow-sm"
-            aria-label="Send message"
-          >
-            <Send size={16} />
-          </button>
-        </div>
-        <p className="text-[10px] text-muted-foreground text-center mt-2">
-          Press Enter to send · Shift+Enter for new line
-        </p>
+        {limitReached ? (
+          <p className="text-center text-sm text-muted-foreground py-2">
+            Come back tomorrow for more Twin AI support 🍒
+          </p>
+        ) : (
+          <>
+            <div className="flex items-end gap-2">
+              <div className="flex-1 relative">
+                <textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => {
+                    setInput(e.target.value);
+                    autoResize();
+                  }}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Ask anything about twins…"
+                  rows={1}
+                  disabled={isStreaming}
+                  className="w-full px-4 py-3 pr-4 rounded-2xl bg-muted/40 border border-border text-sm outline-none focus:ring-2 ring-primary/30 resize-none leading-relaxed transition-all disabled:opacity-60"
+                  style={{ minHeight: 44 }}
+                />
+              </div>
+              <button
+                onClick={() => sendMessage(input)}
+                disabled={!input.trim() || isStreaming}
+                className="w-11 h-11 rounded-2xl bg-primary text-white flex items-center justify-center flex-shrink-0 disabled:opacity-40 active:scale-95 transition-all shadow-sm"
+                aria-label="Send message"
+              >
+                <Send size={16} />
+              </button>
+            </div>
+            <p className="text-[10px] text-muted-foreground text-center mt-2">
+              Press Enter to send · Shift+Enter for new line
+            </p>
+          </>
+        )}
       </div>
     </div>
   );

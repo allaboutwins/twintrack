@@ -1156,6 +1156,59 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorEnvelope"
+        "429":
+          description: Daily question limit reached
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorEnvelope"
+
+  /twin-ai/messages/{id}/feedback:
+    patch:
+      operationId: submitTwinAiMessageFeedback
+      tags: [twin-ai]
+      summary: Submit helpful or not helpful feedback on an AI response
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TwinAiMessageFeedbackRequest"
+      responses:
+        "204":
+          description: Feedback recorded
+        "404":
+          description: Not found
+
+  /admin/twin-ai-analytics:
+    get:
+      operationId: getTwinAiAnalytics
+      tags: [admin]
+      summary: Get Twin AI usage analytics
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            type: string
+        - name: adminPassword
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Twin AI usage analytics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TwinAiAnalytics"
+        "403":
+          description: Forbidden
 
 components:
   schemas:
@@ -2138,6 +2191,60 @@ components:
           format: uri
         objectPath:
           type: string
+
+    TwinAiMessageFeedbackRequest:
+      type: object
+      required: [helpful]
+      properties:
+        helpful:
+          type: boolean
+
+    TwinAiAnalytics:
+      type: object
+      required: [totalMessages, todayMessages, uniqueUsers, avgPerUser, helpfulCount, notHelpfulCount, categoryBreakdown, topQuestions, dailyUsage]
+      properties:
+        totalMessages:
+          type: integer
+        todayMessages:
+          type: integer
+        uniqueUsers:
+          type: integer
+        avgPerUser:
+          type: number
+        helpfulCount:
+          type: integer
+        notHelpfulCount:
+          type: integer
+        categoryBreakdown:
+          type: array
+          items:
+            type: object
+            required: [key, value]
+            properties:
+              key:
+                type: string
+              value:
+                type: integer
+        topQuestions:
+          type: array
+          items:
+            type: object
+            required: [question, count]
+            properties:
+              question:
+                type: string
+              count:
+                type: integer
+        dailyUsage:
+          type: array
+          items:
+            type: object
+            required: [date, count]
+            properties:
+              date:
+                type: string
+              count:
+                type: integer
 
     TwinAiMessage:
       type: object

@@ -1097,3 +1097,49 @@ export const TwinAiChatBody = zod.object({
     )
     .min(1),
 });
+
+/**
+ * @summary Submit helpful or not helpful feedback on an AI response
+ */
+export const SubmitTwinAiMessageFeedbackParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const SubmitTwinAiMessageFeedbackBody = zod.object({
+  helpful: zod.boolean(),
+});
+
+/**
+ * @summary Get Twin AI usage analytics
+ */
+export const GetTwinAiAnalyticsQueryParams = zod.object({
+  userId: zod.coerce.string().optional(),
+  adminPassword: zod.coerce.string().optional(),
+});
+
+export const GetTwinAiAnalyticsResponse = zod.object({
+  totalMessages: zod.number(),
+  todayMessages: zod.number(),
+  uniqueUsers: zod.number(),
+  avgPerUser: zod.number(),
+  helpfulCount: zod.number(),
+  notHelpfulCount: zod.number(),
+  categoryBreakdown: zod.array(
+    zod.object({
+      key: zod.string(),
+      value: zod.number(),
+    }),
+  ),
+  topQuestions: zod.array(
+    zod.object({
+      question: zod.string(),
+      count: zod.number(),
+    }),
+  ),
+  dailyUsage: zod.array(
+    zod.object({
+      date: zod.string(),
+      count: zod.number(),
+    }),
+  ),
+});

@@ -1,0 +1,113 @@
+TwinTrack — ✨ Ask Twin AI Cost Protection + Analytics
+
+The Ask Twin AI feature looks amazing so far and the emotional/supportive direction is exactly right 💕
+
+Now that we already have ~116 users and growing, we need to carefully manage AI usage and Replit credits while still giving moms a great experience.
+
+Please add the following lightweight protections and analytics:
+
+---
+
+1. DAILY QUESTION LIMITS ⚡
+
+For now, please limit Ask Twin AI usage to:
+
+👉 5–10 questions per user per day
+
+(whatever is simplest/most efficient technically for Phase 1)
+
+Goal:
+- prevent unexpected AI cost spikes
+- keep Replit credits manageable
+- allow enough usage for emotional support/testing
+
+Please make the limit feel:
+- soft
+- friendly
+- non-punitive
+
+Example:
+“You’ve reached today’s Twin AI support limit 💕 Check back tomorrow for more support.”
+
+NOT:
+“ERROR / LIMIT REACHED”
+
+---
+
+2. AI USAGE ANALYTICS 📊
+
+Please add lightweight analytics/admin tracking for Twin AI usage.
+
+Inside Admin Dashboard, I would like to see:
+- total Twin AI questions asked
+- daily AI usage
+- most common categories/prompts
+- most asked questions
+- average questions per user
+- top repeated concerns/topics
+
+This information is EXTREMELY valuable for:
+- future premium features
+- future Academy content
+- poll ideas
+- newsletters
+- understanding twin moms struggles
+
+---
+
+3. HELPFUL / NOT HELPFUL FEEDBACK 👍👎
+
+Please add lightweight feedback under each AI response:
+- 👍 Helpful
+- 👎 Not Helpful
+
+Goal:
+- improve future responses
+- understand what moms actually need
+- identify weak areas
+
+Please keep this:
+- very simple
+- mobile friendly
+- emotionally soft
+
+---
+
+4. SAVE COMMON QUESTIONS / INSIGHTS 💡
+
+Without storing full conversations yet, please begin saving:
+- repeated questions
+- popular topics/categories
+- top searched parenting struggles
+
+Examples:
+- sleep deprivation
+- tandem feeding
+- NICU twins
+- adjusted age
+- bedtime routines
+
+Goal:
+Use this data later for:
+- content creation
+- FAQs
+- Academy modules
+- onboarding improvements
+- future AI optimization
+
+---
+
+5. IMPORTANT PRODUCT STRATEGY
+
+Twin AI should remain:
+- emotionally supportive
+- calming
+- twin-specific
+- trustworthy
+
+Our advantage is NOT generic AI.
+
+Our advantage is:
+👉 deep twin-parenting emotional support and understanding 💕
+
+Please keep this feature lightweight and sustainable for now while architecture remains scalable for future premium growth.

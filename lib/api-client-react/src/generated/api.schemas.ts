@@ -607,6 +607,37 @@ export interface UploadUrlResponse {
   objectPath: string;
 }
 
+export interface TwinAiMessageFeedbackRequest {
+  helpful: boolean;
+}
+
+export type TwinAiAnalyticsCategoryBreakdownItem = {
+  key: string;
+  value: number;
+};
+
+export type TwinAiAnalyticsTopQuestionsItem = {
+  question: string;
+  count: number;
+};
+
+export type TwinAiAnalyticsDailyUsageItem = {
+  date: string;
+  count: number;
+};
+
+export interface TwinAiAnalytics {
+  totalMessages: number;
+  todayMessages: number;
+  uniqueUsers: number;
+  avgPerUser: number;
+  helpfulCount: number;
+  notHelpfulCount: number;
+  categoryBreakdown: TwinAiAnalyticsCategoryBreakdownItem[];
+  topQuestions: TwinAiAnalyticsTopQuestionsItem[];
+  dailyUsage: TwinAiAnalyticsDailyUsageItem[];
+}
+
 export interface TwinAiMessage {
   /** user or assistant */
   role: string;
@@ -721,4 +752,9 @@ export type GetPollHistoryParams = {
 
 export type BackfillSheetsOnboardingParams = {
   userId: string;
+};
+
+export type GetTwinAiAnalyticsParams = {
+  userId?: string;
+  adminPassword?: string;
 };

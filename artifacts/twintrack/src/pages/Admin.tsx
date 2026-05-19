@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useUser } from "@clerk/react";
 import { useLocation } from "wouter";
-import { RefreshCw, Users, MessageCircle, BarChart2, Activity, Copy, Check, Star, CheckCircle2, Filter, Sheet, Plus, Trash2, Mail, Lock, Download, BarChart } from "lucide-react";
+import { RefreshCw, Users, MessageCircle, BarChart2, Activity, Copy, Check, Star, CheckCircle2, Filter, Sheet, Plus, Trash2, Mail, Lock, Download, BarChart, Sparkles } from "lucide-react";
 
 interface Breakdown { key: string; value: number; }
 interface FeedbackEntry {
@@ -47,6 +47,18 @@ interface AdminStats {
   activity: { sleepEntries: number; feedingEntries: number; diaperEntries: number; milestones: number; bookmarks: number; videoNotes: number; };
   emails: EmailEntry[];
   polls: PollStat[];
+}
+
+interface TwinAiAnalytics {
+  totalMessages: number;
+  todayMessages: number;
+  uniqueUsers: number;
+  avgPerUser: number;
+  helpfulCount: number;
+  notHelpfulCount: number;
+  categoryBreakdown: { key: string; value: number }[];
+  topQuestions: { question: string; count: number }[];
+  dailyUsage: { date: string; count: number }[];
 }
 
 interface BackfillResult { success: number; failed: number; skipped: number; }
@@ -162,6 +174,8 @@ export default function Admin() {
   const [showUnresolvedOnly, setShowUnresolvedOnly] = useState(false);
   const [showAllEmails, setShowAllEmails] = useState(false);
 
+  const [twinAiAnalytics, setTwinAiAnalytics] = useState<TwinAiAnalytics | null>(null);
+
   const [isBackfilling, setIsBackfilling] = useState(false);
   const [backfillResult, setBackfillResult] = useState<BackfillResult | null>(null);
   const [backfillError, setBackfillError] = useState<string | null>(null);
@@ -181,11 +195,15 @@ export default function Admin() {
     if (!isAdmin) return;
     setLoading(true);
     try {
-      const r = await fetch(`${baseUrl}/api/admin/stats?${authQuery}`);
-      if (!r.ok) throw new Error(`${r.status}`);
-      const data: AdminStats = await r.json();
+      const [statsRes, aiRes] = await Promise.all([
+        fetch(`${baseUrl}/api/admin/stats?${authQuery}`),
+        fetch(`${baseUrl}/api/admin/twin-ai-analytics?${authQuery}`),
+      ]);
+      if (!statsRes.ok) throw new Error(`${statsRes.status}`);
+      const data: AdminStats = await statsRes.json();
       setStats(data);
       setFeedback(data.feedback);
+      if (aiRes.ok) setTwinAiAnalytics(await aiRes.json());
       setLastUpdated(new Date());
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -645,6 +663,102 @@ export default function Admin() {
               </div>
             </div>
           </section>
+
+          {/* ── TWIN AI ANALYTICS ── */}
+          {twinAiAnalytics && (
+            <section>
+              <SectionHeader icon={<Sparkles size={16} />} title="✨ Twin AI Usage" />
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-4">
+                <StatCard label="Total questions" value={twinAiAnalytics.totalMessages} sub="all time" accent />
+                <StatCard label="Today" value={twinAiAnalytics.todayMessages} sub="questions asked" />
+                <StatCard label="Avg per user" value={twinAiAnalytics.avgPerUser} sub="questions" />
+                <StatCard label="Unique users" value={twinAiAnalytics.uniqueUsers} sub="asked AI" />
+              </div>
+
+              <div className="bg-white rounded-2xl p-4 border border-border mb-4">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Response Feedback</p>
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">👍</span>
+                    <div>
+                      <p className="text-lg font-bold text-foreground">{twinAiAnalytics.helpfulCount}</p>
+                      <p className="text-xs text-muted-foreground">Helpful</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">👎</span>
+                    <div>
+                      <p className="text-lg font-bold text-foreground">{twinAiAnalytics.notHelpfulCount}</p>
+                      <p className="text-xs text-muted-foreground">Not helpful</p>
+                    </div>
+                  </div>
+                  {twinAiAnalytics.helpfulCount + twinAiAnalytics.notHelpfulCount > 0 && (
+                    <div className="ml-auto">
+                      <p className="text-base font-bold text-green-600">
+                        {Math.round((twinAiAnalytics.helpfulCount / (twinAiAnalytics.helpfulCount + twinAiAnalytics.notHelpfulCount)) * 100)}%
+                      </p>
+                      <p className="text-xs text-muted-foreground">satisfaction</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div className="bg-white rounded-2xl p-4 border border-border">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Questions by Topic</p>
+                  {twinAiAnalytics.categoryBreakdown.length === 0
+                    ? <p className="text-xs text-muted-foreground italic">No data yet 🍒</p>
+                    : <BreakdownBars items={twinAiAnalytics.categoryBreakdown} color="bg-violet-400" />
+                  }
+                </div>
+
+                <div className="bg-white rounded-2xl p-4 border border-border">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Daily Usage (7 days)</p>
+                  {twinAiAnalytics.dailyUsage.length === 0
+                    ? <p className="text-xs text-muted-foreground italic">No data yet 🍒</p>
+                    : (
+                      <div className="space-y-2">
+                        {twinAiAnalytics.dailyUsage.map((d) => {
+                          const max = Math.max(...twinAiAnalytics.dailyUsage.map((x) => x.count), 1);
+                          return (
+                            <div key={d.date}>
+                              <div className="flex justify-between text-xs mb-1">
+                                <span className="text-foreground font-medium">
+                                  {new Date(d.date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                                </span>
+                                <span className="text-muted-foreground">{d.count}</span>
+                              </div>
+                              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div className="h-full bg-violet-400 rounded-full transition-all" style={{ width: `${Math.round((d.count / max) * 100)}%` }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )
+                  }
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl p-4 border border-border">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Top Questions 💡</p>
+                {twinAiAnalytics.topQuestions.length === 0
+                  ? <p className="text-xs text-muted-foreground italic">No questions asked yet — come back soon!</p>
+                  : (
+                    <div className="space-y-0">
+                      {twinAiAnalytics.topQuestions.map((q, i) => (
+                        <div key={i} className="flex items-start gap-3 py-2.5 border-b border-border/60 last:border-0">
+                          <span className="text-xs font-bold text-primary/50 w-5 flex-shrink-0 pt-0.5">{i + 1}</span>
+                          <p className="text-sm text-foreground leading-snug flex-1">{q.question}</p>
+                          <span className="text-xs font-semibold text-muted-foreground flex-shrink-0 bg-muted px-1.5 py-0.5 rounded-full">{q.count}×</span>
+                        </div>
+                      ))}
+                    </div>
+                  )
+                }
+              </div>
+            </section>
+          )}
 
           {/* ── FEEDBACK CENTER ── */}
           <section>
