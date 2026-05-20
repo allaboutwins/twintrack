@@ -1,0 +1,136 @@
+TwinTrack — UX Priorities + Navigation Improvements 💕
+
+After reviewing real twin mom usage/feedback + current app behavior, here are the next important product improvements to focus on.
+
+Please prioritize these carefully and keep implementation lightweight/cost-efficient where possible.
+
+---
+
+1. TOP NAVIGATION IMPROVEMENTS ✨
+
+The bottom navigation is starting to feel crowded.
+
+Please:
+
+* move ⚙️ Settings from bottom nav → top right corner
+* add a 🍒 Cherries icon in the top menu as a  notification button
+
+The cherries should represent:
+
+* “What’s New”
+* TwinTrack updates
+* feature launches
+* milestones
+* seasonal tips
+* important reminders
+* community updates
+
+The cherries fit the twin identity much better emotionally than a generic notification bell.
+
+---
+
+2. “WHAT’S NEW” HISTORY / UPDATE CENTER 🍒
+
+The current “What’s New” card on the homepage is great, but it needs to feel alive and continuously updated.
+
+Please create:
+
+* a lightweight update history center
+* accessible from the 🍒 Cherries icon
+* showing past updates chronologically
+
+Examples:
+
+* “Edit tracking entries added”
+* “Twins Magazine Library added”
+* “Adjusted age support improved”
+* “Twin AI launched”
+* “New community polls available”
+
+Goal:
+make TwinTrack feel actively evolving and cared for.
+
+Please keep this:
+
+* soft
+* clean
+* mobile-first
+* emotionally warm
+
+---
+
+3. ADD “ASK TWIN AI” TO ADMIN/STATS 📊
+
+Twin AI is becoming one of the most important emotional retention features.
+
+Please add Twin AI usage statistics inside Admin Dashboard:
+
+* total AI questions asked
+* daily AI usage
+* average questions per user
+* most common prompts/categories
+* most repeated questions
+* active AI users
+
+Goal:
+understand:
+
+* what moms truly struggle with
+* what creates emotional retention
+* what could become future premium features
+
+---
+
+4. RETHINK LOWER NAVIGATION STRUCTURE 📱
+
+Current bottom navigation is becoming overloaded.
+
+Please explore a cleaner long-term structure focused on DAILY actions only.
+
+Potential direction:
+Home | Sleep | Feed | Memories | Twin AI | Learn
+
+Then:
+
+* Settings → top right
+* Notifications/What’s New → 🍒 top right
+* Routines → either integrated into Home OR moved inside Learn later if low usage continues
+
+No need to fully redesign immediately — but please begin simplifying the architecture gradually.
+
+---
+
+5. “WHAT’S NEW” SHOULD BE EASY TO UPDATE
+
+Please make the update/history system easy for admin use.
+
+Ideally:
+
+* simple admin form
+* title
+* short description
+* optional emoji/icon
+* publish date
+
+Goal:
+I want to quickly post updates without needing code changes each time.
+
+---
+
+IMPORTANT PRODUCT DIRECTION 💡
+
+The app is evolving from:
+“tracking tool”
+
+into:
+👉 an emotional twin-parenting support ecosystem.
+
+The UX should increasingly feel:
+
+* warm
+* supportive
+* alive
+* community-driven
+* emotionally attached to twin parenting
+
+rather than just utility tracking.

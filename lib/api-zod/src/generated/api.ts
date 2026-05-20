@@ -1110,6 +1110,56 @@ export const SubmitTwinAiMessageFeedbackBody = zod.object({
 });
 
 /**
+ * @summary Get app update history
+ */
+export const getAppUpdatesQueryLimitDefault = 30;
+
+export const GetAppUpdatesQueryParams = zod.object({
+  limit: zod.coerce.number().default(getAppUpdatesQueryLimitDefault),
+});
+
+export const GetAppUpdatesResponseItem = zod.object({
+  id: zod.number(),
+  title: zod.string(),
+  description: zod.string(),
+  emoji: zod.string(),
+  publishedAt: zod.coerce.date(),
+  createdAt: zod.coerce.date().optional(),
+});
+export const GetAppUpdatesResponse = zod.array(GetAppUpdatesResponseItem);
+
+/**
+ * @summary Create a new app update (admin only)
+ */
+export const CreateAppUpdateQueryParams = zod.object({
+  userId: zod.coerce.string().optional(),
+  adminPassword: zod.coerce.string().optional(),
+});
+
+export const createAppUpdateBodyTitleMax = 120;
+
+export const createAppUpdateBodyDescriptionMax = 500;
+
+export const CreateAppUpdateBody = zod.object({
+  title: zod.string().max(createAppUpdateBodyTitleMax),
+  description: zod.string().max(createAppUpdateBodyDescriptionMax),
+  emoji: zod.string().optional(),
+  publishedAt: zod.coerce.date().optional(),
+});
+
+/**
+ * @summary Delete an app update (admin only)
+ */
+export const DeleteAppUpdateParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const DeleteAppUpdateQueryParams = zod.object({
+  userId: zod.coerce.string().optional(),
+  adminPassword: zod.coerce.string().optional(),
+});
+
+/**
  * @summary Get Twin AI usage analytics
  */
 export const GetTwinAiAnalyticsQueryParams = zod.object({

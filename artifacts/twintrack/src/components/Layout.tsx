@@ -1,8 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
-import { Home, Moon, Utensils, BookOpen, GraduationCap, Heart, Settings, MessageCircle, X, Sparkles } from "lucide-react";
+import { Home, Moon, Utensils, GraduationCap, Heart, Settings, MessageCircle, X, Sparkles } from "lucide-react";
 import { useUser } from "@clerk/react";
 import { useSubmitFeedback } from "@workspace/api-client-react";
+
+interface UpdateItem {
+  id: number;
+  title: string;
+  description: string;
+  emoji: string;
+  publishedAt: string;
+}
+
+const UPDATES_SEEN_KEY = "tt_updates_seen";
 
 const FEEDBACK_TYPES = [
   { key: "bug", label: "🐛 Bug report" },
@@ -131,7 +141,6 @@ const tabs = [
   { path: "/dashboard", icon: Home, label: "Home" },
   { path: "/sleep", icon: Moon, label: "Sleep" },
   { path: "/feeding", icon: Utensils, label: "Feed" },
-  { path: "/routines", icon: BookOpen, label: "Routines" },
   { path: "/milestones", icon: Heart, label: "Memories" },
   { path: "/twin-ai", icon: Sparkles, label: "Twin AI", highlight: true },
   { path: "/learn", icon: GraduationCap, label: "Learn" },
@@ -139,10 +148,129 @@ const tabs = [
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+  const [updates, setUpdates] = useState<UpdateItem[]>([]);
+  const [showUpdates, setShowUpdates] = useState(false);
+  const [hasUnread, setHasUnread] = useState(false);
+  const baseUrl = useRef((import.meta.env.BASE_URL ?? "/").replace(/\/$/, "")).current;
+
+  useEffect(() => {
+    fetch(`${baseUrl}/api/app-updates?limit=30`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: UpdateItem[]) => {
+        setUpdates(data);
+        const lastSeen = localStorage.getItem(UPDATES_SEEN_KEY);
+        if (!lastSeen) {
+          setHasUnread(data.length > 0);
+        } else {
+          setHasUnread(data.some((u) => new Date(u.publishedAt) > new Date(lastSeen)));
+        }
+      })
+      .catch(() => {});
+  }, [baseUrl]);
+
+  function openUpdates() {
+    setShowUpdates(true);
+    setHasUnread(false);
+    localStorage.setItem(UPDATES_SEEN_KEY, new Date().toISOString());
+  }
 
   return (
-    <div className="flex flex-col min-h-[100dvh] max-w-[430px] mx-auto bg-background">
+    <div className="relative flex flex-col min-h-[100dvh] max-w-[430px] mx-auto bg-background">
       <main className="flex-1 overflow-y-auto pb-20">{children}</main>
+
+      {/* Top-right floating icons */}
+      <div className="fixed top-3 right-4 z-40 flex items-center gap-0.5 bg-white/90 backdrop-blur-sm rounded-full border border-border/50 shadow-sm px-1 py-1">
+        <button
+          onClick={openUpdates}
+          className="relative p-2 rounded-full hover:bg-muted/60 transition-colors"
+          aria-label="What's New"
+        >
+          <span className="text-base leading-none select-none">🍒</span>
+          {hasUnread && (
+            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary border-2 border-white" />
+          )}
+        </button>
+        <div className="w-px h-4 bg-border/60" />
+        <Link
+          to="/settings"
+          className={`p-2 rounded-full transition-colors ${
+            location === "/settings"
+              ? "text-primary bg-primary/10"
+              : "text-muted-foreground hover:bg-muted/60"
+          }`}
+          aria-label="Settings"
+        >
+          <Settings size={16} strokeWidth={location === "/settings" ? 2.5 : 1.8} />
+        </Link>
+      </div>
+
+      {/* What's New Drawer */}
+      {showUpdates && (
+        <div className="fixed inset-0 z-50 flex items-end">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowUpdates(false)} />
+          <div className="relative bg-white w-full max-w-[430px] mx-auto rounded-t-3xl max-h-[85dvh] flex flex-col safe-area-pb">
+            <div className="flex-shrink-0 flex items-center justify-between px-5 py-4 border-b border-border">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <span className="text-lg leading-none">🍒</span>
+                </div>
+                <div>
+                  <h3 className="font-bold text-foreground leading-tight">What's New</h3>
+                  <p className="text-xs text-muted-foreground">TwinTrack updates &amp; milestones</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowUpdates(false)}
+                className="p-1.5 rounded-lg bg-muted"
+                aria-label="Close"
+              >
+                <X size={14} className="text-muted-foreground" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto px-5 py-4">
+              {updates.length === 0 ? (
+                <div className="py-12 text-center">
+                  <span className="text-4xl">🍒</span>
+                  <p className="text-sm text-muted-foreground mt-3">Updates coming soon!</p>
+                </div>
+              ) : (
+                <div className="space-y-0">
+                  {updates.map((u, i) => (
+                    <div
+                      key={u.id}
+                      className={`flex items-start gap-3.5 py-4 ${
+                        i < updates.length - 1 ? "border-b border-border/50" : ""
+                      }`}
+                    >
+                      <div className="w-10 h-10 rounded-2xl bg-muted/50 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xl leading-none">{u.emoji}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground leading-snug">{u.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{u.description}</p>
+                        <p className="text-[10px] text-muted-foreground/50 mt-1.5 font-medium">
+                          {new Date(u.publishedAt).toLocaleDateString("en-US", {
+                            month: "long",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex-shrink-0 px-5 py-3 border-t border-border/50">
+              <p className="text-center text-xs text-muted-foreground">
+                Built with 💕 for twin families everywhere
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <FeedbackButton />
 
@@ -166,11 +294,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               >
                 {highlight && !active ? (
                   <div className="relative">
-                    <Icon
-                      size={20}
-                      className="transition-transform"
-                      strokeWidth={1.8}
-                    />
+                    <Icon size={20} className="transition-transform" strokeWidth={1.8} />
                     <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-violet-400" />
                   </div>
                 ) : (
@@ -186,22 +310,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               </Link>
             );
           })}
-          <Link
-            to="/settings"
-            className={`flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-xl transition-all flex-1 ${
-              location === "/settings" ? "text-primary" : "text-muted-foreground hover:text-foreground"
-            }`}
-            data-testid="nav-settings"
-          >
-            <Settings
-              size={20}
-              strokeWidth={location === "/settings" ? 2.5 : 1.8}
-              className={location === "/settings" ? "scale-110 transition-transform" : "transition-transform"}
-            />
-            <span className={`text-[9px] font-medium leading-none ${location === "/settings" ? "font-semibold" : ""}`}>
-              Settings
-            </span>
-          </Link>
         </div>
       </nav>
     </div>
@@ -248,12 +356,12 @@ export function PageHeader({
   right?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between px-5 pt-6 pb-4">
-      <div>
+    <div className="flex items-center justify-between px-5 pt-6 pb-4 pr-[72px]">
+      <div className="flex-1 min-w-0">
         <h1 className="text-xl font-bold text-foreground">{title}</h1>
         {subtitle && <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>}
       </div>
-      {right && <div>{right}</div>}
+      {right && <div className="flex-shrink-0 ml-2">{right}</div>}
     </div>
   );
 }

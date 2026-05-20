@@ -1186,6 +1186,84 @@ paths:
         "404":
           description: Not found
 
+  /app-updates:
+    get:
+      operationId: getAppUpdates
+      tags: [app-updates]
+      summary: Get app update history
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 30
+      responses:
+        "200":
+          description: List of app updates newest-first
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AppUpdate"
+
+  /admin/app-updates:
+    post:
+      operationId: createAppUpdate
+      tags: [admin]
+      summary: Create a new app update (admin only)
+      parameters:
+        - name: userId
+          in: query
+          schema:
+            type: string
+        - name: adminPassword
+          in: query
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AppUpdateCreateRequest"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppUpdate"
+        "403":
+          description: Forbidden
+
+  /admin/app-updates/{id}:
+    delete:
+      operationId: deleteAppUpdate
+      tags: [admin]
+      summary: Delete an app update (admin only)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: userId
+          in: query
+          schema:
+            type: string
+        - name: adminPassword
+          in: query
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Deleted
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+
   /admin/twin-ai-analytics:
     get:
       operationId: getTwinAiAnalytics
@@ -2191,6 +2269,41 @@ components:
           format: uri
         objectPath:
           type: string
+
+    AppUpdate:
+      type: object
+      required: [id, title, description, emoji, publishedAt]
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        emoji:
+          type: string
+        publishedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    AppUpdateCreateRequest:
+      type: object
+      required: [title, description]
+      properties:
+        title:
+          type: string
+          maxLength: 120
+        description:
+          type: string
+          maxLength: 500
+        emoji:
+          type: string
+        publishedAt:
+          type: string
+          format: date-time
 
     TwinAiMessageFeedbackRequest:
       type: object

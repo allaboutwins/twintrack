@@ -10,3 +10,4 @@ export * from "./onboarding";
 export * from "./feedback";
 export * from "./polls";
 export * from "./twin-ai-messages";
+export * from "./app-updates";

@@ -607,6 +607,24 @@ export interface UploadUrlResponse {
   objectPath: string;
 }
 
+export interface AppUpdate {
+  id: number;
+  title: string;
+  description: string;
+  emoji: string;
+  publishedAt: string;
+  createdAt?: string;
+}
+
+export interface AppUpdateCreateRequest {
+  /** @maxLength 120 */
+  title: string;
+  /** @maxLength 500 */
+  description: string;
+  emoji?: string;
+  publishedAt?: string;
+}
+
 export interface TwinAiMessageFeedbackRequest {
   helpful: boolean;
 }
@@ -752,6 +770,20 @@ export type GetPollHistoryParams = {
 
 export type BackfillSheetsOnboardingParams = {
   userId: string;
+};
+
+export type GetAppUpdatesParams = {
+  limit?: number;
+};
+
+export type CreateAppUpdateParams = {
+  userId?: string;
+  adminPassword?: string;
+};
+
+export type DeleteAppUpdateParams = {
+  userId?: string;
+  adminPassword?: string;
 };
 
 export type GetTwinAiAnalyticsParams = {

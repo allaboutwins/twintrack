@@ -17,10 +17,13 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  AppUpdate,
+  AppUpdateCreateRequest,
   BackfillResult,
   BackfillSheetsOnboardingParams,
   BookmarkResult,
   BookmarkVideoBody,
+  CreateAppUpdateParams,
   CreateDiaperEntryBody,
   CreateFeedingEntryBody,
   CreateFoodIntroducedBody,
@@ -30,6 +33,7 @@ import type {
   CreateTwinBody,
   CreateVideoBody,
   DashboardSummary,
+  DeleteAppUpdateParams,
   DiaperEntry,
   ErrorEnvelope,
   Feedback,
@@ -37,6 +41,7 @@ import type {
   FeedingSummary,
   FoodIntroduced,
   GetActivePollParams,
+  GetAppUpdatesParams,
   GetDashboardSummaryParams,
   GetFeedingSummaryParams,
   GetPollHistoryParams,
@@ -4723,6 +4728,299 @@ export const useSubmitTwinAiMessageFeedback = <
   TContext
 > => {
   return useMutation(getSubmitTwinAiMessageFeedbackMutationOptions(options));
+};
+
+/**
+ * @summary Get app update history
+ */
+export const getGetAppUpdatesUrl = (params?: GetAppUpdatesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/app-updates?${stringifiedParams}`
+    : `/api/app-updates`;
+};
+
+export const getAppUpdates = async (
+  params?: GetAppUpdatesParams,
+  options?: RequestInit,
+): Promise<AppUpdate[]> => {
+  return customFetch<AppUpdate[]>(getGetAppUpdatesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetAppUpdatesQueryKey = (params?: GetAppUpdatesParams) => {
+  return [`/api/app-updates`, ...(params ? [params] : [])] as const;
+};
+
+export const getGetAppUpdatesQueryOptions = <
+  TData = Awaited<ReturnType<typeof getAppUpdates>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetAppUpdatesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAppUpdates>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetAppUpdatesQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getAppUpdates>>> = ({
+    signal,
+  }) => getAppUpdates(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getAppUpdates>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetAppUpdatesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getAppUpdates>>
+>;
+export type GetAppUpdatesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get app update history
+ */
+
+export function useGetAppUpdates<
+  TData = Awaited<ReturnType<typeof getAppUpdates>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: GetAppUpdatesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getAppUpdates>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetAppUpdatesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create a new app update (admin only)
+ */
+export const getCreateAppUpdateUrl = (params?: CreateAppUpdateParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/app-updates?${stringifiedParams}`
+    : `/api/admin/app-updates`;
+};
+
+export const createAppUpdate = async (
+  appUpdateCreateRequest: AppUpdateCreateRequest,
+  params?: CreateAppUpdateParams,
+  options?: RequestInit,
+): Promise<AppUpdate> => {
+  return customFetch<AppUpdate>(getCreateAppUpdateUrl(params), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(appUpdateCreateRequest),
+  });
+};
+
+export const getCreateAppUpdateMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAppUpdate>>,
+    TError,
+    { data: BodyType<AppUpdateCreateRequest>; params?: CreateAppUpdateParams },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createAppUpdate>>,
+  TError,
+  { data: BodyType<AppUpdateCreateRequest>; params?: CreateAppUpdateParams },
+  TContext
+> => {
+  const mutationKey = ["createAppUpdate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createAppUpdate>>,
+    { data: BodyType<AppUpdateCreateRequest>; params?: CreateAppUpdateParams }
+  > = (props) => {
+    const { data, params } = props ?? {};
+
+    return createAppUpdate(data, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateAppUpdateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createAppUpdate>>
+>;
+export type CreateAppUpdateMutationBody = BodyType<AppUpdateCreateRequest>;
+export type CreateAppUpdateMutationError = ErrorType<void>;
+
+/**
+ * @summary Create a new app update (admin only)
+ */
+export const useCreateAppUpdate = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createAppUpdate>>,
+    TError,
+    { data: BodyType<AppUpdateCreateRequest>; params?: CreateAppUpdateParams },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createAppUpdate>>,
+  TError,
+  { data: BodyType<AppUpdateCreateRequest>; params?: CreateAppUpdateParams },
+  TContext
+> => {
+  return useMutation(getCreateAppUpdateMutationOptions(options));
+};
+
+/**
+ * @summary Delete an app update (admin only)
+ */
+export const getDeleteAppUpdateUrl = (
+  id: number,
+  params?: DeleteAppUpdateParams,
+) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/admin/app-updates/${id}?${stringifiedParams}`
+    : `/api/admin/app-updates/${id}`;
+};
+
+export const deleteAppUpdate = async (
+  id: number,
+  params?: DeleteAppUpdateParams,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteAppUpdateUrl(id, params), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteAppUpdateMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAppUpdate>>,
+    TError,
+    { id: number; params?: DeleteAppUpdateParams },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteAppUpdate>>,
+  TError,
+  { id: number; params?: DeleteAppUpdateParams },
+  TContext
+> => {
+  const mutationKey = ["deleteAppUpdate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteAppUpdate>>,
+    { id: number; params?: DeleteAppUpdateParams }
+  > = (props) => {
+    const { id, params } = props ?? {};
+
+    return deleteAppUpdate(id, params, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteAppUpdateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteAppUpdate>>
+>;
+
+export type DeleteAppUpdateMutationError = ErrorType<void>;
+
+/**
+ * @summary Delete an app update (admin only)
+ */
+export const useDeleteAppUpdate = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteAppUpdate>>,
+    TError,
+    { id: number; params?: DeleteAppUpdateParams },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteAppUpdate>>,
+  TError,
+  { id: number; params?: DeleteAppUpdateParams },
+  TContext
+> => {
+  return useMutation(getDeleteAppUpdateMutationOptions(options));
 };
 
 /**

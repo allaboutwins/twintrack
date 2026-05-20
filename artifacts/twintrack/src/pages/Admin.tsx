@@ -49,6 +49,14 @@ interface AdminStats {
   polls: PollStat[];
 }
 
+interface AppUpdateItem {
+  id: number;
+  title: string;
+  description: string;
+  emoji: string;
+  publishedAt: string;
+}
+
 interface TwinAiAnalytics {
   totalMessages: number;
   todayMessages: number;
@@ -175,6 +183,13 @@ export default function Admin() {
   const [showAllEmails, setShowAllEmails] = useState(false);
 
   const [twinAiAnalytics, setTwinAiAnalytics] = useState<TwinAiAnalytics | null>(null);
+  const [appUpdatesList, setAppUpdatesList] = useState<AppUpdateItem[]>([]);
+  const [showUpdateForm, setShowUpdateForm] = useState(false);
+  const [updateTitle, setUpdateTitle] = useState("");
+  const [updateDesc, setUpdateDesc] = useState("");
+  const [updateEmoji, setUpdateEmoji] = useState("🍒");
+  const [isPostingUpdate, setIsPostingUpdate] = useState(false);
+  const [updateSuccess, setUpdateSuccess] = useState(false);
 
   const [isBackfilling, setIsBackfilling] = useState(false);
   const [backfillResult, setBackfillResult] = useState<BackfillResult | null>(null);
@@ -195,15 +210,17 @@ export default function Admin() {
     if (!isAdmin) return;
     setLoading(true);
     try {
-      const [statsRes, aiRes] = await Promise.all([
+      const [statsRes, aiRes, updatesRes] = await Promise.all([
         fetch(`${baseUrl}/api/admin/stats?${authQuery}`),
         fetch(`${baseUrl}/api/admin/twin-ai-analytics?${authQuery}`),
+        fetch(`${baseUrl}/api/app-updates?limit=50`),
       ]);
       if (!statsRes.ok) throw new Error(`${statsRes.status}`);
       const data: AdminStats = await statsRes.json();
       setStats(data);
       setFeedback(data.feedback);
       if (aiRes.ok) setTwinAiAnalytics(await aiRes.json());
+      if (updatesRes.ok) setAppUpdatesList(await updatesRes.json());
       setLastUpdated(new Date());
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -235,6 +252,33 @@ export default function Admin() {
     } finally {
       setIsBackfilling(false);
     }
+  }
+
+  async function postUpdate() {
+    if (!updateTitle.trim() || !updateDesc.trim()) return;
+    setIsPostingUpdate(true);
+    try {
+      const r = await fetch(`${baseUrl}/api/admin/app-updates?${authQuery}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: updateTitle.trim(), description: updateDesc.trim(), emoji: updateEmoji.trim() || "🍒" }),
+      });
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const created: AppUpdateItem = await r.json();
+      setAppUpdatesList((prev) => [created, ...prev]);
+      setUpdateSuccess(true);
+      setUpdateTitle("");
+      setUpdateDesc("");
+      setUpdateEmoji("🍒");
+      setShowUpdateForm(false);
+      setTimeout(() => setUpdateSuccess(false), 3000);
+    } catch (e) { console.error(e); }
+    finally { setIsPostingUpdate(false); }
+  }
+
+  async function deleteUpdate(id: number) {
+    const r = await fetch(`${baseUrl}/api/admin/app-updates/${id}?${authQuery}`, { method: "DELETE" });
+    if (r.ok) setAppUpdatesList((prev) => prev.filter((u) => u.id !== id));
   }
 
   async function createPoll() {
@@ -629,6 +673,105 @@ export default function Admin() {
                 <p className="text-sm text-muted-foreground">
                   No polls yet. Create your first one above — it will appear on the Community tab for all users.
                 </p>
+              </div>
+            )}
+          </section>
+
+          {/* ── UPDATE CENTER ── */}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <span className="text-base leading-none">🍒</span>
+                </div>
+                <h2 className="font-bold text-foreground text-base">Update Center</h2>
+              </div>
+              <button
+                onClick={() => { setShowUpdateForm((v) => !v); setUpdateSuccess(false); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 text-primary text-xs font-semibold"
+              >
+                <Plus size={13} />{showUpdateForm ? "Cancel" : "Post Update"}
+              </button>
+            </div>
+
+            {updateSuccess && (
+              <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-sm text-green-800 font-medium mb-4">
+                ✓ Update posted and visible to all users!
+              </div>
+            )}
+
+            {showUpdateForm && (
+              <div className="bg-white rounded-2xl border border-border p-5 space-y-4 mb-4">
+                <p className="text-sm font-semibold text-foreground">Post a New Update</p>
+                <div className="flex gap-3">
+                  <div className="flex-shrink-0">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Emoji</label>
+                    <input
+                      value={updateEmoji}
+                      onChange={(e) => setUpdateEmoji(e.target.value)}
+                      placeholder="🍒"
+                      maxLength={4}
+                      className="mt-1.5 w-14 px-2 py-2.5 rounded-xl bg-muted/30 border border-border text-sm text-center outline-none focus:ring-2 ring-primary/30"
+                    />
+                  </div>
+                  <div className="flex-1">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Title</label>
+                    <input
+                      value={updateTitle}
+                      onChange={(e) => setUpdateTitle(e.target.value)}
+                      placeholder="e.g. New feature launched!"
+                      maxLength={120}
+                      className="mt-1.5 w-full px-3 py-2.5 rounded-xl bg-muted/30 border border-border text-sm outline-none focus:ring-2 ring-primary/30"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Description</label>
+                  <textarea
+                    value={updateDesc}
+                    onChange={(e) => setUpdateDesc(e.target.value)}
+                    placeholder="What did we ship? Keep it warm and exciting for twin moms 💕"
+                    rows={3}
+                    maxLength={500}
+                    className="mt-1.5 w-full px-3 py-2.5 rounded-xl bg-muted/30 border border-border text-sm outline-none focus:ring-2 ring-primary/30 resize-none"
+                  />
+                  <p className="text-right text-[10px] text-muted-foreground mt-0.5">{updateDesc.length}/500</p>
+                </div>
+                <button
+                  onClick={postUpdate}
+                  disabled={isPostingUpdate || !updateTitle.trim() || !updateDesc.trim()}
+                  className="w-full py-2.5 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50 transition-all active:scale-[0.98]"
+                >
+                  {isPostingUpdate ? "Posting…" : "Publish Update 🍒"}
+                </button>
+              </div>
+            )}
+
+            {appUpdatesList.length === 0 ? (
+              <div className="bg-white rounded-2xl p-5 border border-border text-center text-sm text-muted-foreground">
+                No updates posted yet — click "Post Update" to add the first one!
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {appUpdatesList.slice(0, 15).map((u) => (
+                  <div key={u.id} className="bg-white rounded-2xl border border-border px-4 py-3 flex items-start gap-3">
+                    <span className="text-xl flex-shrink-0 mt-0.5">{u.emoji}</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground leading-snug">{u.title}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{u.description}</p>
+                      <p className="text-[10px] text-muted-foreground/60 mt-1">
+                        {new Date(u.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                      </p>
+                    </div>
+                    <button
+                      onClick={() => deleteUpdate(u.id)}
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-50 transition-colors flex-shrink-0"
+                      title="Delete update"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                ))}
               </div>
             )}
           </section>
