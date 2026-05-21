@@ -179,8 +179,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="relative flex flex-col min-h-[100dvh] max-w-[430px] mx-auto bg-background">
       {/* Top header */}
       <div className="bg-white border-b border-border/30">
-        <div className="flex items-center justify-between px-4 h-12">
-          <img src={logoAat} alt="All About Twins" className="h-8 w-auto" />
+        <div className="flex items-center justify-between px-4 h-16">
+          <img src={logoAat} alt="All About Twins" className="h-16 w-auto" />
           <div className="flex items-center">
             <button
               onClick={openUpdates}
