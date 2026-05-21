@@ -176,33 +176,40 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="relative flex flex-col min-h-[100dvh] max-w-[430px] mx-auto bg-background">
-      <main className="flex-1 overflow-y-auto pb-20">{children}</main>
-
-      {/* Top-right floating icons */}
-      <div className="fixed top-3 right-4 z-40 flex items-center gap-0.5 bg-white/90 backdrop-blur-sm rounded-full border border-border/50 shadow-sm px-1 py-1">
-        <button
-          onClick={openUpdates}
-          className="relative p-2 rounded-full hover:bg-muted/60 transition-colors"
-          aria-label="What's New"
-        >
-          <span className="text-base leading-none select-none">🍒</span>
-          {hasUnread && (
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary border-2 border-white" />
-          )}
-        </button>
-        <div className="w-px h-4 bg-border/60" />
-        <Link
-          to="/settings"
-          className={`p-2 rounded-full transition-colors ${
-            location === "/settings"
-              ? "text-primary bg-primary/10"
-              : "text-muted-foreground hover:bg-muted/60"
-          }`}
-          aria-label="Settings"
-        >
-          <Settings size={16} strokeWidth={location === "/settings" ? 2.5 : 1.8} />
-        </Link>
+      {/* Sticky top header */}
+      <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-border/30">
+        <div className="flex items-center justify-between px-4 h-11">
+          <div className="flex items-center gap-2">
+            <span className="text-lg leading-none select-none">💕</span>
+            <p className="text-sm font-bold text-primary tracking-tight">All About Twins</p>
+          </div>
+          <div className="flex items-center">
+            <button
+              onClick={openUpdates}
+              className="relative p-2 rounded-full hover:bg-muted/60 transition-colors"
+              aria-label="What's New"
+            >
+              <span className="text-base leading-none select-none">🍒</span>
+              {hasUnread && (
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary border-2 border-white" />
+              )}
+            </button>
+            <Link
+              to="/settings"
+              className={`p-2 rounded-full transition-colors ${
+                location === "/settings"
+                  ? "text-primary bg-primary/10"
+                  : "text-muted-foreground hover:bg-muted/60"
+              }`}
+              aria-label="Settings"
+            >
+              <Settings size={16} strokeWidth={location === "/settings" ? 2.5 : 1.8} />
+            </Link>
+          </div>
+        </div>
       </div>
+
+      <main className="flex-1 overflow-y-auto pb-20">{children}</main>
 
       {/* What's New Drawer */}
       {showUpdates && (
@@ -249,13 +256,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-foreground leading-snug">{u.title}</p>
                         <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{u.description}</p>
-                        <p className="text-[10px] text-muted-foreground/50 mt-1.5 font-medium">
-                          {new Date(u.publishedAt).toLocaleDateString("en-US", {
-                            month: "long",
-                            day: "numeric",
-                            year: "numeric",
-                          })}
-                        </p>
                       </div>
                     </div>
                   ))}
@@ -356,7 +356,7 @@ export function PageHeader({
   right?: React.ReactNode;
 }) {
   return (
-    <div className="flex items-center justify-between px-5 pt-6 pb-4 pr-[72px]">
+    <div className="flex items-center justify-between px-5 pt-4 pb-4">
       <div className="flex-1 min-w-0">
         <h1 className="text-xl font-bold text-foreground">{title}</h1>
         {subtitle && <p className="text-sm text-muted-foreground mt-0.5">{subtitle}</p>}

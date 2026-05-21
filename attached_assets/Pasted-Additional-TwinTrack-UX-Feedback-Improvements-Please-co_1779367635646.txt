@@ -1,0 +1,267 @@
+Additional TwinTrack UX + Feedback Improvements 💕
+
+Please continue improving the app based on real twin mom feedback and current UX behavior.
+
+---
+
+1. ADD “ALL ABOUT TWINS” BRANDING TO TOP HEADER 💕
+
+Please add the “All About Twins” logo to the top header area of the app.
+
+Goal:
+
+* stronger emotional identity
+* stronger trust/community feeling
+* make TwinTrack feel connected to the All About Twins ecosystem
+
+Please keep it:
+
+* soft
+* minimal
+* clean
+* mobile-first
+
+---
+
+2. 🍒 CHERRIES BUTTON POSITIONING FIX
+
+The 🍒 Cherries button idea is great emotionally, but currently it overlaps important information on the Home page (example: the date).
+
+Please:
+
+* remove floating behavior
+* integrate the cherries icon naturally into the top header/navigation row
+* same for Settings icon
+
+The top area should feel:
+clean, balanced, intentional.
+
+Also:
+please REMOVE the dates shown inside each “What’s New” notification/update entry.
+They visually clutter the experience and make updates feel too technical.
+
+---
+
+3. “WHAT’S NEW” HOME CARD AUTO-UPDATES
+
+The “What’s New” section on the Home page is currently static.
+
+Please make it automatically show:
+👉 the LATEST 3 published updates/changes
+
+Example:
+
+* Twin AI launched
+* Edit entries added
+* Poll history added
+
+Goal:
+keep the app feeling alive and evolving.
+
+---
+
+4. HOME PAGE POLL AUTO-UPDATES 📊
+
+The Home page poll still shows the very first poll only.
+
+Please:
+
+* automatically display the latest active poll
+* add a button:
+  “View Older Polls”
+  that opens poll history/community polls
+
+---
+
+5. COMMUNITY / POLLS TAB FIX
+
+Inside Learn → Community,
+the app still only shows the very first poll.
+
+Please:
+
+* show ALL created polls
+* newest first
+* allow scrolling/history
+* continue showing results only after voting
+
+This is important for:
+
+* engagement
+* repeat visits
+* community feeling
+* emotional retention
+
+---
+
+6. REMOVE VIDEO SECTION FROM HOME PAGE
+
+Please remove the video recommendation section from the Home page for now.
+
+Reason:
+
+* YouTube integration is still broken
+* titles are incorrect
+* videos are not updating/opening correctly
+
+No need to spend more resources on homepage video placement until the integration works reliably.
+
+---
+
+7. MEMORIES TAB — PRIORITY IMPROVEMENTS 📸
+
+The Memories feature has huge emotional potential but currently feels unfinished.
+
+Current issues:
+
+* uploaded photos still do not display properly
+* shared images do not include the uploaded photo
+* social sharing feels broken/incomplete
+
+Please prioritize fixing:
+
+* uploaded image visibility also on other social media channels, like Instagram
+* image rendering
+* social sharing reliability
+
+Then:
+please create a beautiful lightweight share card/frame, with this small remark below:
+Made with TwinTrack 💕
+
+Goal:
+encourage organic social sharing and emotional attachment.
+
+Please keep implementation simple and lightweight.
+
+---
+
+8. FUTURE MEMORIES DIRECTION 💡
+
+Please keep architecture scalable for future ideas:
+
+* community milestone sharing
+* likes/comments
+* “Memory Book” export
+* monthly/yearly memory recaps
+* premium printed/photo book options
+
+BUT:
+do not overbuild this yet.
+
+Focus first on:
+👉 reliable photo upload + beautiful sharing.
+
+---
+
+9. NEW TWIN MOM FEEDBACK — IMPORTANT UX / FEATURE REQUESTS 💕
+
+A) CUSTOM MILESTONES
+Twin moms want the ability to create their own milestones.
+
+Examples:
+
+* first wave
+* first trip to the park
+* pulling up
+* funny family moments
+* mom victories
+
+Please:
+
+* move “Custom Milestone” option higher in the flow
+* Create:
+  “Mama Milestones" 💕
+  with encouraging examples celebrating small wins too
+
+This could become a very emotional retention feature.
+
+---
+
+B) MEDICINE TRACKING 💊
+
+Please explore lightweight medicine tracking support:
+
+* medicine name
+* dosage
+* time given
+
+Very useful for:
+
+* NICU/preemie families
+* sick babies
+* multiple caregivers
+
+---
+
+C) “TIME SINCE LAST…” ON HOME PAGE ⏱️
+
+Please add lightweight timing references under:
+
+* Sleep
+* Feeding
+* Diapers
+
+Example:
+
+* “1h 30m since last sleep”
+* “2h since last bottle”
+
+This is extremely useful for exhausted twin parents.
+
+---
+
+D) FORMULA LOGGING IMPROVEMENTS 🍼
+
+Please improve formula logging:
+
+* editable oz/ml after feed
+* editable feed time
+* allow logging after feed completion
+
+Real twin parenting is chaotic and moms often cannot log immediately.
+
+---
+
+E) NIGHT SLEEP / CROSS-DAY BUG 🌙
+
+Current issue:
+night sleep crossing midnight causes problems stopping/editing sleep.
+
+Please fix cross-day sleep tracking reliability.
+
+Also:
+please begin building:
+
+* yesterday view
+* weekly summaries
+* historical tracking
+
+This is VERY important long-term and could later become a premium analytics feature.
+
+Potential future premium:
+
+* export PDF summaries for pediatricians/doctors
+
+---
+
+F) TWIN SWITCHING BUG 🐛
+
+Current bug:
+when switching twins from Home page,
+the app sometimes opens the wrong twin’s tracker/logging page.
+
+Example:
+clicking Fletcher still opens Eliza logging.
+
+Please investigate/fix carefully because this creates incorrect tracking data.
+
+---
+
+G) IMPORTANT POSITIVE FEEDBACK 💕
+
+Twin moms LOVE:
+👉 the quick twin switching tabs
+
+(being able to tap directly between twins instead of using dropdowns like Huckleberry)
+
+Please preserve and continue improving this UX direction because it’s becoming a strong TwinTrack differentiator.

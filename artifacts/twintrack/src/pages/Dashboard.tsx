@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser } from "@clerk/react";
 import { useLocation } from "wouter";
 import {
@@ -6,8 +6,6 @@ import {
   getGetDashboardSummaryQueryKey,
   useListTwins,
   getListTwinsQueryKey,
-  useListVideos,
-  getListVideosQueryKey,
   useListMilestones,
   getListMilestonesQueryKey,
   useGetActivePoll,
@@ -16,7 +14,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { PageHeader } from "@/components/Layout";
-import { Moon, Utensils, Baby, ChevronRight, Play, Star, Heart, BarChart2, Sparkles, X } from "lucide-react";
+import { Moon, Utensils, Baby, ChevronRight, Star, Heart, BarChart2, Sparkles, X } from "lucide-react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -74,14 +72,6 @@ function getAgeLabel(months: number) {
   return `${years} year${years === 1 ? "" : "s"} old`;
 }
 
-function getRecommendedCategory(months: number) {
-  if (months < 3) return "sleep";
-  if (months < 6) return "feeding";
-  if (months < 12) return "breastfeeding-twins";
-  if (months < 24) return "routines";
-  return "toddler-life";
-}
-
 function getRoutineSuggestion() {
   const h = new Date().getHours();
   if (h < 10) return { label: "Morning Routine", emoji: "☀️", desc: "Start the day calm and organised" };
@@ -121,20 +111,6 @@ export default function Dashboard() {
     { query: { enabled: !!user?.id, queryKey: getListTwinsQueryKey({ userId: user?.id ?? "" }) } },
   );
 
-  const birthdateSample = twins[0]?.birthdate;
-  const twinAgeMonths = birthdateSample ? getAgeMonths(birthdateSample) : null;
-  const recommendedCategory = twinAgeMonths != null ? getRecommendedCategory(twinAgeMonths) : "sleep";
-
-  const { data: recommendedVideos = [] } = useListVideos(
-    { category: recommendedCategory },
-    {
-      query: {
-        enabled: true,
-        queryKey: getListVideosQueryKey({ category: recommendedCategory }),
-      },
-    },
-  );
-
   const { data: milestones = [] } = useListMilestones(
     { userId: user?.id ?? "" },
     { query: { enabled: !!user?.id, queryKey: getListMilestonesQueryKey({ userId: user?.id ?? "" }) } },
@@ -145,7 +121,6 @@ export default function Dashboard() {
       ? [...milestones].sort((a, b) => new Date(b.achievedDate).getTime() - new Date(a.achievedDate).getTime())[0]
       : null;
 
-  const featuredVideo = recommendedVideos[0] ?? null;
   const noTwins = !isLoading && (!summary?.twins || summary.twins.length === 0);
   const routineSuggestion = getRoutineSuggestion();
 
@@ -324,45 +299,6 @@ export default function Dashboard() {
               </button>
             )}
 
-            {/* Recommended video */}
-            {featuredVideo && (
-              <button
-                onClick={() => setLocation("/learn")}
-                className="w-full bg-white rounded-2xl border border-border overflow-hidden text-left hover:shadow-sm active:scale-[0.99] transition-all"
-                data-testid="featured-video"
-              >
-                <div className="relative aspect-video bg-muted overflow-hidden">
-                  {featuredVideo.thumbnailUrl ? (
-                    <img
-                      src={featuredVideo.thumbnailUrl}
-                      alt={featuredVideo.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full bg-gradient-to-br from-primary/20 to-accent/20" />
-                  )}
-                  <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                    <div className="w-12 h-12 rounded-full bg-white/90 flex items-center justify-center shadow-lg">
-                      <Play size={20} className="text-primary ml-0.5" fill="currentColor" />
-                    </div>
-                  </div>
-                  <div className="absolute top-3 left-3">
-                    <span className="bg-primary text-white text-xs font-semibold px-2 py-1 rounded-full">
-                      {twinAgeMonths != null
-                        ? `Recommended for ${getAgeLabel(twinAgeMonths)} twins`
-                        : "Recommended"}
-                    </span>
-                  </div>
-                </div>
-                <div className="p-4">
-                  <p className="font-semibold text-sm text-foreground leading-snug">{featuredVideo.title}</p>
-                  <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                    <span>Tap to watch in Learn</span>
-                    <ChevronRight size={12} />
-                  </p>
-                </div>
-              </button>
-            )}
           </div>
         )}
 
@@ -385,19 +321,40 @@ export default function Dashboard() {
   );
 }
 
-const WHATS_NEW_ITEMS = [
-  { emoji: "✏️", title: "Edit tracking entries", desc: "Tap the pencil on any sleep, feeding, or diaper entry to correct it." },
-  { emoji: "📚", title: "Twins Magazine Library", desc: "11 issues of Twins Magazine now in the Learn tab — tap to read!" },
-  { emoji: "👶", title: "Weekly sleep average", desc: "Your sleep summary now shows a 7-day daily average." },
-];
-const WHATS_NEW_KEY = "whats_new_dismissed_v3";
+const UPDATES_SEEN_KEY = "tt_updates_seen";
+
+interface AppUpdateItem {
+  id: number;
+  emoji: string;
+  title: string;
+  description: string;
+  publishedAt: string;
+}
 
 function WhatsNewCard() {
-  const [dismissed, setDismissed] = useState(() => {
-    try { return localStorage.getItem(WHATS_NEW_KEY) === "1"; } catch { return false; }
-  });
+  const [dismissed, setDismissed] = useState(false);
+  const [updates, setUpdates] = useState<AppUpdateItem[]>([]);
+  const baseUrl = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
 
-  if (dismissed) return null;
+  useEffect(() => {
+    fetch(`${baseUrl}/api/app-updates?limit=3`)
+      .then((r) => (r.ok ? r.json() : []))
+      .then((data: AppUpdateItem[]) => {
+        setUpdates(data);
+        const lastSeen = localStorage.getItem(UPDATES_SEEN_KEY);
+        if (lastSeen && !data.some((u) => new Date(u.publishedAt) > new Date(lastSeen))) {
+          setDismissed(true);
+        }
+      })
+      .catch(() => {});
+  }, [baseUrl]);
+
+  function dismiss() {
+    setDismissed(true);
+    try { localStorage.setItem(UPDATES_SEEN_KEY, new Date().toISOString()); } catch { /* noop */ }
+  }
+
+  if (dismissed || updates.length === 0) return null;
 
   return (
     <div className="bg-gradient-to-br from-violet-50 to-pink-50 border border-violet-200/60 rounded-2xl p-4 space-y-3">
@@ -407,10 +364,7 @@ function WhatsNewCard() {
           <p className="text-xs font-bold text-violet-600 uppercase tracking-wide">What's New</p>
         </div>
         <button
-          onClick={() => {
-            setDismissed(true);
-            try { localStorage.setItem(WHATS_NEW_KEY, "1"); } catch { /* noop */ }
-          }}
+          onClick={dismiss}
           className="p-1 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
           aria-label="Dismiss"
           data-testid="whats-new-dismiss"
@@ -419,12 +373,12 @@ function WhatsNewCard() {
         </button>
       </div>
       <div className="space-y-2.5">
-        {WHATS_NEW_ITEMS.map((item) => (
-          <div key={item.title} className="flex items-start gap-3">
-            <span className="text-base flex-shrink-0 mt-0.5">{item.emoji}</span>
+        {updates.map((u) => (
+          <div key={u.id} className="flex items-start gap-3">
+            <span className="text-base flex-shrink-0 mt-0.5">{u.emoji}</span>
             <div>
-              <p className="text-sm font-semibold text-foreground leading-snug">{item.title}</p>
-              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{item.desc}</p>
+              <p className="text-sm font-semibold text-foreground leading-snug">{u.title}</p>
+              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{u.description}</p>
             </div>
           </div>
         ))}
@@ -435,6 +389,7 @@ function WhatsNewCard() {
 
 function PollWidget({ userId }: { userId: string }) {
   const qc = useQueryClient();
+  const [, setLocation] = useLocation();
   const { data: poll } = useGetActivePoll(
     { userId },
     {
@@ -505,6 +460,14 @@ function PollWidget({ userId }: { userId: string }) {
           </p>
         </div>
       )}
+      <div className="pt-1 border-t border-border/50 flex justify-end">
+        <button
+          onClick={() => setLocation("/learn?tab=community")}
+          className="text-xs text-primary font-semibold flex items-center gap-0.5 py-1"
+        >
+          View older polls <ChevronRight size={11} />
+        </button>
+      </div>
     </div>
   );
 }

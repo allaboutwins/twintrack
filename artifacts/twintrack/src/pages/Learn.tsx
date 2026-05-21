@@ -601,43 +601,50 @@ function CommunityPollsSection({ userId }: { userId: string }) {
     { query: { enabled: !!userId, queryKey: getGetPollHistoryQueryKey({ userId }) } },
   );
 
-  const pastPolls = (pollHistory as unknown as PollItem[]).filter((p) => !p.isActive);
-
-  function handleVoted(updated: PollItem) {
+  function handleVoted() {
     qc.invalidateQueries({ queryKey: getGetActivePollQueryKey({ userId }) });
     qc.invalidateQueries({ queryKey: getGetPollHistoryQueryKey({ userId }) });
   }
 
+  const isLoading = activePollLoading || historyLoading;
+
+  const historyPolls = pollHistory as unknown as PollItem[];
+  const historyIds = new Set(historyPolls.map((p) => p.id));
+  const activePollItem = activePoll ? (activePoll as unknown as PollItem) : null;
+
+  const allPolls: PollItem[] = [
+    ...(activePollItem && !historyIds.has(activePollItem.id) ? [activePollItem] : []),
+    ...historyPolls,
+  ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
   return (
-    <div className="px-4 pt-4 space-y-4 pb-4">
-      {/* Active Poll */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <BarChart3 size={15} className="text-primary" />
-          <p className="font-bold text-sm text-foreground">Twin Mom Poll</p>
-        </div>
-        {activePollLoading ? (
-          <Skeleton className="h-40 w-full rounded-2xl" />
-        ) : activePoll ? (
-          <PollCard poll={activePoll as unknown as PollItem} userId={userId} onVoted={handleVoted} />
-        ) : (
-          <div className="bg-muted/30 rounded-2xl border border-border p-6 text-center">
-            <p className="text-2xl mb-2">🗳️</p>
-            <p className="font-semibold text-sm text-foreground">No active poll right now</p>
-            <p className="text-xs text-muted-foreground mt-1">Check back soon for the next community poll!</p>
-          </div>
+    <div className="px-4 pt-4 pb-4">
+      <div className="flex items-center gap-2 mb-4">
+        <BarChart3 size={15} className="text-primary" />
+        <p className="font-bold text-sm text-foreground">Community Polls</p>
+        {allPolls.length > 0 && (
+          <span className="text-[10px] font-bold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">
+            {allPolls.length}
+          </span>
         )}
       </div>
 
-      {/* Poll History */}
-      {!historyLoading && pastPolls.length > 0 && (
-        <div>
-          <p className="font-bold text-sm text-foreground mb-3">Past Polls</p>
-          <div className="space-y-3">
-            {pastPolls.map((poll) => (
-              <PollCard key={poll.id} poll={poll} userId={userId} onVoted={handleVoted} />
-            ))}
-          </div>
+      {isLoading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-40 w-full rounded-2xl" />
+          <Skeleton className="h-40 w-full rounded-2xl" />
+        </div>
+      ) : allPolls.length === 0 ? (
+        <div className="bg-muted/30 rounded-2xl border border-border p-8 text-center">
+          <p className="text-3xl mb-3">🗳️</p>
+          <p className="font-semibold text-sm text-foreground">No polls yet</p>
+          <p className="text-xs text-muted-foreground mt-1">Check back soon for the next community poll!</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {allPolls.map((poll) => (
+            <PollCard key={poll.id} poll={poll} userId={userId} onVoted={handleVoted} />
+          ))}
         </div>
       )}
     </div>
@@ -650,7 +657,14 @@ export default function Learn() {
   const [activeCategory, setActiveCategory] = useState("");
   const [search, setSearch] = useState("");
   const [showSearch, setShowSearch] = useState(false);
-  const [activeTab, setActiveTab] = useState<"library" | "saved" | "magazines" | "academy" | "community">("magazines");
+  const [activeTab, setActiveTab] = useState<"library" | "saved" | "magazines" | "academy" | "community">(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get("tab");
+      if (tab === "community") return "community";
+    } catch { /* noop */ }
+    return "magazines";
+  });
 
   const { data: videos = [], isLoading } = useListVideos(
     { category: activeCategory || undefined, search: search || undefined },
