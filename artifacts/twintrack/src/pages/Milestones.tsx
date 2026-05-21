@@ -43,6 +43,186 @@ function formatDate(iso: string) {
   return new Date(iso + "T00:00:00").toLocaleDateString([], { month: "long", day: "numeric", year: "numeric" });
 }
 
+function wrapTextLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
+  const words = text.split(" ");
+  const lines: string[] = [];
+  let line = "";
+  for (const word of words) {
+    const test = line ? `${line} ${word}` : word;
+    if (ctx.measureText(test).width > maxWidth && line) {
+      lines.push(line);
+      line = word;
+    } else {
+      line = test;
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
+
+async function createShareCard(
+  milestone: { title: string; category: string; achievedDate: string; note?: string | null; photoUrl?: string | null; twinId: number },
+  twin: { name: string; label: string; colorTheme: string } | undefined,
+  preset: { emoji: string } | undefined,
+): Promise<Blob | null> {
+  const W = 1080;
+  const H = 1080;
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+
+  const twinColor = twin?.colorTheme ?? "#da5a9f";
+  const twinName = twin?.name || twin?.label || "Our twins";
+  const emoji = preset?.emoji ?? "⭐";
+  const hexToRgb = (hex: string) => ({
+    r: parseInt(hex.slice(1, 3), 16),
+    g: parseInt(hex.slice(3, 5), 16),
+    b: parseInt(hex.slice(5, 7), 16),
+  });
+  const rgb = hexToRgb(twinColor);
+
+  let photoImg: HTMLImageElement | null = null;
+  let photoBlobUrl: string | null = null;
+  if (milestone.photoUrl) {
+    try {
+      const baseUrl = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+      const photoPath = milestone.photoUrl.startsWith("/") ? milestone.photoUrl : `/${milestone.photoUrl}`;
+      const r = await fetch(`${baseUrl}/api/storage${photoPath}`);
+      if (r.ok) {
+        const blob = await r.blob();
+        photoBlobUrl = URL.createObjectURL(blob);
+        photoImg = await new Promise<HTMLImageElement>((res, rej) => {
+          const img = new Image();
+          img.onload = () => res(img);
+          img.onerror = rej;
+          img.src = photoBlobUrl!;
+        });
+      }
+    } catch { photoImg = null; }
+  }
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, W, H);
+
+  if (photoImg) {
+    const HEADER_H = 280;
+    const PHOTO_H = 600;
+    const FOOTER_H = 200;
+
+    const grad = ctx.createLinearGradient(0, 0, 0, HEADER_H);
+    grad.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},1)`);
+    grad.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0.75)`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, HEADER_H);
+
+    ctx.font = "90px serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(emoji, W / 2, 95);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `bold 54px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    const titleLines = wrapTextLines(ctx, milestone.title, W - 120);
+    let ty = 160;
+    for (const line of titleLines.slice(0, 2)) {
+      ctx.fillText(line, W / 2, ty);
+      ty += 62;
+    }
+    ctx.font = `36px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    ctx.fillStyle = "rgba(255,255,255,0.88)";
+    ctx.fillText(twinName, W / 2, ty + 4);
+
+    const aspectSrc = photoImg.width / photoImg.height;
+    const aspectDst = W / PHOTO_H;
+    let sx = 0, sy = 0, sw = photoImg.width, sh = photoImg.height;
+    if (aspectSrc > aspectDst) {
+      sw = Math.round(photoImg.height * aspectDst);
+      sx = Math.round((photoImg.width - sw) / 2);
+    } else {
+      sh = Math.round(photoImg.width / aspectDst);
+      sy = Math.round((photoImg.height - sh) / 2);
+    }
+    ctx.drawImage(photoImg, sx, sy, sw, sh, 0, HEADER_H, W, PHOTO_H);
+
+    const footerY = HEADER_H + PHOTO_H;
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, footerY, W, FOOTER_H);
+    ctx.fillStyle = twinColor;
+    ctx.fillRect(0, footerY, W, 5);
+
+    ctx.fillStyle = twinColor;
+    ctx.font = `bold 44px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("Made with TwinTrack 💕", W / 2, footerY + 90);
+    ctx.fillStyle = "#aaaaaa";
+    ctx.font = `30px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    ctx.fillText("All About Twins", W / 2, footerY + 152);
+  } else {
+    const grad = ctx.createLinearGradient(0, 0, 0, H);
+    grad.addColorStop(0, "#ffffff");
+    grad.addColorStop(0.65, `rgba(${rgb.r},${rgb.g},${rgb.b},0.07)`);
+    grad.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0.14)`);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
+    ctx.fillStyle = twinColor;
+    ctx.fillRect(0, 0, W, 18);
+
+    ctx.font = "190px serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(emoji, W / 2, 290);
+
+    ctx.fillStyle = "#1a1a2e";
+    ctx.font = `bold 70px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    const titleLines = wrapTextLines(ctx, milestone.title, W - 160);
+    let y = 440;
+    for (const line of titleLines.slice(0, 3)) {
+      ctx.fillText(line, W / 2, y);
+      y += 80;
+    }
+
+    ctx.fillStyle = twinColor;
+    ctx.font = `bold 52px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    ctx.fillText(twinName, W / 2, y + 18);
+    y += 82;
+
+    ctx.fillStyle = "#999999";
+    ctx.font = `40px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    ctx.fillText(formatDate(milestone.achievedDate), W / 2, y + 14);
+    y += 68;
+
+    if (milestone.note && y < 820) {
+      ctx.fillStyle = "#666666";
+      ctx.font = `italic 36px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+      const noteLines = wrapTextLines(ctx, `"${milestone.note}"`, W - 200);
+      for (const line of noteLines.slice(0, 2)) {
+        ctx.fillText(line, W / 2, y + 12);
+        y += 52;
+      }
+    }
+
+    ctx.fillStyle = twinColor;
+    ctx.fillRect(0, H - 130, W, 130);
+    ctx.fillStyle = "#ffffff";
+    ctx.font = `bold 46px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("Made with TwinTrack 💕", W / 2, H - 65);
+  }
+
+  if (photoBlobUrl) URL.revokeObjectURL(photoBlobUrl);
+
+  return new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
+}
+
 const CONFETTI_PARTICLES = Array.from({ length: 65 }, (_, i) => {
   const shapes = ["rect", "square", "circle", "thin"] as const;
   const colors = ["#da5a9f", "#2e818c", "#83b8c0", "#ffd700", "#ff8fab", "#a8e6cf", "#ffc8dd", "#ffe4b5", "#c9f0ff"];
@@ -148,6 +328,7 @@ export default function Milestones() {
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [shareToast, setShareToast] = useState<number | null>(null);
+  const [isSharing, setIsSharing] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const requestUploadUrl = useRequestUploadUrl();
 
@@ -217,20 +398,46 @@ export default function Milestones() {
     }
   }
 
-  function handleShare(milestone: { id: number; category: string; title: string; achievedDate: string; note?: string | null; twinId: number }) {
+  async function handleShare(milestone: { id: number; category: string; title: string; achievedDate: string; note?: string | null; photoUrl?: string | null; twinId: number }) {
     const twin = getTwinForMilestone(milestone.twinId);
-    const twinName = twin?.name || twin?.label || "Our twin";
     const preset = MILESTONE_PRESETS.find((m) => m.key === milestone.category);
-    const text = [
+    const twinName = twin?.name || twin?.label || "Our twin";
+
+    const fallbackText = [
       `${preset?.emoji ?? "🎉"} ${twinName} just hit a milestone: ${milestone.title}!`,
       `📅 ${formatDate(milestone.achievedDate)}`,
       milestone.note ? `💭 "${milestone.note}"` : null,
       `\nMade with TwinTrack 💕`,
     ].filter(Boolean).join("\n");
+
+    setIsSharing(milestone.id);
+    try {
+      const blob = await createShareCard(milestone, twin ?? undefined, preset);
+      if (blob) {
+        const file = new File([blob], "my-memory.png", { type: "image/png" });
+        if (navigator.share && navigator.canShare?.({ files: [file] })) {
+          await navigator.share({ files: [file], title: milestone.title, text: "Made with TwinTrack 💕" });
+          return;
+        }
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${milestone.title.replace(/\s+/g, "-")}-memory.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        setShareToast(milestone.id);
+        setTimeout(() => setShareToast(null), 2500);
+        return;
+      }
+    } catch { /* fall through */ }
+    finally { setIsSharing(null); }
+
     if (navigator.share) {
-      navigator.share({ text }).catch(() => {});
+      navigator.share({ text: fallbackText }).catch(() => {});
     } else {
-      navigator.clipboard?.writeText(text).catch(() => {});
+      navigator.clipboard?.writeText(fallbackText).catch(() => {});
       setShareToast(milestone.id);
       setTimeout(() => setShareToast(null), 2000);
     }
@@ -443,7 +650,7 @@ export default function Milestones() {
                 {/* Photo */}
                 {milestone.photoUrl && (
                   <img
-                    src={`/api${milestone.photoUrl}`}
+                    src={`${(import.meta.env.BASE_URL ?? "/").replace(/\/$/, "")}/api/storage${milestone.photoUrl.startsWith("/") ? milestone.photoUrl : `/${milestone.photoUrl}`}`}
                     alt={milestone.title}
                     className="w-full h-48 object-cover"
                   />
@@ -453,11 +660,16 @@ export default function Milestones() {
                 <div className="border-t border-border px-4 py-2 flex items-center justify-between">
                   <button
                     onClick={() => handleShare(milestone)}
-                    className="text-xs text-primary font-semibold flex items-center gap-1 py-1 px-2 rounded-lg hover:bg-primary/5 transition-colors relative"
+                    disabled={isSharing === milestone.id}
+                    className="text-xs text-primary font-semibold flex items-center gap-1.5 py-1 px-2 rounded-lg hover:bg-primary/5 transition-colors disabled:opacity-60"
                     data-testid={`share-milestone-${milestone.id}`}
                   >
-                    <Share2 size={12} />
-                    {shareToast === milestone.id ? "Copied!" : "Share"}
+                    {isSharing === milestone.id ? (
+                      <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                      <Share2 size={12} />
+                    )}
+                    {shareToast === milestone.id ? "Saved! ✓" : isSharing === milestone.id ? "Creating…" : "Share Card"}
                   </button>
 
                   {deleteConfirm === milestone.id ? (

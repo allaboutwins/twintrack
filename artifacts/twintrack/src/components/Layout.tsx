@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
+import logoAat from "../assets/logo-aat.png";
 import { Home, Moon, Utensils, GraduationCap, Heart, Settings, MessageCircle, X, Sparkles } from "lucide-react";
 import { useUser } from "@clerk/react";
 import { useSubmitFeedback } from "@workspace/api-client-react";
@@ -176,13 +177,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="relative flex flex-col min-h-[100dvh] max-w-[430px] mx-auto bg-background">
-      {/* Sticky top header */}
-      <div className="sticky top-0 z-30 bg-white/95 backdrop-blur-md border-b border-border/30">
-        <div className="flex items-center justify-between px-4 h-11">
-          <div className="flex items-center gap-2">
-            <span className="text-lg leading-none select-none">💕</span>
-            <p className="text-sm font-bold text-primary tracking-tight">All About Twins</p>
-          </div>
+      {/* Top header */}
+      <div className="bg-white border-b border-border/30">
+        <div className="flex items-center justify-between px-4 h-12">
+          <img src={logoAat} alt="All About Twins" className="h-8 w-auto" />
           <div className="flex items-center">
             <button
               onClick={openUpdates}
@@ -208,6 +206,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </div>
+
 
       <main className="flex-1 overflow-y-auto pb-20">{children}</main>
 
