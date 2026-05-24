@@ -277,6 +277,24 @@ export default function Dashboard() {
               <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
             </button>
 
+            {/* Twin AI Promo */}
+            <button
+              onClick={() => setLocation("/twin-ai")}
+              className="w-full bg-gradient-to-br from-violet-50 to-pink-50 rounded-2xl border border-violet-200/60 p-4 text-left hover:border-violet-300 active:scale-[0.99] transition-all"
+              data-testid="twin-ai-promo"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles size={15} className="text-violet-500 flex-shrink-0" />
+                <p className="text-xs font-bold text-violet-600 uppercase tracking-wide">Twin AI</p>
+              </div>
+              <p className="text-sm font-semibold text-foreground mb-2.5">Ask me anything about your twins</p>
+              <div className="flex flex-wrap gap-1.5">
+                {["Why won't they sync schedules?", "Sleep regression tips?", "Is their weight normal?"].map((q) => (
+                  <span key={q} className="text-[11px] bg-white/80 border border-violet-200 text-violet-700 px-2 py-0.5 rounded-full font-medium">{q}</span>
+                ))}
+              </div>
+            </button>
+
             {/* Memory Recap */}
             {latestMilestone && (
               <button

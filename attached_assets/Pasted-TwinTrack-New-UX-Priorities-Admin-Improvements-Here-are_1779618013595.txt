@@ -1,0 +1,190 @@
+TwinTrack — New UX Priorities + Admin Improvements 💕
+
+Here are the newest twin mom feedbacks + some important product/admin adjustments.
+
+Please keep implementations lightweight and scalable where possible.
+
+---
+
+1. APP STORE / GOOGLE PLAY EXPECTATION 📱
+
+Recent feedback:
+💬 “Is there an Android app?”
+
+This keeps coming up, which means moms already emotionally perceive TwinTrack as a real app (great sign 💕).
+
+Please add a short lightweight message somewhere inside:
+🍒 What’s New
+
+Something like:
+“TwinTrack will soon be available on the App Store & Google Play 💕”
+
+(or another short warm variation)
+
+Goal:
+set expectations while building excitement.
+
+---
+
+2. PARTNER / CAREGIVER ACCESS 👨‍👩‍👧‍👦
+
+Recent feedback:
+💡 “I need a way to add a partner or caregiver that is upfront and easy.”
+
+YES — this is a very important future feature.
+
+Please begin planning lightweight architecture for:
+
+* partner access
+* caregiver syncing
+* shared tracking
+
+Potential future premium feature.
+
+No need for full implementation yet unless lightweight/simple.
+
+---
+
+3. LOGIN / VERIFICATION UI IMPROVEMENT 🔐
+
+Recent feedback:
+💬 verification/login boxes are too transparent/confusing.
+
+Also:
+“Continue with Google” currently feels too transparent visually.
+
+Please improve:
+
+* contrast
+* visibility
+* button clarity
+* verification code UX
+
+Goal:
+cleaner onboarding/login experience, especially for exhausted parents.
+
+---
+
+4. MEDICATION TRACKING 💊
+
+Recent feedback:
+💬 moms want medication logging integrated near feeding.
+
+Please begin lightweight support for:
+
+* medication name
+* dosage
+* time given
+
+Potential future premium feature.
+
+This is especially important for:
+
+* NICU/preemie twins
+* sick babies
+* multiple caregivers
+
+---
+
+5. ADMIN DASHBOARD REORGANIZATION 📊
+
+Please simplify and clean the Admin Dashboard structure.
+
+New preferred order:
+
+1️⃣ Users
+2️⃣ App Activity
+3️⃣ Twin AI Usage
+4️⃣ Google Sheets Sync
+5️⃣ Community Polls
+6️⃣ Onboarding Insights
+7️⃣ Feedback Center
+8️⃣ Email List
+
+---
+
+6. TWIN AI USAGE NEEDS PUSHING ✨
+
+Twin AI usage is currently extremely low.
+
+Please:
+
+* surface it more naturally
+* create example prompts/questions
+* add gentle onboarding encouragement
+* make it feel emotionally useful immediately
+
+Examples:
+
+* “How do I sync twin naps?”
+* “My twins were premature, should I use adjusted age?”
+* “How can I manage tandem feeding?”
+* “Twin bedtime routine help”
+
+Goal:
+help moms understand WHY to use Twin AI.
+
+---
+
+7. GOOGLE SHEETS SYNC SECTION
+
+Do we still need:
+👉 “Run Backfill Now”
+
+If no longer necessary, please simplify/remove it to reduce admin clutter.
+
+---
+
+8. COMMUNITY POLLS SECTION
+
+Please:
+
+* show only latest/current poll in collapsed admin view
+* add button:
+  “Show All Polls”
+
+Goal:
+reduce visual overload.
+
+---
+
+9. FEEDBACK CENTER
+
+Please:
+
+* show latest 5 feedback items only
+* add:
+  “Show All Feedback”
+
+Goal:
+cleaner admin UX.
+
+---
+
+10. EMAIL LIST
+
+Please:
+
+* show latest 5 email captures only
+* add:
+  “Show Full Email List”
+
+Goal:
+simplify dashboard readability while keeping scalability.
+
+---
+
+IMPORTANT PRODUCT DIRECTION 💡
+
+TwinTrack is slowly becoming:
+
+* emotional support
+* organization
+* twin-specific guidance
+* community
+* memory keeping
+
+The UX should increasingly feel:
+warm, calm, lightweight, supportive.
+
+Not overly technical/admin-heavy.

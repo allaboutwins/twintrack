@@ -15,6 +15,7 @@ const SEED_UPDATES = [
   { emoji: "✅", title: "Routines upgraded", description: "Morning, bedtime, outing, daycare, and meal routines with progress tracking, favorites, and satisfying checkmarks.", publishedAt: new Date("2025-03-15") },
   { emoji: "✨", title: "Twin AI launched", description: "Meet your twin parenting companion — ask anything about sleep, feeding, NICU life, adjusted age, mental load, and more. Always warm, always available. 💕", publishedAt: new Date("2025-04-15") },
   { emoji: "⚡", title: "AI usage limits & feedback added", description: "To keep Twin AI sustainable for everyone, 10 questions per day per user. Rate each response 👍👎 to help us keep improving for you!", publishedAt: new Date("2025-05-19") },
+  { emoji: "📱", title: "App Store & Google Play — coming soon!", description: "TwinTrack is heading to the App Store and Google Play 🍒 Native mobile apps for iPhone and Android are on the way — stay tuned, we'll be the first to tell you!", publishedAt: new Date("2026-05-24") },
 ];
 
 const router = Router();
