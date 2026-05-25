@@ -619,7 +619,13 @@ export default function OnboardingFlow({
           )}
           <button
             onClick={next}
-            className="flex-[2] py-3.5 rounded-xl bg-primary text-white text-sm font-semibold shadow-sm active:scale-[0.98] transition-all"
+            disabled={
+              (currentStep === "family" && (!form.parentStatus || !form.multipleType)) ||
+              (currentStep === "age" && !form.babyAgeGroup) ||
+              (currentStep === "prematurity" && form.isPremature === null) ||
+              (currentStep === "discovery" && !form.discoverySource)
+            }
+            className="flex-[2] py-3.5 rounded-xl bg-primary text-white text-sm font-semibold shadow-sm active:scale-[0.98] transition-all disabled:opacity-40 disabled:scale-100"
             data-testid="onboarding-next"
           >
             {isLastContentStep ? "Almost done! →" : "Next →"}

@@ -66,7 +66,7 @@ router.get("/admin/stats", async (req, res): Promise<void> => {
     db.select({ count: count() }).from(videoBookmarksTable),
     db.select({ count: count() }).from(videoNotesTable),
     db
-      .select({ userId: onboardingTable.userId, email: onboardingTable.email, newsletterConsent: onboardingTable.newsletterConsent, createdAt: onboardingTable.createdAt })
+      .select({ userId: onboardingTable.userId, email: onboardingTable.email, newsletterConsent: onboardingTable.newsletterConsent, createdAt: onboardingTable.createdAt, instagramHandle: onboardingTable.instagramHandle, babyAgeGroup: onboardingTable.babyAgeGroup })
       .from(onboardingTable)
       .where(isNotNull(onboardingTable.email))
       .orderBy(desc(onboardingTable.createdAt)),
@@ -108,6 +108,8 @@ router.get("/admin/stats", async (req, res): Promise<void> => {
     email: r.email ?? "",
     newsletterConsent: r.newsletterConsent ?? false,
     createdAt: r.createdAt.toISOString(),
+    instagramHandle: r.instagramHandle ?? null,
+    babyAgeGroup: r.babyAgeGroup ?? null,
   }));
 
   res.json({

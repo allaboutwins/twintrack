@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useUser } from "@clerk/react";
 import { useLocation } from "wouter";
-import { RefreshCw, Users, MessageCircle, BarChart2, Activity, Copy, Check, Star, CheckCircle2, Filter, Sheet, Plus, Trash2, Mail, Lock, Download, BarChart, Sparkles } from "lucide-react";
+import { RefreshCw, Users, MessageCircle, BarChart2, Activity, Copy, Check, Star, CheckCircle2, Filter, Sheet, Plus, Trash2, Mail, Lock, Download, BarChart, Sparkles, Zap, Instagram } from "lucide-react";
 
 interface Breakdown { key: string; value: number; }
 interface FeedbackEntry {
@@ -19,6 +19,8 @@ interface EmailEntry {
   email: string;
   newsletterConsent: boolean;
   createdAt: string;
+  instagramHandle?: string | null;
+  babyAgeGroup?: string | null;
 }
 interface PollStat {
   id: number;
@@ -392,6 +394,23 @@ export default function Admin() {
             <button onClick={fetchStats} disabled={loading}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-primary/10 text-primary text-xs font-semibold disabled:opacity-50 transition-all">
               <RefreshCw size={13} className={loading ? "animate-spin" : ""} />Refresh
+            </button>
+            <button
+              onClick={async () => {
+                if ("serviceWorker" in navigator) {
+                  const regs = await navigator.serviceWorker.getRegistrations();
+                  await Promise.all(regs.map((r) => r.unregister()));
+                }
+                if ("caches" in window) {
+                  const keys = await caches.keys();
+                  await Promise.all(keys.map((k) => caches.delete(k)));
+                }
+                window.location.reload();
+              }}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-orange-50 text-orange-600 border border-orange-200 text-xs font-semibold hover:bg-orange-100 transition-all"
+              title="Clear all browser caches and force reload"
+            >
+              <Zap size={13} />Force Reload
             </button>
           </div>
         </div>
@@ -926,9 +945,21 @@ export default function Admin() {
                       <div key={entry.userId} className="px-5 py-3 flex items-center justify-between gap-3">
                         <div className="flex-1 min-w-0">
                           <p className="text-sm text-foreground font-medium truncate">{entry.email}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(entry.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                          </p>
+                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(entry.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                            </p>
+                            {entry.instagramHandle && (
+                              <span className="text-[10px] font-semibold text-violet-600 bg-violet-50 border border-violet-100 px-1.5 py-0.5 rounded-full flex items-center gap-0.5">
+                                <Instagram size={9} />@{entry.instagramHandle.replace(/^@/, "")}
+                              </span>
+                            )}
+                            {entry.babyAgeGroup && (
+                              <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 border border-blue-100 px-1.5 py-0.5 rounded-full">
+                                {LABELS.age[entry.babyAgeGroup] ?? entry.babyAgeGroup}
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="flex items-center gap-2 flex-shrink-0">
                           {entry.newsletterConsent && (

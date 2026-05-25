@@ -9,7 +9,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { PageHeader } from "@/components/Layout";
-import { Save, LogOut, Video, ChevronRight } from "lucide-react";
+import { Save, LogOut, Video, ChevronRight, Trash2, AlertTriangle } from "lucide-react";
 
 const COLOR_OPTIONS = [
   "#da5a9f",
@@ -50,6 +50,11 @@ export default function Settings() {
   const [formB, setFormB] = useState<TwinFormData>({ ...defaultForm, colorTheme: "#2e818c" });
   const [savedA, setSavedA] = useState(false);
   const [savedB, setSavedB] = useState(false);
+
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   const twinA = twins.find((t) => t.label === "Twin A");
   const twinB = twins.find((t) => t.label === "Twin B");
@@ -123,6 +128,26 @@ export default function Settings() {
     }
   }
 
+  async function handleDeleteAccount() {
+    if (deleteConfirmText.trim().toLowerCase() !== "delete") return;
+    setIsDeleting(true);
+    setDeleteError(null);
+    try {
+      const res = await fetch("/api/users/me", { method: "DELETE" });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({})) as { error?: string };
+        setDeleteError(body.error ?? "Something went wrong. Please try again.");
+        setIsDeleting(false);
+        return;
+      }
+      await signOut();
+      setLocation("/");
+    } catch {
+      setDeleteError("Could not connect to the server. Please try again.");
+      setIsDeleting(false);
+    }
+  }
+
   return (
     <Layout>
       <PageHeader title="Settings" subtitle="Manage your twin profiles" />
@@ -189,6 +214,77 @@ export default function Settings() {
           saved={savedB}
           isPending={createTwin.isPending || updateTwin.isPending}
         />
+
+        {/* Delete Account */}
+        <div className="bg-white rounded-2xl border border-red-100 overflow-hidden">
+          <div className="px-5 py-4 border-b border-red-100">
+            <p className="text-xs font-semibold text-red-400 uppercase tracking-wide">Danger Zone</p>
+          </div>
+
+          {!showDeleteConfirm ? (
+            <div className="px-5 py-4 flex items-center justify-between">
+              <div>
+                <p className="font-semibold text-sm text-foreground">Delete Account</p>
+                <p className="text-xs text-muted-foreground mt-0.5">Permanently removes all your data</p>
+              </div>
+              <button
+                onClick={() => setShowDeleteConfirm(true)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-50 text-red-500 border border-red-200 text-xs font-semibold hover:bg-red-100 transition-colors"
+                data-testid="button-delete-account"
+              >
+                <Trash2 size={13} />
+                Delete
+              </button>
+            </div>
+          ) : (
+            <div className="px-5 py-5 space-y-4">
+              <div className="flex items-start gap-3 bg-red-50 rounded-xl p-4 border border-red-100">
+                <AlertTriangle size={18} className="text-red-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold text-sm text-red-700">This cannot be undone</p>
+                  <p className="text-xs text-red-500 mt-1 leading-relaxed">
+                    All your twins' data — sleep logs, feeding records, diapers, routines, and milestones — will be permanently deleted.
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs font-semibold text-muted-foreground">
+                  Type <span className="text-red-500 font-bold">delete</span> to confirm
+                </p>
+                <input
+                  value={deleteConfirmText}
+                  onChange={(e) => setDeleteConfirmText(e.target.value)}
+                  placeholder="delete"
+                  className="w-full px-4 py-3 rounded-xl bg-muted text-sm outline-none focus:ring-2 ring-red-300 transition-all"
+                  data-testid="input-delete-confirm"
+                />
+              </div>
+
+              {deleteError && (
+                <p className="text-xs text-red-500 font-medium">{deleteError}</p>
+              )}
+
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => { setShowDeleteConfirm(false); setDeleteConfirmText(""); setDeleteError(null); }}
+                  className="py-3 rounded-xl border border-border text-sm font-semibold text-muted-foreground"
+                  data-testid="button-cancel-delete"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deleteConfirmText.trim().toLowerCase() !== "delete" || isDeleting}
+                  className="py-3 rounded-xl bg-red-500 text-white text-sm font-semibold disabled:opacity-40 active:scale-95 transition-all"
+                  data-testid="button-confirm-delete"
+                >
+                  {isDeleting ? "Deleting..." : "Delete Forever"}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
     </Layout>
   );

@@ -11,7 +11,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { PageHeader } from "@/components/Layout";
-import { Plus, Star, Trash2, ChevronDown, ChevronUp, Check } from "lucide-react";
+import { Plus, Star, Trash2, ChevronDown, ChevronUp, Check, Zap } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const CATEGORIES = [
@@ -32,14 +32,145 @@ const TEMPLATES: Record<Category, string[]> = {
   meal: ["Wash hands", "Prep high chairs", "Prepare bibs", "Serve food", "Clean up", "Wash hands again"],
 };
 
+const QUICK_START_TEMPLATES: Array<{
+  title: string;
+  category: Category;
+  emoji: string;
+  description: string;
+  tasks: string[];
+}> = [
+  {
+    title: "Newborn Twin Morning Routine",
+    category: "morning",
+    emoji: "🐣",
+    description: "Gentle start for newborns",
+    tasks: [
+      "Wake & cuddle twins",
+      "Diaper check & change",
+      "Morning feed (both twins)",
+      "Burp & settle",
+      "Tummy time (10 min)",
+      "Get dressed",
+      "Log feed in TwinTrack",
+    ],
+  },
+  {
+    title: "Twin Bedtime Routine",
+    category: "bedtime",
+    emoji: "🌙",
+    description: "Calm wind-down for both babies",
+    tasks: [
+      "Bath time (alternate nights)",
+      "Lotion massage",
+      "Put on PJs & sleep sack",
+      "Last feed of the day",
+      "Dim lights & white noise on",
+      "Story or lullaby",
+      "Lights out",
+    ],
+  },
+  {
+    title: "NICU Feeding Schedule",
+    category: "meal",
+    emoji: "🏥",
+    description: "Structured feeds for NICU or preemie babies",
+    tasks: [
+      "Wash & sanitize hands",
+      "Prepare expressed breast milk or formula",
+      "Feed Twin A (log ml amount)",
+      "Burp Twin A",
+      "Feed Twin B (log ml amount)",
+      "Burp Twin B",
+      "Record feed time in TwinTrack",
+      "Clean & sterilize bottles",
+    ],
+  },
+  {
+    title: "Pumping Schedule",
+    category: "meal",
+    emoji: "🍼",
+    description: "Breast pumping reminders",
+    tasks: [
+      "Set up pump & flanges",
+      "Pump 15–20 minutes",
+      "Label & date milk storage bags",
+      "Store in fridge or freezer",
+      "Rinse pump parts",
+      "Log pump session",
+    ],
+  },
+  {
+    title: "Toddler Twin Morning",
+    category: "morning",
+    emoji: "🧒",
+    description: "Busy morning with older twins",
+    tasks: [
+      "Wake twins up gently",
+      "Bathroom & potty time",
+      "Get dressed (let them pick!)",
+      "Breakfast together",
+      "Brush teeth",
+      "Pack school/daycare bags",
+      "Out the door!",
+    ],
+  },
+  {
+    title: "Twin Outing Checklist",
+    category: "outing",
+    emoji: "👜",
+    description: "Never forget anything again",
+    tasks: [
+      "Pack diaper bag (diapers × 4+)",
+      "Prepare formula or breast milk",
+      "Pack snacks & water",
+      "Extra outfit per twin",
+      "Sunscreen applied",
+      "Stroller charged/folded",
+      "Car seats secured",
+      "Pacifiers & comfort toys",
+    ],
+  },
+  {
+    title: "Doctor Visit Checklist",
+    category: "outing",
+    emoji: "🩺",
+    description: "Stay organized at appointments",
+    tasks: [
+      "Print or pull up insurance cards",
+      "Bring vaccination records",
+      "Write down questions for doctor",
+      "Pack snacks & entertainment",
+      "Extra diapers & wipes",
+      "Note current weights & milestones",
+      "Take notes during appointment",
+    ],
+  },
+  {
+    title: "Daycare Drop-Off",
+    category: "daycare",
+    emoji: "🏫",
+    description: "Smooth mornings every day",
+    tasks: [
+      "Pack labeled bottles & formula",
+      "Spare outfit per twin in bag",
+      "Comfort item (stuffed animal etc.)",
+      "Sign-in sheets",
+      "Update teacher on last night",
+      "Log any health notes",
+    ],
+  },
+];
+
 export default function Routines() {
   const { user } = useUser();
   const qc = useQueryClient();
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [showCreate, setShowCreate] = useState(false);
+  const [showQuickStart, setShowQuickStart] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newCategory, setNewCategory] = useState<Category>("morning");
   const [activeFilter, setActiveFilter] = useState<Category | "all">("all");
+  const [addingTemplate, setAddingTemplate] = useState<string | null>(null);
 
   const { data: routines = [], isLoading } = useListRoutines(
     { userId: user?.id ?? "" },
@@ -70,6 +201,23 @@ export default function Routines() {
     );
   }
 
+  function handleQuickStart(template: (typeof QUICK_START_TEMPLATES)[number]) {
+    if (!user?.id) return;
+    setAddingTemplate(template.title);
+    const tasks = template.tasks.map((text, i) => ({ text, order: i }));
+    createRoutine.mutate(
+      { data: { userId: user.id, title: template.title, category: template.category, isFavorite: false, tasks } },
+      {
+        onSuccess: () => {
+          invalidate();
+          setAddingTemplate(null);
+          setShowQuickStart(false);
+        },
+        onError: () => setAddingTemplate(null),
+      },
+    );
+  }
+
   function toggleFavorite(id: number, current: boolean) {
     updateRoutine.mutate(
       { id, data: { isFavorite: !current } },
@@ -92,6 +240,8 @@ export default function Routines() {
     activeFilter === "all"
       ? routines
       : routines.filter((r) => r.category === activeFilter);
+
+  const existingTitles = new Set(routines.map((r) => r.title));
 
   return (
     <Layout>
@@ -176,6 +326,63 @@ export default function Routines() {
           </div>
         )}
 
+        {/* Quick Start Templates */}
+        <div className="bg-white rounded-2xl border border-border overflow-hidden">
+          <button
+            onClick={() => setShowQuickStart((v) => !v)}
+            className="w-full px-4 py-3.5 flex items-center justify-between hover:bg-muted/20 transition-colors"
+            data-testid="button-quick-start"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-violet-50 flex items-center justify-center">
+                <Zap size={15} className="text-violet-500" />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-sm text-foreground">Quick Start Templates</p>
+                <p className="text-xs text-muted-foreground">One-tap ready-made routines</p>
+              </div>
+            </div>
+            {showQuickStart
+              ? <ChevronUp size={16} className="text-muted-foreground" />
+              : <ChevronDown size={16} className="text-muted-foreground" />}
+          </button>
+
+          {showQuickStart && (
+            <div className="border-t border-border divide-y divide-border">
+              {QUICK_START_TEMPLATES.map((tmpl) => {
+                const cat = CATEGORIES.find((c) => c.key === tmpl.category);
+                const alreadyAdded = existingTitles.has(tmpl.title);
+                const isAdding = addingTemplate === tmpl.title;
+                return (
+                  <div key={tmpl.title} className="px-4 py-3.5 flex items-center gap-3">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center text-lg flex-shrink-0"
+                      style={{ backgroundColor: (cat?.color ?? "#888") + "20" }}
+                    >
+                      {tmpl.emoji}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-foreground truncate">{tmpl.title}</p>
+                      <p className="text-xs text-muted-foreground">{tmpl.description} · {tmpl.tasks.length} tasks</p>
+                    </div>
+                    <button
+                      onClick={() => !alreadyAdded && handleQuickStart(tmpl)}
+                      disabled={alreadyAdded || isAdding}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-semibold flex-shrink-0 transition-all ${
+                        alreadyAdded
+                          ? "bg-green-50 text-green-600 border border-green-200"
+                          : "bg-primary/10 text-primary hover:bg-primary/20 active:scale-95"
+                      } disabled:opacity-60`}
+                    >
+                      {alreadyAdded ? "✓ Added" : isAdding ? "Adding..." : "+ Add"}
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
         {isLoading && (
           <div className="space-y-2">
             <Skeleton className="h-20 rounded-2xl" />
@@ -186,7 +393,8 @@ export default function Routines() {
         {!isLoading && filtered.length === 0 && (
           <div className="text-center py-12 text-muted-foreground text-sm">
             <p className="text-4xl mb-3">📋</p>
-            <p>No routines yet. Tap the + button to create one.</p>
+            <p>No routines yet.</p>
+            <p className="mt-1">Tap <span className="font-semibold text-primary">Quick Start</span> above to add one instantly.</p>
           </div>
         )}
 
