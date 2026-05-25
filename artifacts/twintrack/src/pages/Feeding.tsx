@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useUser } from "@clerk/react";
 import {
   useListTwins,
@@ -17,21 +17,24 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { TwinTabs, PageHeader } from "@/components/Layout";
-import { Trash2, Pencil, X, Check, Plus, ChevronDown, ChevronUp } from "lucide-react";
+import { Trash2, Pencil, X, Check, Plus, ChevronDown, ChevronUp, Play, Square, Clock, Droplets } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // ── Constants ─────────────────────────────────────────────────────────────
 
 const FEEDING_TYPES = [
   { key: "breastfeeding", label: "Breast", emoji: "🤱", color: "#da5a9f" },
-  { key: "bottle", label: "Bottle", emoji: "🍼", color: "#2e818c" },
-  { key: "formula", label: "Formula", emoji: "🧴", color: "#83b8c0" },
-  { key: "solids", label: "Solids", emoji: "🥣", color: "#b58c5a" },
+  { key: "bottle",        label: "Bottle",  emoji: "🍼", color: "#2e818c" },
+  { key: "formula",       label: "Formula", emoji: "🧴", color: "#83b8c0" },
+  { key: "solids",        label: "Solids",  emoji: "🥣", color: "#b58c5a" },
+  { key: "pumping",       label: "Pumping", emoji: "🫙", color: "#9b59b6" },
+  { key: "medication",    label: "Medicine",emoji: "💊", color: "#e74c3c" },
 ] as const;
 
 type FeedingType = (typeof FEEDING_TYPES)[number]["key"];
 
 const DURATION_OPTIONS = [5, 10, 15, 20, 25, 30, 40, 45, 60];
+const AMOUNT_PRESETS_ML = [60, 90, 120, 150, 180, 210, 240];
 
 const COMMON_FOODS = [
   "Avocado", "Banana", "Sweet Potato", "Apple", "Pear",
@@ -41,29 +44,38 @@ const COMMON_FOODS = [
 ];
 
 const FOOD_CATEGORIES = [
-  { key: "fruits", label: "Fruits", emoji: "🍎" },
+  { key: "fruits",     label: "Fruits",     emoji: "🍎" },
   { key: "vegetables", label: "Vegetables", emoji: "🥦" },
-  { key: "proteins", label: "Proteins", emoji: "🥩" },
-  { key: "dairy", label: "Dairy", emoji: "🧀" },
-  { key: "grains", label: "Grains", emoji: "🌾" },
-  { key: "other", label: "Other", emoji: "🍽️" },
+  { key: "proteins",   label: "Proteins",   emoji: "🥩" },
+  { key: "dairy",      label: "Dairy",      emoji: "🧀" },
+  { key: "grains",     label: "Grains",     emoji: "🌾" },
+  { key: "other",      label: "Other",      emoji: "🍽️" },
 ];
 
 const REACTION_OPTIONS = [
-  { key: "none", label: "No reaction", color: "#22c55e" },
-  { key: "mild", label: "Mild reaction", color: "#f59e0b" },
-  { key: "moderate", label: "Moderate", color: "#f97316" },
-  { key: "severe", label: "Severe", color: "#ef4444" },
+  { key: "none",     label: "No reaction",  color: "#22c55e" },
+  { key: "mild",     label: "Mild",         color: "#f59e0b" },
+  { key: "moderate", label: "Moderate",     color: "#f97316" },
+  { key: "severe",   label: "Severe",       color: "#ef4444" },
 ];
 
 const OZ_TO_ML = 29.5735;
-
 const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function timeSince(iso: string): string {
+  const diff = Date.now() - new Date(iso).getTime();
+  const totalMins = Math.floor(diff / 60000);
+  if (totalMins < 1) return "just now";
+  if (totalMins < 60) return `${totalMins}m ago`;
+  const h = Math.floor(totalMins / 60);
+  const m = totalMins % 60;
+  return m > 0 ? `${h}h ${m}m ago` : `${h}h ago`;
 }
 
 function toDatetimeLocal(iso: string) {
@@ -89,6 +101,12 @@ function formatDuration(mins: number | null | undefined) {
   return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
+function formatElapsed(secs: number): string {
+  const m = Math.floor(secs / 60);
+  const s = secs % 60;
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
 function categoryEmoji(cat: string) {
   return FOOD_CATEGORIES.find((c) => c.key === cat)?.emoji ?? "🍽️";
 }
@@ -104,6 +122,89 @@ function reactionBadge(reaction: string | null | undefined) {
     >
       {r.label}
     </span>
+  );
+}
+
+// ── Breastfeeding Timer ───────────────────────────────────────────────────
+
+interface TimerState {
+  side: "left" | "right" | null;
+  startedAt: number; // epoch ms
+  elapsed: number;   // seconds ticked so far
+  running: boolean;
+}
+
+function BreastfeedingTimer({
+  color,
+  onDone,
+}: {
+  color: string;
+  onDone: (side: "left" | "right" | null, durationMinutes: number) => void;
+}) {
+  const [timer, setTimer] = useState<TimerState>({ side: null, startedAt: 0, elapsed: 0, running: false });
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const start = useCallback((side: "left" | "right") => {
+    const now = Date.now();
+    setTimer({ side, startedAt: now, elapsed: 0, running: true });
+    intervalRef.current = setInterval(() => {
+      setTimer((t) => ({ ...t, elapsed: Math.floor((Date.now() - t.startedAt) / 1000) }));
+    }, 1000);
+  }, []);
+
+  const stop = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setTimer((t) => {
+      const minutes = Math.max(1, Math.round(t.elapsed / 60));
+      onDone(t.side, minutes);
+      return { ...t, running: false };
+    });
+  }, [onDone]);
+
+  useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current); }, []);
+
+  if (!timer.running && timer.elapsed === 0) {
+    return (
+      <div className="space-y-3">
+        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Tap a side to start timer</p>
+        <div className="grid grid-cols-2 gap-3">
+          {(["left", "right"] as const).map((s) => (
+            <button
+              key={s}
+              onClick={() => start(s)}
+              className="py-4 rounded-2xl flex flex-col items-center gap-1.5 text-white font-bold active:scale-95 transition-all shadow-sm"
+              style={{ backgroundColor: color }}
+            >
+              <Play size={20} />
+              <span className="text-sm">{s === "left" ? "⬅️ Left" : "Right ➡️"}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <div
+        className="rounded-2xl p-5 text-center text-white space-y-1 shadow-sm"
+        style={{ backgroundColor: color }}
+      >
+        <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
+          {timer.side === "left" ? "⬅️ Left" : "Right ➡️"} — timing
+        </p>
+        <p className="text-5xl font-bold tracking-tight font-mono">{formatElapsed(timer.elapsed)}</p>
+        <p className="text-xs opacity-70">{Math.round(timer.elapsed / 60)} min</p>
+      </div>
+      <button
+        onClick={stop}
+        className="w-full py-3.5 rounded-2xl bg-white border-2 text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-all"
+        style={{ borderColor: color, color }}
+      >
+        <Square size={14} />
+        Stop & Log
+      </button>
+    </div>
   );
 }
 
@@ -124,44 +225,44 @@ type LogSheetProps = {
 
 function LogFeedingSheet({ feedingType, onClose, onLog, isPending }: LogSheetProps) {
   const ft = FEEDING_TYPES.find((f) => f.key === feedingType)!;
+  const [mode, setMode] = useState<"timer" | "manual">(feedingType === "breastfeeding" ? "timer" : "manual");
 
-  // Breastfeeding state
   const [side, setSide] = useState<"left" | "right" | null>(null);
   const [duration, setDuration] = useState<number | null>(null);
-
-  // Bottle / Formula state
   const [amountUnit, setAmountUnit] = useState<"ml" | "oz">("ml");
   const [amountInput, setAmountInput] = useState("");
-
-  // Solids state
   const [foodName, setFoodName] = useState("");
-
-  // Shared
   const [notes, setNotes] = useState("");
+  const [timerDone, setTimerDone] = useState(false);
+
+  function handleTimerDone(s: "left" | "right" | null, mins: number) {
+    setSide(s);
+    setDuration(mins);
+    setTimerDone(true);
+  }
 
   function handleLog() {
     let amountMl: number | null = null;
-    if ((feedingType === "bottle" || feedingType === "formula") && amountInput) {
+    if ((feedingType === "bottle" || feedingType === "formula" || feedingType === "pumping") && amountInput) {
       const val = parseFloat(amountInput);
-      if (!isNaN(val)) {
-        amountMl = amountUnit === "oz" ? val * OZ_TO_ML : val;
-      }
+      if (!isNaN(val)) amountMl = amountUnit === "oz" ? val * OZ_TO_ML : val;
     }
     onLog({
-      side: feedingType === "breastfeeding" ? side : null,
-      durationMinutes: feedingType === "breastfeeding" ? duration : null,
+      side: (feedingType === "breastfeeding" || feedingType === "pumping") ? side : null,
+      durationMinutes: (feedingType === "breastfeeding" || feedingType === "pumping") ? duration : null,
       amountMl,
       foodName: feedingType === "solids" ? (foodName.trim() || null) : null,
       notes: notes.trim() || null,
     });
   }
 
+  const showLogButton = feedingType !== "breastfeeding" || mode === "manual" || timerDone;
+
   return (
     <div className="fixed inset-0 z-50 flex items-end">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div className="relative bg-white w-full max-w-[430px] mx-auto rounded-t-3xl p-5 space-y-4 safe-area-pb overflow-y-auto max-h-[90vh]">
 
-        {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-base" style={{ backgroundColor: ft.color }}>
@@ -177,24 +278,93 @@ function LogFeedingSheet({ feedingType, onClose, onLog, isPending }: LogSheetPro
           </button>
         </div>
 
-        {/* Breastfeeding: Side + Duration */}
-        {feedingType === "breastfeeding" && (
+        {/* Breastfeeding — timer vs manual toggle */}
+        {feedingType === "breastfeeding" && !timerDone && (
+          <>
+            <div className="flex gap-1 bg-muted rounded-xl p-1">
+              {(["timer", "manual"] as const).map((m) => (
+                <button
+                  key={m}
+                  onClick={() => setMode(m)}
+                  className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all capitalize ${
+                    mode === m ? "bg-white text-foreground shadow-sm" : "text-muted-foreground"
+                  }`}
+                >
+                  {m === "timer" ? "⏱ Timer" : "✏️ Manual"}
+                </button>
+              ))}
+            </div>
+
+            {mode === "timer" ? (
+              <BreastfeedingTimer color={ft.color} onDone={handleTimerDone} />
+            ) : (
+              <>
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Side</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {(["left", "right"] as const).map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => setSide(side === s ? null : s)}
+                        className={`py-3 rounded-xl text-sm font-semibold transition-all border ${
+                          side === s ? "text-white border-transparent shadow-sm" : "bg-muted/60 text-muted-foreground border-transparent"
+                        }`}
+                        style={side === s ? { backgroundColor: ft.color } : {}}
+                      >
+                        {s === "left" ? "⬅️ Left" : "Right ➡️"}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Duration</p>
+                  <div className="flex flex-wrap gap-2">
+                    {DURATION_OPTIONS.map((mins) => (
+                      <button
+                        key={mins}
+                        onClick={() => setDuration(duration === mins ? null : mins)}
+                        className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                          duration === mins ? "text-white" : "bg-muted/60 text-muted-foreground"
+                        }`}
+                        style={duration === mins ? { backgroundColor: ft.color } : {}}
+                      >
+                        {mins}m
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
+          </>
+        )}
+
+        {/* Timer just finished — show summary */}
+        {feedingType === "breastfeeding" && timerDone && (
+          <div
+            className="rounded-2xl p-4 text-center space-y-1 text-white"
+            style={{ backgroundColor: ft.color }}
+          >
+            <p className="text-xs font-semibold opacity-80 uppercase tracking-wide">Session complete</p>
+            <p className="text-2xl font-bold">{duration} min · {side === "left" ? "⬅️ Left" : "Right ➡️"}</p>
+          </div>
+        )}
+
+        {/* Pumping — side + amount + duration */}
+        {feedingType === "pumping" && (
           <>
             <div>
               <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Side</p>
-              <div className="grid grid-cols-2 gap-2">
-                {(["left", "right"] as const).map((s) => (
+              <div className="grid grid-cols-3 gap-2">
+                {(["left", "right", "both"] as const).map((s) => (
                   <button
                     key={s}
-                    onClick={() => setSide(side === s ? null : s)}
-                    className={`py-3 rounded-xl text-sm font-semibold transition-all border ${
-                      side === s
-                        ? "text-white border-transparent shadow-sm"
-                        : "bg-muted/60 text-muted-foreground border-transparent"
+                    onClick={() => setSide(s === "both" ? null : s)}
+                    className={`py-2.5 rounded-xl text-xs font-semibold transition-all capitalize ${
+                      (s === "both" && side === null) || side === s ? "text-white" : "bg-muted/60 text-muted-foreground"
                     }`}
-                    style={side === s ? { backgroundColor: ft.color } : {}}
+                    style={(s === "both" && side === null) || side === s ? { backgroundColor: ft.color } : {}}
                   >
-                    {s === "left" ? "⬅️ Left" : "Right ➡️"}
+                    {s === "left" ? "⬅️ Left" : s === "right" ? "Right ➡️" : "Both"}
                   </button>
                 ))}
               </div>
@@ -206,14 +376,12 @@ function LogFeedingSheet({ feedingType, onClose, onLog, isPending }: LogSheetPro
                   <button
                     key={mins}
                     onClick={() => setDuration(duration === mins ? null : mins)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
-                      duration === mins
-                        ? "text-white border-transparent"
-                        : "bg-muted/60 text-muted-foreground border-transparent"
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                      duration === mins ? "text-white" : "bg-muted/60 text-muted-foreground"
                     }`}
                     style={duration === mins ? { backgroundColor: ft.color } : {}}
                   >
-                    {mins} min
+                    {mins}m
                   </button>
                 ))}
               </div>
@@ -221,11 +389,13 @@ function LogFeedingSheet({ feedingType, onClose, onLog, isPending }: LogSheetPro
           </>
         )}
 
-        {/* Bottle / Formula: Amount */}
-        {(feedingType === "bottle" || feedingType === "formula") && (
+        {/* Amount: bottle, formula, pumping */}
+        {(feedingType === "bottle" || feedingType === "formula" || feedingType === "pumping") && (
           <div>
-            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Amount</p>
-            <div className="flex gap-2 items-center">
+            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">
+              {feedingType === "pumping" ? "Amount pumped" : "Amount"}
+            </p>
+            <div className="flex gap-2 items-center mb-2">
               <input
                 type="number"
                 min="0"
@@ -243,11 +413,9 @@ function LogFeedingSheet({ feedingType, onClose, onLog, isPending }: LogSheetPro
                       if (amountUnit !== unit && amountInput) {
                         const val = parseFloat(amountInput);
                         if (!isNaN(val)) {
-                          setAmountInput(
-                            unit === "oz"
-                              ? String(Math.round((val / OZ_TO_ML) * 10) / 10)
-                              : String(Math.round(val * OZ_TO_ML)),
-                          );
+                          setAmountInput(unit === "oz"
+                            ? String(Math.round((val / OZ_TO_ML) * 10) / 10)
+                            : String(Math.round(val * OZ_TO_ML)));
                         }
                       }
                       setAmountUnit(unit);
@@ -262,8 +430,26 @@ function LogFeedingSheet({ feedingType, onClose, onLog, isPending }: LogSheetPro
                 ))}
               </div>
             </div>
+            <div className="flex flex-wrap gap-1.5">
+              {AMOUNT_PRESETS_ML.map((ml) => {
+                const display = amountUnit === "ml" ? `${ml}ml` : `${mlToOz(ml)}oz`;
+                const val = amountUnit === "ml" ? String(ml) : String(mlToOz(ml));
+                return (
+                  <button
+                    key={ml}
+                    onClick={() => setAmountInput(val)}
+                    className={`px-2.5 py-1 rounded-full text-[10px] font-semibold transition-all ${
+                      amountInput === val ? "text-white" : "bg-muted/60 text-muted-foreground"
+                    }`}
+                    style={amountInput === val ? { backgroundColor: ft.color } : {}}
+                  >
+                    {display}
+                  </button>
+                );
+              })}
+            </div>
             {amountInput && !isNaN(parseFloat(amountInput)) && (
-              <p className="text-xs text-muted-foreground mt-1 px-1">
+              <p className="text-xs text-muted-foreground mt-1.5 px-1">
                 ≈ {amountUnit === "ml"
                   ? `${mlToOz(parseFloat(amountInput))} oz`
                   : `${Math.round(parseFloat(amountInput) * OZ_TO_ML)} ml`}
@@ -272,7 +458,7 @@ function LogFeedingSheet({ feedingType, onClose, onLog, isPending }: LogSheetPro
           </div>
         )}
 
-        {/* Solids: Food name */}
+        {/* Solids: food name */}
         {feedingType === "solids" && (
           <div>
             <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Food</p>
@@ -288,10 +474,8 @@ function LogFeedingSheet({ feedingType, onClose, onLog, isPending }: LogSheetPro
                 <button
                   key={food}
                   onClick={() => setFoodName(food)}
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all border ${
-                    foodName === food
-                      ? "text-white border-transparent"
-                      : "bg-muted/60 text-muted-foreground border-transparent"
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                    foodName === food ? "text-white" : "bg-muted/60 text-muted-foreground"
                   }`}
                   style={foodName === food ? { backgroundColor: ft.color } : {}}
                 >
@@ -302,28 +486,46 @@ function LogFeedingSheet({ feedingType, onClose, onLog, isPending }: LogSheetPro
           </div>
         )}
 
-        {/* Notes */}
-        <div>
-          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Notes (optional)</p>
-          <input
-            type="text"
-            placeholder="Any notes..."
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className="w-full px-4 py-3 rounded-xl bg-muted/30 border border-border text-sm outline-none focus:ring-2 ring-primary/30"
-          />
-        </div>
+        {/* Medication: notes as the main field */}
+        {feedingType === "medication" && (
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Medication & Dose</p>
+            <input
+              type="text"
+              placeholder="e.g. Paracetamol 2.5ml, Vitamin D drops..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl bg-muted/30 border border-border text-sm outline-none focus:ring-2 ring-primary/30"
+              autoFocus
+            />
+          </div>
+        )}
 
-        {/* Log button */}
-        <button
-          onClick={handleLog}
-          disabled={isPending}
-          className="w-full py-3.5 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50 shadow-sm"
-          style={{ backgroundColor: ft.color }}
-        >
-          <Check size={16} />
-          {isPending ? "Logging…" : `Log ${ft.label}`}
-        </button>
+        {/* Notes (not medication, since notes IS the main field there) */}
+        {feedingType !== "medication" && (
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground mb-1.5 uppercase tracking-wide">Notes (optional)</p>
+            <input
+              type="text"
+              placeholder="Any notes..."
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl bg-muted/30 border border-border text-sm outline-none focus:ring-2 ring-primary/30"
+            />
+          </div>
+        )}
+
+        {showLogButton && (
+          <button
+            onClick={handleLog}
+            disabled={isPending}
+            className="w-full py-3.5 rounded-2xl text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50 shadow-sm"
+            style={{ backgroundColor: ft.color }}
+          >
+            <Check size={16} />
+            {isPending ? "Logging…" : `Log ${ft.label}`}
+          </button>
+        )}
       </div>
     </div>
   );
@@ -350,17 +552,49 @@ function EditFeedingSheet({
 }: {
   entry: EditEntry;
   onClose: () => void;
-  onSave: (updates: { feedingType: string; time: string; notes?: string | null }) => void;
+  onSave: (updates: {
+    feedingType: string;
+    time: string;
+    side?: string | null;
+    durationMinutes?: number | null;
+    amountMl?: number | null;
+    foodName?: string | null;
+    notes?: string | null;
+  }) => void;
   isPending: boolean;
 }) {
   const [feedType, setFeedType] = useState<FeedingType>(entry.feedingType as FeedingType);
   const [timeVal, setTimeVal] = useState(toDatetimeLocal(entry.time));
+  const [side, setSide] = useState<string | null>(entry.side ?? null);
+  const [duration, setDuration] = useState<number | null>(entry.durationMinutes ?? null);
+  const [amountUnit, setAmountUnit] = useState<"ml" | "oz">("ml");
+  const [amountInput, setAmountInput] = useState(entry.amountMl ? String(Math.round(entry.amountMl)) : "");
+  const [foodName, setFoodName] = useState(entry.foodName ?? "");
   const [notes, setNotes] = useState(entry.notes ?? "");
+
+  const ft = FEEDING_TYPES.find((f) => f.key === feedType)!;
+
+  function handleSave() {
+    let amountMl: number | null = null;
+    if (amountInput) {
+      const val = parseFloat(amountInput);
+      if (!isNaN(val)) amountMl = amountUnit === "oz" ? val * OZ_TO_ML : val;
+    }
+    onSave({
+      feedingType: feedType,
+      time: new Date(timeVal).toISOString(),
+      side: side || null,
+      durationMinutes: duration,
+      amountMl,
+      foodName: foodName.trim() || null,
+      notes: notes.trim() || null,
+    });
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-end">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white w-full max-w-[430px] mx-auto rounded-t-3xl p-5 space-y-4 safe-area-pb">
+      <div className="relative bg-white w-full max-w-[430px] mx-auto rounded-t-3xl p-5 space-y-4 safe-area-pb overflow-y-auto max-h-[90vh]">
         <div className="flex items-center justify-between">
           <h3 className="font-bold text-foreground">Edit Feeding Entry</h3>
           <button onClick={onClose} className="p-1.5 rounded-lg bg-muted" aria-label="Close">
@@ -368,24 +602,27 @@ function EditFeedingSheet({
           </button>
         </div>
 
+        {/* Type */}
         <div>
           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Type</p>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
             {FEEDING_TYPES.map(({ key, label, emoji, color }) => (
               <button
                 key={key}
                 onClick={() => setFeedType(key)}
-                className={`py-2.5 px-3 rounded-xl text-sm font-semibold transition-all border ${
-                  feedType === key ? "text-white border-transparent shadow-sm" : "bg-muted text-muted-foreground border-transparent"
+                className={`py-2.5 px-2 rounded-xl text-xs font-semibold transition-all flex flex-col items-center gap-0.5 ${
+                  feedType === key ? "text-white shadow-sm" : "bg-muted text-muted-foreground"
                 }`}
                 style={feedType === key ? { backgroundColor: color } : {}}
               >
-                {emoji} {label}
+                <span>{emoji}</span>
+                <span>{label}</span>
               </button>
             ))}
           </div>
         </div>
 
+        {/* Time */}
         <div>
           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Time</p>
           <input
@@ -396,6 +633,95 @@ function EditFeedingSheet({
           />
         </div>
 
+        {/* Side (breastfeeding / pumping) */}
+        {(feedType === "breastfeeding" || feedType === "pumping") && (
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Side</p>
+            <div className="grid grid-cols-2 gap-2">
+              {(["left", "right"] as const).map((s) => (
+                <button
+                  key={s}
+                  onClick={() => setSide(side === s ? null : s)}
+                  className={`py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                    side === s ? "text-white" : "bg-muted text-muted-foreground"
+                  }`}
+                  style={side === s ? { backgroundColor: ft.color } : {}}
+                >
+                  {s === "left" ? "⬅️ Left" : "Right ➡️"}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Duration (breastfeeding / pumping) */}
+        {(feedType === "breastfeeding" || feedType === "pumping") && (
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Duration</p>
+            <div className="flex flex-wrap gap-2">
+              {DURATION_OPTIONS.map((mins) => (
+                <button
+                  key={mins}
+                  onClick={() => setDuration(duration === mins ? null : mins)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                    duration === mins ? "text-white" : "bg-muted/60 text-muted-foreground"
+                  }`}
+                  style={duration === mins ? { backgroundColor: ft.color } : {}}
+                >
+                  {mins}m
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Amount (bottle / formula / pumping) */}
+        {(feedType === "bottle" || feedType === "formula" || feedType === "pumping") && (
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Amount</p>
+            <div className="flex gap-2 items-center">
+              <input
+                type="number"
+                min="0"
+                step="0.5"
+                placeholder={amountUnit === "ml" ? "e.g. 150" : "e.g. 5"}
+                value={amountInput}
+                onChange={(e) => setAmountInput(e.target.value)}
+                className="flex-1 px-4 py-3 rounded-xl bg-muted/30 border border-border text-sm outline-none focus:ring-2 ring-primary/30"
+              />
+              <div className="flex rounded-xl overflow-hidden border border-border">
+                {(["ml", "oz"] as const).map((unit) => (
+                  <button
+                    key={unit}
+                    onClick={() => setAmountUnit(unit)}
+                    className={`px-3 py-3 text-xs font-semibold transition-all ${
+                      amountUnit === unit ? "text-white" : "bg-muted/30 text-muted-foreground"
+                    }`}
+                    style={amountUnit === unit ? { backgroundColor: ft.color } : {}}
+                  >
+                    {unit}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Food name (solids) */}
+        {feedType === "solids" && (
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Food</p>
+            <input
+              type="text"
+              placeholder="What did they eat?"
+              value={foodName}
+              onChange={(e) => setFoodName(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl bg-muted/30 border border-border text-sm outline-none focus:ring-2 ring-primary/30"
+            />
+          </div>
+        )}
+
+        {/* Notes */}
         <div>
           <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Notes</p>
           <input
@@ -412,9 +738,10 @@ function EditFeedingSheet({
             Cancel
           </button>
           <button
-            onClick={() => onSave({ feedingType: feedType, time: new Date(timeVal).toISOString(), notes: notes.trim() || null })}
+            onClick={handleSave}
             disabled={isPending}
-            className="flex-1 py-3 rounded-xl bg-primary text-white font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
+            className="flex-1 py-3 rounded-xl text-white font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
+            style={{ backgroundColor: ft.color }}
           >
             <Check size={15} />
             Save
@@ -475,8 +802,8 @@ function AddFoodSheet({
               <button
                 key={food}
                 onClick={() => setFoodName(food)}
-                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all border ${
-                  foodName === food ? "bg-[#b58c5a] text-white border-transparent" : "bg-muted/60 text-muted-foreground border-transparent"
+                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                  foodName === food ? "bg-[#b58c5a] text-white" : "bg-muted/60 text-muted-foreground"
                 }`}
               >
                 {food}
@@ -520,8 +847,8 @@ function AddFoodSheet({
               <button
                 key={key}
                 onClick={() => setReaction(key)}
-                className={`py-2 rounded-xl text-xs font-semibold transition-all border ${
-                  reaction === key ? "text-white border-transparent" : "bg-muted/60 text-muted-foreground border-transparent"
+                className={`py-2 rounded-xl text-xs font-semibold transition-all ${
+                  reaction === key ? "text-white" : "bg-muted/60 text-muted-foreground"
                 }`}
                 style={reaction === key ? { backgroundColor: color } : {}}
               >
@@ -543,16 +870,11 @@ function AddFoodSheet({
         </div>
 
         <button
-          onClick={() =>
-            onSave({
-              twinId,
-              foodName: foodName.trim(),
-              category,
-              firstIntroduced: date,
-              reaction: reaction === "none" ? null : reaction,
-              notes: notes.trim() || null,
-            })
-          }
+          onClick={() => onSave({
+            twinId, foodName: foodName.trim(), category, firstIntroduced: date,
+            reaction: reaction === "none" ? null : reaction,
+            notes: notes.trim() || null,
+          })}
           disabled={!canSubmit || isPending}
           className="w-full py-3.5 rounded-2xl bg-[#b58c5a] text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50"
         >
@@ -569,7 +891,7 @@ function AddFoodSheet({
 export default function Feeding() {
   const { user } = useUser();
   const qc = useQueryClient();
-  const today = new Date().toLocaleDateString("en-CA"); // YYYY-MM-DD in local time
+  const today = new Date().toLocaleDateString("en-CA");
 
   const [activeTwinId, setActiveTwinId] = useState<number | null>(null);
   const [logSheetType, setLogSheetType] = useState<FeedingType | null>(null);
@@ -589,7 +911,6 @@ export default function Feeding() {
   }, [twins, activeTwinId]);
 
   const queryParams = { twinId: twinId ?? 0, date: today, timezone: TZ };
-  const queryEnabled = { query: { enabled: !!twinId } };
 
   const { data: entries = [], isLoading } = useListFeedingEntries(
     queryParams,
@@ -642,42 +963,46 @@ export default function Feeding() {
           notes: details.notes ?? null,
         },
       },
-      {
-        onSuccess: () => {
-          invalidateFeeding();
-          setLogSheetType(null);
-        },
-      },
+      { onSuccess: () => { invalidateFeeding(); setLogSheetType(null); } },
     );
   }
 
-  function handleSaveEdit(updates: { feedingType: string; time: string; notes?: string | null }) {
+  function handleSaveEdit(updates: {
+    feedingType: string;
+    time: string;
+    side?: string | null;
+    durationMinutes?: number | null;
+    amountMl?: number | null;
+    foodName?: string | null;
+    notes?: string | null;
+  }) {
     if (!editingEntry) return;
     updateEntry.mutate(
       { id: editingEntry.id, data: updates },
-      {
-        onSuccess: () => {
-          invalidateFeeding();
-          setEditingEntry(null);
-        },
-      },
+      { onSuccess: () => { invalidateFeeding(); setEditingEntry(null); } },
     );
   }
 
   function handleAddFood(data: { twinId: number; foodName: string; category: string; firstIntroduced: string; reaction?: string | null; notes?: string | null }) {
     createFood.mutate(
       { data },
-      {
-        onSuccess: () => {
-          invalidateFoods();
-          setShowAddFood(false);
-        },
-      },
+      { onSuccess: () => { invalidateFoods(); setShowAddFood(false); } },
     );
   }
 
+  // Last feed calculation
+  const sortedEntries = [...entries].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
+  const lastEntry = sortedEntries[0];
+
+  // Tick "since last feed" every minute
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 60000);
+    return () => clearInterval(id);
+  }, []);
+
   const activeTwin = twins.find((t) => t.id === twinId);
-  const twinColor = (activeTwin as { color?: string } | undefined)?.color ?? "#da5a9f";
+  const twinColor = (activeTwin as { colorTheme?: string } | undefined)?.colorTheme ?? "#da5a9f";
 
   return (
     <Layout>
@@ -689,41 +1014,59 @@ export default function Feeding() {
 
       <div className="px-4 pt-4 pb-8 space-y-4">
 
-        {/* Summary card */}
+        {/* Rich summary card */}
         {summary && (
-          <div className="bg-white rounded-2xl border border-border p-4">
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Today's Total</p>
-            <p className="text-3xl font-bold text-primary mb-3">{summary.totalFeedings} feedings</p>
-            <div className="grid grid-cols-4 gap-2 text-center mb-3">
+          <div className="bg-white rounded-2xl border border-border p-4 space-y-3">
+            <div className="flex items-center justify-between">
               <div>
-                <p className="font-bold text-[#da5a9f]">{summary.breastfeedingCount}</p>
-                <p className="text-xs text-muted-foreground">Breast</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">Today's Total</p>
+                <p className="text-3xl font-bold text-primary leading-none">{summary.totalFeedings}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">feeding{summary.totalFeedings !== 1 ? "s" : ""}</p>
               </div>
-              <div>
-                <p className="font-bold text-accent">{summary.bottleCount}</p>
-                <p className="text-xs text-muted-foreground">Bottle</p>
-              </div>
-              <div>
-                <p className="font-bold text-secondary">{summary.formulaCount}</p>
-                <p className="text-xs text-muted-foreground">Formula</p>
-              </div>
-              <div>
-                <p className="font-bold text-[#b58c5a]">{summary.solidsCount}</p>
-                <p className="text-xs text-muted-foreground">Solids</p>
-              </div>
+              {lastEntry && (
+                <div className="text-right">
+                  <div className="flex items-center gap-1 justify-end text-muted-foreground mb-0.5">
+                    <Clock size={11} />
+                    <p className="text-[10px] font-medium uppercase tracking-wide">Last feed</p>
+                  </div>
+                  <p className="text-sm font-bold text-foreground">{timeSince(lastEntry.time)}</p>
+                  <p className="text-[10px] text-muted-foreground">{formatTime(lastEntry.time)}</p>
+                </div>
+              )}
             </div>
+
+            <div className="grid grid-cols-4 gap-1.5">
+              {[
+                { label: "Breast", count: summary.breastfeedingCount, color: "#da5a9f" },
+                { label: "Bottle", count: summary.bottleCount,        color: "#2e818c" },
+                { label: "Formula",count: summary.formulaCount,       color: "#83b8c0" },
+                { label: "Solids", count: summary.solidsCount,        color: "#b58c5a" },
+              ].map(({ label, count, color }) => (
+                <div key={label} className="rounded-xl py-2 text-center" style={{ backgroundColor: color + "18" }}>
+                  <p className="font-bold text-sm" style={{ color }}>{count}</p>
+                  <p className="text-[10px] text-muted-foreground">{label}</p>
+                </div>
+              ))}
+            </div>
+
             {(summary.totalAmountMl > 0 || summary.totalDurationMinutes > 0) && (
               <div className="flex gap-3 pt-2 border-t border-border">
                 {summary.totalAmountMl > 0 && (
-                  <div className="text-center flex-1">
-                    <p className="font-bold text-accent text-sm">{Math.round(summary.totalAmountMl)}ml</p>
-                    <p className="text-xs text-muted-foreground">{mlToOz(summary.totalAmountMl)}oz total</p>
+                  <div className="flex items-center gap-1.5 flex-1">
+                    <Droplets size={13} className="text-teal-500 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-teal-700">{Math.round(summary.totalAmountMl)}ml</p>
+                      <p className="text-[10px] text-muted-foreground">{mlToOz(summary.totalAmountMl)} oz total</p>
+                    </div>
                   </div>
                 )}
                 {summary.totalDurationMinutes > 0 && (
-                  <div className="text-center flex-1">
-                    <p className="font-bold text-[#da5a9f] text-sm">{summary.totalDurationMinutes} min</p>
-                    <p className="text-xs text-muted-foreground">breast time</p>
+                  <div className="flex items-center gap-1.5 flex-1">
+                    <Clock size={13} className="text-pink-500 flex-shrink-0" />
+                    <div>
+                      <p className="text-xs font-bold text-pink-700">{summary.totalDurationMinutes} min</p>
+                      <p className="text-[10px] text-muted-foreground">breast time</p>
+                    </div>
                   </div>
                 )}
               </div>
@@ -731,20 +1074,19 @@ export default function Feeding() {
           </div>
         )}
 
-        {/* Quick log buttons */}
+        {/* Quick log buttons — 3 rows of 2 */}
         <div className="grid grid-cols-2 gap-3">
           {FEEDING_TYPES.map(({ key, label, emoji, color }) => (
             <button
               key={key}
               onClick={() => setLogSheetType(key)}
               disabled={!twinId}
-              className="py-5 rounded-2xl text-white font-semibold flex flex-col items-center gap-1.5 active:scale-95 transition-all shadow-sm disabled:opacity-50"
+              className="py-4 rounded-2xl text-white font-semibold flex flex-col items-center gap-1 active:scale-95 transition-all shadow-sm disabled:opacity-50"
               style={{ backgroundColor: color }}
               data-testid={`button-log-${key}`}
             >
-              <span className="text-2xl">{emoji}</span>
-              <span>{label}</span>
-              <span className="text-xs opacity-80">Tap to log</span>
+              <span className="text-2xl leading-none">{emoji}</span>
+              <span className="text-sm">{label}</span>
             </button>
           ))}
         </div>
@@ -752,10 +1094,10 @@ export default function Feeding() {
         {/* Today's log */}
         {isLoading && <Skeleton className="h-24 rounded-2xl" />}
 
-        {entries.length > 0 && (
+        {sortedEntries.length > 0 && (
           <div className="space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1">Today's Log</p>
-            {[...entries].reverse().map((entry) => {
+            {sortedEntries.map((entry) => {
               const ft = FEEDING_TYPES.find((f) => f.key === entry.feedingType);
               const e = entry as typeof entry & {
                 side?: string | null;
@@ -768,7 +1110,7 @@ export default function Feeding() {
               if (e.durationMinutes) details.push(formatDuration(e.durationMinutes)!);
               if (e.amountMl) details.push(formatAmount(e.amountMl)!);
               if (e.foodName) details.push(e.foodName);
-              if (entry.notes) details.push(entry.notes);
+              if (entry.notes && entry.feedingType === "medication") details.push(entry.notes);
 
               return (
                 <div
@@ -791,7 +1133,7 @@ export default function Feeding() {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-1 flex-shrink-0">
+                  <div className="flex items-center gap-0.5 flex-shrink-0">
                     <button
                       onClick={() => setEditingEntry(entry as EditEntry)}
                       className="text-muted-foreground hover:text-primary p-2 transition-colors"
@@ -815,8 +1157,10 @@ export default function Feeding() {
         )}
 
         {!isLoading && entries.length === 0 && twinId && (
-          <div className="text-center py-6 text-muted-foreground text-sm">
-            No feedings logged yet today. Tap a button above to log.
+          <div className="text-center py-8 space-y-2">
+            <p className="text-4xl">🍼</p>
+            <p className="font-semibold text-foreground">No feedings yet today</p>
+            <p className="text-sm text-muted-foreground">Tap a button above to log the first one</p>
           </div>
         )}
 
@@ -826,7 +1170,7 @@ export default function Feeding() {
           </div>
         )}
 
-        {/* ── Foods Journal ─────────────────────────────────────────────── */}
+        {/* Foods Journal */}
         {twinId && (
           <div className="bg-white rounded-2xl border border-border overflow-hidden">
             <button
@@ -844,10 +1188,7 @@ export default function Feeding() {
               </div>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowAddFood(true);
-                  }}
+                  onClick={(e) => { e.stopPropagation(); setShowAddFood(true); }}
                   className="w-7 h-7 rounded-full bg-[#b58c5a] text-white flex items-center justify-center active:scale-95 transition-all"
                   aria-label="Add food"
                 >
