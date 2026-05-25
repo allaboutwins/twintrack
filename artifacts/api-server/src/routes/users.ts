@@ -19,7 +19,7 @@ import { eq, inArray } from "drizzle-orm";
 
 const router: IRouter = Router();
 
-router.delete("/api/users/me", async (req, res): Promise<void> => {
+router.delete("/users/me", async (req, res): Promise<void> => {
   const { userId } = getAuth(req);
   if (!userId) {
     res.status(401).json({ error: "Unauthorized" });

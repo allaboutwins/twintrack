@@ -16,6 +16,7 @@ import storageRouter from "./storage";
 import twinAiRouter from "./twin-ai";
 import appUpdatesRouter from "./app-updates";
 import usersRouter from "./users";
+import statsRouter from "./stats";
 
 const router: IRouter = Router();
 
@@ -36,5 +37,6 @@ router.use(storageRouter);
 router.use(twinAiRouter);
 router.use(appUpdatesRouter);
 router.use(usersRouter);
+router.use(statsRouter);
 
 export default router;

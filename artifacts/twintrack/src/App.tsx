@@ -23,6 +23,7 @@ import Settings from "@/pages/Settings";
 import TwinAI from "@/pages/TwinAI";
 import VideoAdmin from "@/pages/VideoAdmin";
 import Admin from "@/pages/Admin";
+import Stats from "@/pages/Stats";
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -287,6 +288,9 @@ function ClerkProviderWithRoutes() {
             </Route>
             <Route path="/twin-ai">
               <ProtectedRoute component={TwinAI} />
+            </Route>
+            <Route path="/stats">
+              <ProtectedRoute component={Stats} />
             </Route>
             <Route path="/settings">
               <ProtectedRoute component={Settings} />
