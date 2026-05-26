@@ -1,0 +1,113 @@
+NEXT PRIORITIES — RETENTION + APP STORE PHASE
+
+1. Smart Push Notifications (VERY IMPORTANT)
+
+Please now activate the FIRST real smart notifications using the infrastructure already built.
+
+High priority notifications:
+
+* It’s been 3h since the last feeding
+* Twin A usually naps around now
+* You haven’t logged today yet
+* You logged every day this week 🔥
+* Weekly recap is ready
+* New Twin Mom poll available
+
+Important:
+
+* notifications should feel warm, calming, and supportive
+* NOT stressful or spammy
+* use quiet hours / sleep hours logic
+* allow easy opt-out
+
+Need notification analytics in Admin:
+
+* sent
+* opened
+* CTR/open rate
+* most engaging notification types
+
+2. Daily Emotional Value / Retention
+
+Please improve the emotional experience of TwinTrack.
+
+Ideas:
+
+* daily recap cards
+* “you’re doing amazing” moments
+* streak celebrations
+* twin sync insights
+* longest sleep session
+* “you logged every day this week”
+* weekly summary cards
+
+Important:
+The app should feel emotionally supportive for exhausted twin parents, not clinical or competitive.
+
+3. Learn Tab Cleanup (IMPORTANT)
+
+The YouTube/video system is currently unstable:
+
+* wrong titles
+* old videos
+* broken updates
+* videos not opening correctly
+
+For now:
+please HIDE the Videos section completely.
+
+Keep only:
+
+* Twins Magazines
+* Twins Academy
+* Community/Polls
+* Social links
+
+A clean "Learn" tab is much better than a buggy one.
+
+4. App Store / Google Play Preparation
+
+Please begin preparing TwinTrack for App Store launch.
+
+Need:
+
+* installable mobile app feel
+* persistent login
+* smooth reopen experience
+* app icons
+* splash screen
+* push notification permissions
+* camera/gallery permissions
+* install-to-home-screen flow
+
+Please evaluate the best approach:
+
+* Capacitor
+* Expo
+* best lightweight wrapper for the current stack
+
+Goal:
+launch “TwinTrack Early Access” on Apple App Store + Google Play.
+
+5. Analytics Improvements
+
+Please add tracking + Admin analytics for:
+
+* Twins Academy clicks
+* Magazine opens
+* Shared memory shares
+* Notification opens
+* Poll participation
+* Daily active users
+* Returning users
+* Install prompt acceptance
+
+Important:
+Focus now on:
+
+* retention
+* stability
+* emotional value
+* mobile app readiness
+
+NOT giant new feature systems.

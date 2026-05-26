@@ -18,6 +18,7 @@ import appUpdatesRouter from "./app-updates";
 import usersRouter from "./users";
 import statsRouter from "./stats";
 import pushRouter from "./push";
+import notificationsSchedulerRouter from "./notifications-scheduler";
 
 const router: IRouter = Router();
 
@@ -40,5 +41,6 @@ router.use(appUpdatesRouter);
 router.use(usersRouter);
 router.use(statsRouter);
 router.use(pushRouter);
+router.use(notificationsSchedulerRouter);
 
 export default router;

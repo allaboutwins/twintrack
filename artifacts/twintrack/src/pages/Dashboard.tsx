@@ -14,7 +14,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { PageHeader } from "@/components/Layout";
-import { Moon, Utensils, Baby, ChevronRight, Star, Heart, BarChart2, Sparkles, X } from "lucide-react";
+import { Moon, Utensils, Baby, ChevronRight, Star, Heart, BarChart2, Sparkles, X, Flame, Trophy } from "lucide-react";
 
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -123,6 +123,32 @@ export default function Dashboard() {
 
   const noTwins = !isLoading && (!summary?.twins || summary.twins.length === 0);
   const routineSuggestion = getRoutineSuggestion();
+
+  // Compute emotional value from today's data
+  const totalFeedings = summary?.twins.reduce((acc, t) => acc + t.todayFeedingCount, 0) ?? 0;
+  const totalDiapers = summary?.twins.reduce((acc, t) => acc + t.todayDiaperCount, 0) ?? 0;
+  const totalSleepMins = summary?.twins.reduce((acc, t) => acc + t.todaySleepMinutes, 0) ?? 0;
+  const hasGoodDay = totalFeedings >= 4 || totalDiapers >= 4 || totalSleepMins >= 180;
+
+  // Streak tracking via localStorage
+  const [streak, setStreak] = useState(0);
+  useEffect(() => {
+    if (isLoading || noTwins) return;
+    const today = new Date().toISOString().split("T")[0];
+    const stored = (() => { try { return JSON.parse(localStorage.getItem("tt_streak") ?? "{}"); } catch { return {}; } })();
+    const { lastDate, count } = stored as { lastDate?: string; count?: number };
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+    let newCount = 1;
+    if (lastDate === today) {
+      newCount = count ?? 1;
+    } else if (lastDate === yesterday) {
+      newCount = (count ?? 0) + 1;
+    }
+    if (lastDate !== today) {
+      try { localStorage.setItem("tt_streak", JSON.stringify({ lastDate: today, count: newCount })); } catch { /* noop */ }
+    }
+    setStreak(newCount);
+  }, [isLoading, noTwins]);
 
   return (
     <Layout>
@@ -244,6 +270,16 @@ export default function Dashboard() {
           </div>
         ))}
 
+        {/* Streak celebration */}
+        {!noTwins && !isLoading && streak >= 3 && (
+          <StreakCard streak={streak} />
+        )}
+
+        {/* Good day affirmation */}
+        {!noTwins && !isLoading && hasGoodDay && streak < 3 && (
+          <GoodDayCard feedings={totalFeedings} diapers={totalDiapers} sleepMins={totalSleepMins} />
+        )}
+
         {/* What's New */}
         {!noTwins && !isLoading && <WhatsNewCard />}
 
@@ -336,6 +372,110 @@ export default function Dashboard() {
         )}
       </div>
     </Layout>
+  );
+}
+
+// ── Emotional Value Cards ────────────────────────────────────────────────
+
+const STREAK_MESSAGES: Record<number, { headline: string; body: string }> = {
+  3: { headline: "3 days in a row! 🔥", body: "You've been showing up for your twins every single day. That consistency is everything." },
+  5: { headline: "5-day streak! 🔥🔥", body: "Five consecutive days of tracking. Your dedication is inspiring — your twins are so lucky to have you." },
+  7: { headline: "One full week! 🏆", body: "You've logged every day this week. A whole week of showing up. You're absolutely incredible." },
+  14: { headline: "Two-week streak! 🏆", body: "Fourteen days of consistent tracking. Two weeks of love, care, and attention for your twins. You are amazing." },
+  21: { headline: "21 days! 🌟", body: "Three weeks in a row. This is a habit now. You've built something beautiful for your family." },
+  30: { headline: "30-day milestone! 🎉", body: "A full month of tracking! One month of showing up, day after day. This is extraordinary parenting." },
+};
+
+function getStreakMessage(streak: number) {
+  const milestones = [30, 21, 14, 7, 5, 3];
+  for (const m of milestones) {
+    if (streak >= m) return STREAK_MESSAGES[m];
+  }
+  return null;
+}
+
+function StreakCard({ streak }: { streak: number }) {
+  const [dismissed, setDismissed] = useState(false);
+  const msg = getStreakMessage(streak);
+  if (!msg || dismissed) return null;
+
+  return (
+    <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/60 rounded-2xl p-4 relative overflow-hidden" data-testid="streak-card">
+      <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-amber-100/50 -mr-8 -mt-8" />
+      <button
+        onClick={() => setDismissed(true)}
+        className="absolute top-3 right-3 p-1 rounded-lg text-amber-400 hover:text-amber-600 transition-colors z-10"
+        aria-label="Dismiss"
+        data-testid="streak-card-dismiss"
+      >
+        <X size={13} />
+      </button>
+      <div className="flex items-start gap-3 pr-6">
+        <div className="w-11 h-11 rounded-xl bg-amber-100 border border-amber-200 flex items-center justify-center flex-shrink-0">
+          <Flame size={22} className="text-amber-500" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-amber-800 text-sm leading-tight">{msg.headline}</p>
+          <p className="text-xs text-amber-700 mt-1 leading-relaxed">{msg.body}</p>
+          <div className="flex items-center gap-1.5 mt-2.5">
+            {Array.from({ length: Math.min(streak, 7) }).map((_, i) => (
+              <div key={i} className="w-5 h-1.5 rounded-full bg-amber-400" />
+            ))}
+            {streak > 7 && <span className="text-[10px] font-bold text-amber-500">+{streak - 7}</span>}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const GOOD_DAY_MESSAGES = [
+  "You're doing beautifully today. Every diaper changed, every feed logged — that's love in action.",
+  "Look at everything you've done today. Your twins are thriving because of you.",
+  "Today's a great day in the books! Keep up the incredible work, twin parent.",
+  "You're crushing it today. These little wins add up to something extraordinary.",
+  "Your attention to your twins today is genuinely beautiful. You're an amazing parent.",
+];
+
+function GoodDayCard({ feedings, diapers, sleepMins }: { feedings: number; diapers: number; sleepMins: number }) {
+  const [dismissed, setDismissed] = useState(false);
+  if (dismissed) return null;
+
+  const highlights = [
+    feedings > 0 && `${feedings} feeding${feedings === 1 ? "" : "s"}`,
+    diapers > 0 && `${diapers} diaper${diapers === 1 ? "" : "s"}`,
+    sleepMins > 0 && `${Math.round(sleepMins / 60)}h sleep tracked`,
+  ].filter(Boolean) as string[];
+
+  const msg = GOOD_DAY_MESSAGES[new Date().getDate() % GOOD_DAY_MESSAGES.length];
+
+  return (
+    <div className="bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200/60 rounded-2xl p-4 relative" data-testid="good-day-card">
+      <button
+        onClick={() => setDismissed(true)}
+        className="absolute top-3 right-3 p-1 rounded-lg text-rose-300 hover:text-rose-500 transition-colors"
+        aria-label="Dismiss"
+        data-testid="good-day-dismiss"
+      >
+        <X size={13} />
+      </button>
+      <div className="flex items-start gap-3 pr-6">
+        <div className="w-11 h-11 rounded-xl bg-rose-100 border border-rose-200 flex items-center justify-center flex-shrink-0">
+          <Heart size={20} className="text-rose-400 fill-rose-300" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-bold text-rose-600 uppercase tracking-wide mb-1">You're amazing</p>
+          <p className="text-sm text-rose-800 leading-relaxed font-medium">{msg}</p>
+          {highlights.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2.5">
+              {highlights.map((h) => (
+                <span key={h} className="text-[10px] font-semibold bg-rose-100 text-rose-700 px-2 py-0.5 rounded-full border border-rose-200">{h}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }
 
