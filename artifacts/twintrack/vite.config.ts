@@ -44,7 +44,8 @@ export default defineConfig({
         ],
       },
       workbox: {
-        navigateFallback: null,
+        navigateFallback: "/offline.html",
+        navigateFallbackDenylist: [/^\/api\//],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         importScripts: ["sw-push.js"],
         runtimeCaching: [
@@ -54,6 +55,22 @@ export default defineConfig({
             options: {
               cacheName: "google-fonts",
               expiration: { maxEntries: 10, maxAgeSeconds: 31536000 },
+            },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-fonts-static",
+              expiration: { maxEntries: 20, maxAgeSeconds: 31536000 },
+            },
+          },
+          {
+            urlPattern: /\/api\/dashboard/,
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "api-dashboard",
+              expiration: { maxEntries: 10, maxAgeSeconds: 60 },
             },
           },
         ],

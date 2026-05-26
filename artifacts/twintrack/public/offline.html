@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>TwinTrack — You're offline</title>
+  <meta name="theme-color" content="#da5a9f" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      height: 100%;
+      background: #fdf8fa;
+      font-family: 'Quicksand', sans-serif;
+      color: #1a4a50;
+    }
+    .container {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+      text-align: center;
+      gap: 16px;
+      max-width: 430px;
+      margin: 0 auto;
+    }
+    .emoji { font-size: 64px; line-height: 1; margin-bottom: 8px; }
+    h1 { font-size: 22px; font-weight: 700; color: #1a4a50; }
+    p { font-size: 15px; color: #6b9ea5; line-height: 1.6; max-width: 280px; }
+    .tip {
+      margin-top: 8px;
+      background: white;
+      border: 1px solid #e8d5e4;
+      border-radius: 16px;
+      padding: 16px 20px;
+      font-size: 13px;
+      color: #6b9ea5;
+      line-height: 1.5;
+    }
+    button {
+      margin-top: 8px;
+      background: #da5a9f;
+      color: white;
+      border: none;
+      border-radius: 14px;
+      padding: 14px 28px;
+      font-family: 'Quicksand', sans-serif;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    button:active { opacity: 0.85; transform: scale(0.98); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="emoji">🍒</div>
+    <h1>You're offline right now</h1>
+    <p>No worries — even the most organised twin parents lose their signal sometimes.</p>
+    <div class="tip">
+      Once you're back online, TwinTrack will reconnect automatically and sync everything you need. 💕
+    </div>
+    <button onclick="window.location.reload()">Try again</button>
+  </div>
+</body>
+</html>

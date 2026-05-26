@@ -2,15 +2,28 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>TwinTrack — The Twin Parenting App</title>
     <meta name="description" content="TwinTrack helps twin parents track sleep, feeding, diapers, and routines for both babies — calmly, simply, together." />
+
+    <!-- Theme & PWA -->
     <meta name="theme-color" content="#da5a9f" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="TwinTrack" />
     <meta name="application-name" content="TwinTrack" />
     <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="format-detection" content="telephone=no" />
+
+    <!-- Apple Splash Screens (portrait) -->
+    <link rel="apple-touch-startup-image" href="/apple-touch-icon.png" />
+
+    <!-- Icons -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+    <!-- Social -->
     <meta property="og:title" content="TwinTrack — The Twin Parenting App by @AllAboutTwins" />
     <meta property="og:description" content="The app that finally understands twin life. Track sleep, feeding, diapers &amp; milestones for both babies — calmly, simply, together. Made for twin moms, by twin moms. 🍒" />
     <meta property="og:type" content="website" />
@@ -24,11 +37,26 @@
     <meta name="googlebot" content="index, follow" />
     <link rel="canonical" href="https://app.allaboutwins.com/" />
     <meta name="keywords" content="twin parenting app, twins tracker, sleep tracker twins, feeding tracker twins, twin mom app, multiples parenting" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Inline splash/loading styles so the first paint is branded, not white -->
+    <style>
+      html, body { background-color: #fdf8fa; margin: 0; padding: 0; }
+      #root:empty::after {
+        content: '';
+        display: block;
+        position: fixed;
+        inset: 0;
+        background: #fdf8fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>

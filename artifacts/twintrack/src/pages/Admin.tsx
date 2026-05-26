@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from "react";
 import { useUser } from "@clerk/react";
 import { useLocation } from "wouter";
-import { RefreshCw, Users, MessageCircle, BarChart2, Activity, Copy, Check, Star, CheckCircle2, Filter, Sheet, Plus, Trash2, Mail, Lock, Download, BarChart, Sparkles, Zap, Instagram, Bell } from "lucide-react";
+import { RefreshCw, Users, MessageCircle, BarChart2, Activity, Copy, Check, Star, CheckCircle2, Filter, Sheet, Plus, Trash2, Mail, Lock, Download, BarChart, Sparkles, Zap, Instagram, Bell, TrendingUp } from "lucide-react";
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart as ReBarChart, Bar } from "recharts";
 
 interface Breakdown { key: string; value: number; }
 interface FeedbackEntry {
@@ -66,6 +67,16 @@ interface NotificationStats {
   totalOpened: number;
   openRate: number;
   byType: Record<string, { sent: number; opened: number }>;
+}
+
+interface RetentionData {
+  days: number;
+  dau: { date: string; users: number }[];
+  wau: { users: number }[];
+  pushSubsByDay: { date: string; subs: number }[];
+  notifByDay: { date: string; sent: number; opened: number; rate: number }[];
+  signupsByDay: { date: string; signups: number }[];
+  totals: { pushSubscribers: number; onboardedUsers: number; pushOptInRate: number };
 }
 
 interface TwinAiAnalytics {
@@ -196,6 +207,7 @@ export default function Admin() {
 
   const [notificationStats, setNotificationStats] = useState<NotificationStats | null>(null);
   const [twinAiAnalytics, setTwinAiAnalytics] = useState<TwinAiAnalytics | null>(null);
+  const [retentionData, setRetentionData] = useState<RetentionData | null>(null);
   const [appUpdatesList, setAppUpdatesList] = useState<AppUpdateItem[]>([]);
   const [showUpdateForm, setShowUpdateForm] = useState(false);
   const [updateTitle, setUpdateTitle] = useState("");
@@ -219,11 +231,12 @@ export default function Admin() {
     if (!isAdmin) return;
     setLoading(true);
     try {
-      const [statsRes, aiRes, updatesRes, notifRes] = await Promise.all([
+      const [statsRes, aiRes, updatesRes, notifRes, retentionRes] = await Promise.all([
         fetch(`${baseUrl}/api/admin/stats?${authQuery}`),
         fetch(`${baseUrl}/api/admin/twin-ai-analytics?${authQuery}`),
         fetch(`${baseUrl}/api/app-updates?limit=50`),
         fetch(`${baseUrl}/api/admin/notifications/stats`),
+        fetch(`${baseUrl}/api/admin/retention?${authQuery}&days=30`),
       ]);
       if (!statsRes.ok) throw new Error(`${statsRes.status}`);
       const data: AdminStats = await statsRes.json();
@@ -232,6 +245,7 @@ export default function Admin() {
       if (aiRes.ok) setTwinAiAnalytics(await aiRes.json());
       if (updatesRes.ok) setAppUpdatesList(await updatesRes.json());
       if (notifRes.ok) setNotificationStats(await notifRes.json());
+      if (retentionRes.ok) setRetentionData(await retentionRes.json());
       setLastUpdated(new Date());
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -447,6 +461,98 @@ export default function Admin() {
               <StatCard label="Newsletter 📧" value={stats.users.newsletterSubscribers} sub="subscribed" accent />
             </div>
           </section>
+
+          {/* ── RETENTION & DAU ── */}
+          {retentionData && (
+            <section>
+              <SectionHeader icon={<TrendingUp size={16} />} title="Retention & Growth (30 days)" />
+
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                <StatCard label="Push opt-in rate" value={`${retentionData.totals.pushOptInRate}%`} sub="of onboarded users" accent />
+                <StatCard label="Push subscribers" value={retentionData.totals.pushSubscribers} sub="active devices" />
+                <StatCard label="Onboarded" value={retentionData.totals.onboardedUsers} sub="completed setup" />
+              </div>
+
+              {retentionData.dau.length > 0 ? (
+                <div className="bg-white rounded-2xl p-4 border border-border mb-4">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Daily Active Users (30d)</p>
+                  <ResponsiveContainer width="100%" height={120}>
+                    <AreaChart data={retentionData.dau} margin={{ top: 4, right: 4, left: -24, bottom: 0 }}>
+                      <defs>
+                        <linearGradient id="dauGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#da5a9f" stopOpacity={0.25} />
+                          <stop offset="95%" stopColor="#da5a9f" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#6b9ea5" }} tickFormatter={(v: string) => new Date(v + "T12:00:00").toLocaleDateString("en-US", { month: "numeric", day: "numeric" })} interval="preserveStartEnd" />
+                      <YAxis tick={{ fontSize: 9, fill: "#6b9ea5" }} allowDecimals={false} />
+                      <Tooltip
+                        contentStyle={{ borderRadius: 12, border: "1px solid #e8d5e4", fontSize: 11 }}
+                        labelFormatter={(v: string) => new Date(v + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                        formatter={(v: number) => [v, "Active users"]}
+                      />
+                      <Area type="monotone" dataKey="users" stroke="#da5a9f" strokeWidth={2} fill="url(#dauGrad)" dot={false} />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              ) : (
+                <div className="bg-white rounded-2xl p-4 border border-border mb-4">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Daily Active Users (30d)</p>
+                  <p className="text-xs text-muted-foreground italic">No activity data yet — data appears once users start logging 🍒</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {retentionData.signupsByDay.length > 0 && (
+                  <div className="bg-white rounded-2xl p-4 border border-border">
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">New Signups per Day</p>
+                    <ResponsiveContainer width="100%" height={90}>
+                      <ReBarChart data={retentionData.signupsByDay} margin={{ top: 2, right: 4, left: -24, bottom: 0 }}>
+                        <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#6b9ea5" }} tickFormatter={(v: string) => new Date(v + "T12:00:00").toLocaleDateString("en-US", { month: "numeric", day: "numeric" })} interval="preserveStartEnd" />
+                        <YAxis tick={{ fontSize: 9, fill: "#6b9ea5" }} allowDecimals={false} />
+                        <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #e8d5e4", fontSize: 11 }} formatter={(v: number) => [v, "Signups"]} />
+                        <Bar dataKey="signups" fill="#da5a9f" radius={[3, 3, 0, 0]} />
+                      </ReBarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+
+                {retentionData.notifByDay.length > 0 && (
+                  <div className="bg-white rounded-2xl p-4 border border-border">
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Notification Open Rate (%)</p>
+                    <ResponsiveContainer width="100%" height={90}>
+                      <AreaChart data={retentionData.notifByDay} margin={{ top: 2, right: 4, left: -24, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="notifGrad" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#7c3aed" stopOpacity={0.2} />
+                            <stop offset="95%" stopColor="#7c3aed" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#6b9ea5" }} tickFormatter={(v: string) => new Date(v + "T12:00:00").toLocaleDateString("en-US", { month: "numeric", day: "numeric" })} interval="preserveStartEnd" />
+                        <YAxis tick={{ fontSize: 9, fill: "#6b9ea5" }} domain={[0, 100]} unit="%" />
+                        <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #e8d5e4", fontSize: 11 }} formatter={(v: number) => [`${v}%`, "Open rate"]} />
+                        <Area type="monotone" dataKey="rate" stroke="#7c3aed" strokeWidth={2} fill="url(#notifGrad)" dot={false} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+
+                {retentionData.pushSubsByDay.length > 0 && (
+                  <div className="bg-white rounded-2xl p-4 border border-border">
+                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">New Push Subscribers per Day</p>
+                    <ResponsiveContainer width="100%" height={90}>
+                      <ReBarChart data={retentionData.pushSubsByDay} margin={{ top: 2, right: 4, left: -24, bottom: 0 }}>
+                        <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#6b9ea5" }} tickFormatter={(v: string) => new Date(v + "T12:00:00").toLocaleDateString("en-US", { month: "numeric", day: "numeric" })} interval="preserveStartEnd" />
+                        <YAxis tick={{ fontSize: 9, fill: "#6b9ea5" }} allowDecimals={false} />
+                        <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #e8d5e4", fontSize: 11 }} formatter={(v: number) => [v, "New subscribers"]} />
+                        <Bar dataKey="subs" fill="#2e818c" radius={[3, 3, 0, 0]} />
+                      </ReBarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </div>
+            </section>
+          )}
 
           {/* ── ACTIVITY ── */}
           <section>

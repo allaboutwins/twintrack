@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useGetOnboarding, getGetOnboardingQueryKey } from "@workspace/api-client-react";
 import InAppBrowserGate from "@/components/InAppBrowserGate";
+import PageTransition from "@/components/PageTransition";
 import NotFound from "@/pages/not-found";
 import OnboardingFlow from "@/pages/OnboardingFlow";
 import Landing from "@/pages/Landing";
@@ -147,8 +148,9 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
 
   if (!userId || isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[100dvh] bg-background">
-        <div className="w-8 h-8 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
+      <div className="flex flex-col items-center justify-center min-h-[100dvh] bg-background gap-4">
+        <span className="text-4xl animate-pulse select-none">🍒</span>
+        <p className="text-sm text-muted-foreground font-medium">Loading your twins' day…</p>
       </div>
     );
   }
@@ -252,51 +254,53 @@ function ClerkProviderWithRoutes() {
         <ClerkQueryClientCacheInvalidator />
         <PostHogIdentifier />
         <TooltipProvider>
-          <Switch>
-            <Route path="/" component={HomeRedirect} />
-            <Route path="/sign-in/*?" component={SignInPage} />
-            <Route path="/sign-up/*?" component={SignUpPage} />
-            <Route path="/dashboard">
-              <ProtectedRoute component={Dashboard} />
-            </Route>
-            <Route path="/sleep">
-              <ProtectedRoute component={Sleep} />
-            </Route>
-            <Route path="/feeding">
-              <ProtectedRoute component={Feeding} />
-            </Route>
-            <Route path="/diapers">
-              <ProtectedRoute component={Diapers} />
-            </Route>
-            <Route path="/routines">
-              <ProtectedRoute component={Routines} />
-            </Route>
-            <Route path="/tv">
-              <ProtectedRoute component={Learn} />
-            </Route>
-            <Route path="/learn">
-              <ProtectedRoute component={Learn} />
-            </Route>
-            <Route path="/milestones">
-              <ProtectedRoute component={Milestones} />
-            </Route>
-            <Route path="/admin/videos">
-              <ProtectedRoute component={VideoAdmin} />
-            </Route>
-            <Route path="/admin">
-              <AdminRoute component={Admin} />
-            </Route>
-            <Route path="/twin-ai">
-              <ProtectedRoute component={TwinAI} />
-            </Route>
-            <Route path="/stats">
-              <ProtectedRoute component={Stats} />
-            </Route>
-            <Route path="/settings">
-              <ProtectedRoute component={Settings} />
-            </Route>
-            <Route component={NotFound} />
-          </Switch>
+          <PageTransition>
+            <Switch>
+              <Route path="/" component={HomeRedirect} />
+              <Route path="/sign-in/*?" component={SignInPage} />
+              <Route path="/sign-up/*?" component={SignUpPage} />
+              <Route path="/dashboard">
+                <ProtectedRoute component={Dashboard} />
+              </Route>
+              <Route path="/sleep">
+                <ProtectedRoute component={Sleep} />
+              </Route>
+              <Route path="/feeding">
+                <ProtectedRoute component={Feeding} />
+              </Route>
+              <Route path="/diapers">
+                <ProtectedRoute component={Diapers} />
+              </Route>
+              <Route path="/routines">
+                <ProtectedRoute component={Routines} />
+              </Route>
+              <Route path="/tv">
+                <ProtectedRoute component={Learn} />
+              </Route>
+              <Route path="/learn">
+                <ProtectedRoute component={Learn} />
+              </Route>
+              <Route path="/milestones">
+                <ProtectedRoute component={Milestones} />
+              </Route>
+              <Route path="/admin/videos">
+                <ProtectedRoute component={VideoAdmin} />
+              </Route>
+              <Route path="/admin">
+                <AdminRoute component={Admin} />
+              </Route>
+              <Route path="/twin-ai">
+                <ProtectedRoute component={TwinAI} />
+              </Route>
+              <Route path="/stats">
+                <ProtectedRoute component={Stats} />
+              </Route>
+              <Route path="/settings">
+                <ProtectedRoute component={Settings} />
+              </Route>
+              <Route component={NotFound} />
+            </Switch>
+          </PageTransition>
           <Toaster />
         </TooltipProvider>
       </QueryClientProvider>
