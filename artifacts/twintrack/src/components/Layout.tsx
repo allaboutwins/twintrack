@@ -6,6 +6,7 @@ import { useUser } from "@clerk/react";
 import { useSubmitFeedback } from "@workspace/api-client-react";
 import NotificationCenter from "@/components/NotificationCenter";
 import InstallPrompt from "@/components/InstallPrompt";
+import OfflineBanner from "@/components/OfflineBanner";
 
 const FEEDBACK_TYPES = [
   { key: "bug", label: "🐛 Bug report" },
@@ -167,6 +168,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="relative flex flex-col min-h-[100dvh] max-w-[430px] mx-auto bg-background">
+      <OfflineBanner />
       {/* Top header */}
       <div className="bg-white border-b border-border/30">
         <div className="flex items-center justify-between px-4 h-16">
@@ -206,8 +208,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <InstallPrompt />
       <FeedbackButton />
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-border safe-area-pb">
+      {/* Bottom Navigation — extra padding for iPhone home indicator */}
+      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-border"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
         <div className="flex items-center justify-around px-1 py-1.5">
           {tabs.map(({ path, icon: Icon, label, highlight }) => {
             const active = location === path || location.startsWith(path + "/");

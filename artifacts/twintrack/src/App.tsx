@@ -10,6 +10,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { useGetOnboarding, getGetOnboardingQueryKey } from "@workspace/api-client-react";
 import InAppBrowserGate from "@/components/InAppBrowserGate";
 import PageTransition from "@/components/PageTransition";
+import PushPermissionPrompt from "@/components/PushPermissionPrompt";
 import NotFound from "@/pages/not-found";
 import OnboardingFlow from "@/pages/OnboardingFlow";
 import Landing from "@/pages/Landing";
@@ -254,6 +255,7 @@ function ClerkProviderWithRoutes() {
         <ClerkQueryClientCacheInvalidator />
         <PostHogIdentifier />
         <TooltipProvider>
+          <PushPermissionPrompt />
           <PageTransition>
             <Switch>
               <Route path="/" component={HomeRedirect} />
