@@ -1,0 +1,106 @@
+NEXT PHASE — APP STORE READINESS + TRUST + STABILITY
+
+TwinTrack is now entering a new phase:
+less feature overload,
+more polish, trust, stability, and retention.
+
+Please focus on the following priorities only:
+
+1. App Store / Google Play Preparation (HIGH PRIORITY)
+
+Please begin preparing TwinTrack Early Access for:
+
+* Apple App Store
+* Google Play Store
+
+Goals:
+
+* true mobile-app feel
+* persistent login
+* smooth reopen experience
+* polished install experience
+* notification permissions
+* native-like transitions/performance
+
+Please:
+
+* evaluate best wrapper approach for current stack:
+
+  * Capacitor
+  * Expo
+  * or best lightweight option
+
+Need preparation for:
+
+* app icon package
+* splash screen
+* app name assets
+* mobile permissions
+* push permissions
+* camera/gallery permissions
+* install-to-home-screen improvements
+
+Please also prepare:
+
+* App Store screenshots structure
+* onboarding screenshot flow
+* placeholder App Store metadata/text sections
+
+2. Stability + Trust Improvements
+
+Please focus on reliability and polish now.
+
+Need:
+
+* reduce loading flickers
+* smoother page transitions
+* faster dashboard load
+* better offline handling
+* graceful reconnect states
+* reduce cache/update confusion between preview and production
+* improve mobile responsiveness on smaller devices
+
+Important:
+the app should feel:
+calming,
+stable,
+safe,
+and premium.
+
+3. Analytics + Retention Insights
+
+Please improve Admin analytics:
+
+* daily active users
+* returning users
+* retention trends
+* install prompt acceptance
+* push notification opt-in rate
+* notification CTR/open rate
+* Twins Academy clicks
+* Magazine opens
+* Poll participation
+* Ask Twin AI usage
+
+Please create simple charts/trends for:
+
+* DAU
+* WAU
+* streak growth
+* average logs per user
+
+4. Emotional Polish
+
+Please continue improving the emotional feel:
+
+* warm empty states
+* encouraging microcopy
+* calmer loading states
+* supportive onboarding language
+* rewarding daily summaries
+
+Important:
+avoid making the app feel clinical or overwhelming.
+
+TwinTrack should feel like:
+“a calm companion for exhausted twin parents.”
