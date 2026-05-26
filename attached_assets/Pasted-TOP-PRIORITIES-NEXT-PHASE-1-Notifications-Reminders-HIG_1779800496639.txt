@@ -1,0 +1,128 @@
+TOP PRIORITIES — NEXT PHASE
+
+1. Notifications / Reminders (HIGH PRIORITY)
+
+Need a lightweight but powerful notification system.
+
+Please build:
+
+* Push notification infrastructure preparation for:
+
+  * Apple Push Notifications (APNs)
+  * Firebase Cloud Messaging (FCM)
+
+* In-app notification center (🍒 Cherries tab already exists)
+
+* Notification preferences inside Settings:
+
+  * Sleep reminders
+  * Feeding reminders
+  * Pumping reminders
+  * Medication reminders
+  * Milestone reminders
+  * Twin AI tips
+  * Weekly insights
+
+* Smart reminders examples:
+
+  * “It’s been 3h since the last feeding”
+  * “Twin A usually naps around now”
+  * “You logged every day this week 🔥”
+  * “A new Twin Mom poll is live”
+  * “New issue added to Twins Magazine”
+
+* Add notification analytics to Admin:
+
+  * notifications sent
+  * notifications opened
+  * most clicked notifications
+
+2. Daily Insights / Rewards (Retention)
+
+Please create a lightweight emotional reward system.
+
+Ideas:
+
+* Daily summary card:
+
+  * total feeds
+  * total sleep
+  * diapers
+  * pumping
+  * longest sleep
+  * twin sync %
+
+* Emotional insights:
+
+  * “You logged consistently for 5 days 🔥”
+  * “Twin B slept better today”
+  * “Your twins synced naps twice today”
+
+* Weekly recap card:
+
+  * trends vs previous week
+  * sleep averages
+  * feeding averages
+  * streaks
+
+* Add simple celebration moments:
+
+  * streak badges
+  * “first full week tracked”
+  * “100 feedings logged”
+  * “milestone memory added”
+
+* Important:
+  Keep this calming and emotionally supportive — NOT competitive.
+
+3. App Store / Google Play Preparation
+
+Please start preparing TwinTrack for:
+
+* Apple App Store
+* Google Play Store
+
+Goals:
+
+* installable real mobile app
+* persistent login
+* push notifications
+* native app feel
+
+Please:
+
+* evaluate best wrapper approach:
+
+  * Capacitor
+  * Expo
+  * other best option for current stack
+
+* prepare:
+
+  * app icons
+  * splash screen
+  * mobile permissions
+  * notification permissions
+  * camera/gallery permissions
+
+* improve mobile persistence:
+
+  * keep users logged in
+  * reduce login friction
+  * smoother app reopen experience
+
+* add install prompt for PWA users:
+  “Add TwinTrack to your Home Screen”
+
+* add analytics on Admin for:
+
+  * app installs
+  * retention
+  * daily active users
+  * notification opens
+  * feature usage
+  * external link clicks
+    (Twins Academy, Magazines, Shared Memories, etc.)
+
+* Important:
+  Focus on stability and App Store readiness first — not advanced new features.
