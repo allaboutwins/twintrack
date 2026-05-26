@@ -46,6 +46,7 @@ export default defineConfig({
       workbox: {
         navigateFallback: null,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        importScripts: ["sw-push.js"],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

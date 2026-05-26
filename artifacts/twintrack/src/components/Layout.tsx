@@ -1,19 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import logoAat from "../assets/logo-aat.png";
-import { Home, Moon, Utensils, GraduationCap, Heart, Settings, MessageCircle, X, Sparkles, BarChart2 } from "lucide-react";
+import { Home, Moon, Utensils, GraduationCap, Settings, MessageCircle, X, Sparkles, BarChart2 } from "lucide-react";
 import { useUser } from "@clerk/react";
 import { useSubmitFeedback } from "@workspace/api-client-react";
-
-interface UpdateItem {
-  id: number;
-  title: string;
-  description: string;
-  emoji: string;
-  publishedAt: string;
-}
-
-const UPDATES_SEEN_KEY = "tt_updates_seen";
+import NotificationCenter from "@/components/NotificationCenter";
+import InstallPrompt from "@/components/InstallPrompt";
 
 const FEEDBACK_TYPES = [
   { key: "bug", label: "🐛 Bug report" },
@@ -149,30 +141,28 @@ const tabs = [
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
-  const [updates, setUpdates] = useState<UpdateItem[]>([]);
-  const [showUpdates, setShowUpdates] = useState(false);
-  const [hasUnread, setHasUnread] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const { user } = useUser();
   const baseUrl = useRef((import.meta.env.BASE_URL ?? "/").replace(/\/$/, "")).current;
 
   useEffect(() => {
-    fetch(`${baseUrl}/api/app-updates?limit=30`)
+    if (!user?.id) return;
+    fetch(`${baseUrl}/api/notifications?limit=50`)
       .then((r) => (r.ok ? r.json() : []))
-      .then((data: UpdateItem[]) => {
-        setUpdates(data);
-        const lastSeen = localStorage.getItem(UPDATES_SEEN_KEY);
-        if (!lastSeen) {
-          setHasUnread(data.length > 0);
-        } else {
-          setHasUnread(data.some((u) => new Date(u.publishedAt) > new Date(lastSeen)));
-        }
+      .then((data: Array<{ isRead: boolean }>) => {
+        setUnreadCount(data.filter((n) => !n.isRead).length);
       })
       .catch(() => {});
-  }, [baseUrl]);
+  }, [user?.id, baseUrl]);
 
-  function openUpdates() {
-    setShowUpdates(true);
-    setHasUnread(false);
-    localStorage.setItem(UPDATES_SEEN_KEY, new Date().toISOString());
+  function openNotifications() {
+    setShowNotifications(true);
+  }
+
+  function closeNotifications() {
+    setShowNotifications(false);
+    setUnreadCount(0);
   }
 
   return (
@@ -183,13 +173,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <img src={logoAat} alt="All About Twins" className="h-16 w-auto" />
           <div className="flex items-center">
             <button
-              onClick={openUpdates}
+              onClick={openNotifications}
               className="relative p-2 rounded-full hover:bg-muted/60 transition-colors"
-              aria-label="What's New"
+              aria-label="Notifications"
+              data-testid="notifications-button"
             >
               <span className="text-base leading-none select-none">🍒</span>
-              {hasUnread && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-primary border-2 border-white" />
+              {unreadCount > 0 && (
+                <span className="absolute top-1 right-1 min-w-[14px] h-3.5 rounded-full bg-primary border-2 border-white text-[8px] font-bold text-white flex items-center justify-center px-0.5">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
               )}
             </button>
             <Link
@@ -207,70 +200,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-
       <main className="flex-1 overflow-y-auto pb-20">{children}</main>
 
-      {/* What's New Drawer */}
-      {showUpdates && (
-        <div className="fixed inset-0 z-50 flex items-end">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowUpdates(false)} />
-          <div className="relative bg-white w-full max-w-[430px] mx-auto rounded-t-3xl max-h-[85dvh] flex flex-col safe-area-pb">
-            <div className="flex-shrink-0 flex items-center justify-between px-5 py-4 border-b border-border">
-              <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-2xl bg-primary/10 flex items-center justify-center">
-                  <span className="text-lg leading-none">🍒</span>
-                </div>
-                <div>
-                  <h3 className="font-bold text-foreground leading-tight">What's New</h3>
-                  <p className="text-xs text-muted-foreground">TwinTrack updates &amp; milestones</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowUpdates(false)}
-                className="p-1.5 rounded-lg bg-muted"
-                aria-label="Close"
-              >
-                <X size={14} className="text-muted-foreground" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto px-5 py-4">
-              {updates.length === 0 ? (
-                <div className="py-12 text-center">
-                  <span className="text-4xl">🍒</span>
-                  <p className="text-sm text-muted-foreground mt-3">Updates coming soon!</p>
-                </div>
-              ) : (
-                <div className="space-y-0">
-                  {updates.map((u, i) => (
-                    <div
-                      key={u.id}
-                      className={`flex items-start gap-3.5 py-4 ${
-                        i < updates.length - 1 ? "border-b border-border/50" : ""
-                      }`}
-                    >
-                      <div className="w-10 h-10 rounded-2xl bg-muted/50 flex items-center justify-center flex-shrink-0">
-                        <span className="text-xl leading-none">{u.emoji}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground leading-snug">{u.title}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{u.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="flex-shrink-0 px-5 py-3 border-t border-border/50">
-              <p className="text-center text-xs text-muted-foreground">
-                Built with 💕 for twin families everywhere
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
+      <NotificationCenter open={showNotifications} onClose={closeNotifications} />
+      <InstallPrompt />
       <FeedbackButton />
 
       {/* Bottom Navigation */}

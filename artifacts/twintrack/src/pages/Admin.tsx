@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useUser } from "@clerk/react";
 import { useLocation } from "wouter";
-import { RefreshCw, Users, MessageCircle, BarChart2, Activity, Copy, Check, Star, CheckCircle2, Filter, Sheet, Plus, Trash2, Mail, Lock, Download, BarChart, Sparkles, Zap, Instagram } from "lucide-react";
+import { RefreshCw, Users, MessageCircle, BarChart2, Activity, Copy, Check, Star, CheckCircle2, Filter, Sheet, Plus, Trash2, Mail, Lock, Download, BarChart, Sparkles, Zap, Instagram, Bell } from "lucide-react";
 
 interface Breakdown { key: string; value: number; }
 interface FeedbackEntry {
@@ -57,6 +57,15 @@ interface AppUpdateItem {
   description: string;
   emoji: string;
   publishedAt: string;
+}
+
+interface NotificationStats {
+  totalSubscribers: number;
+  uniqueSubscribedUsers: number;
+  totalSent: number;
+  totalOpened: number;
+  openRate: number;
+  byType: Record<string, { sent: number; opened: number }>;
 }
 
 interface TwinAiAnalytics {
@@ -185,6 +194,7 @@ export default function Admin() {
   const [showAllPolls, setShowAllPolls] = useState(false);
   const [showAllFeedback, setShowAllFeedback] = useState(false);
 
+  const [notificationStats, setNotificationStats] = useState<NotificationStats | null>(null);
   const [twinAiAnalytics, setTwinAiAnalytics] = useState<TwinAiAnalytics | null>(null);
   const [appUpdatesList, setAppUpdatesList] = useState<AppUpdateItem[]>([]);
   const [showUpdateForm, setShowUpdateForm] = useState(false);
@@ -209,10 +219,11 @@ export default function Admin() {
     if (!isAdmin) return;
     setLoading(true);
     try {
-      const [statsRes, aiRes, updatesRes] = await Promise.all([
+      const [statsRes, aiRes, updatesRes, notifRes] = await Promise.all([
         fetch(`${baseUrl}/api/admin/stats?${authQuery}`),
         fetch(`${baseUrl}/api/admin/twin-ai-analytics?${authQuery}`),
         fetch(`${baseUrl}/api/app-updates?limit=50`),
+        fetch(`${baseUrl}/api/admin/notifications/stats`),
       ]);
       if (!statsRes.ok) throw new Error(`${statsRes.status}`);
       const data: AdminStats = await statsRes.json();
@@ -220,6 +231,7 @@ export default function Admin() {
       setFeedback(data.feedback);
       if (aiRes.ok) setTwinAiAnalytics(await aiRes.json());
       if (updatesRes.ok) setAppUpdatesList(await updatesRes.json());
+      if (notifRes.ok) setNotificationStats(await notifRes.json());
       setLastUpdated(new Date());
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -448,6 +460,40 @@ export default function Admin() {
               <StatCard label="Video notes" value={stats.activity.videoNotes} />
             </div>
           </section>
+
+          {/* ── NOTIFICATIONS ── */}
+          {notificationStats && (
+            <section>
+              <SectionHeader icon={<Bell size={16} />} title="Push Notifications" />
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-4">
+                <StatCard label="Push subscribers" value={notificationStats.totalSubscribers} sub="active devices" accent />
+                <StatCard label="Subscribed users" value={notificationStats.uniqueSubscribedUsers} sub="unique accounts" />
+                <StatCard label="Notifications sent" value={notificationStats.totalSent} sub="all time" />
+                <StatCard label="Open rate" value={`${notificationStats.openRate}%`} sub={`${notificationStats.totalOpened} opened`} accent />
+              </div>
+              {Object.keys(notificationStats.byType).length > 0 && (
+                <div className="bg-white rounded-2xl p-4 border border-border">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">By Type</p>
+                  <div className="space-y-2.5">
+                    {Object.entries(notificationStats.byType).map(([type, d]) => {
+                      const pct = d.sent > 0 ? Math.round((d.opened / d.sent) * 100) : 0;
+                      return (
+                        <div key={type}>
+                          <div className="flex justify-between text-xs mb-1">
+                            <span className="text-foreground font-medium capitalize">{type}</span>
+                            <span className="text-muted-foreground">{d.sent} sent · {pct}% opened</span>
+                          </div>
+                          <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                            <div className="h-full bg-primary rounded-full" style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </section>
+          )}
 
           {/* ── TWIN AI ANALYTICS ── */}
           {twinAiAnalytics && (

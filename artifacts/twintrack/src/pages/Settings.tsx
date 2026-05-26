@@ -9,7 +9,9 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { PageHeader } from "@/components/Layout";
-import { Save, LogOut, Video, ChevronRight, Trash2, AlertTriangle } from "lucide-react";
+import { Save, LogOut, Video, ChevronRight, Trash2, AlertTriangle, Bell, BellOff, Smartphone } from "lucide-react";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
+import { useNotificationPrefs } from "@/hooks/useNotificationPrefs";
 
 const COLOR_OPTIONS = [
   "#da5a9f",
@@ -36,6 +38,9 @@ export default function Settings() {
   const { signOut } = useClerk();
   const qc = useQueryClient();
   const [, setLocation] = useLocation();
+  const { permission, subscription, loading: pushLoading, subscribe, unsubscribe, sendTest } = usePushNotifications();
+  const { prefs, toggle } = useNotificationPrefs();
+  const [testSent, setTestSent] = useState(false);
 
   const { data: twins = [], isLoading } = useListTwins(
     { userId: user?.id ?? "" },
@@ -193,6 +198,105 @@ export default function Settings() {
             </div>
             <ChevronRight size={16} className="text-muted-foreground" />
           </button>
+        </div>
+
+        {/* Notifications */}
+        <div className="bg-white rounded-2xl border border-border overflow-hidden">
+          <div className="px-5 py-4 border-b border-border">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Notifications</p>
+          </div>
+
+          {/* Push enable/disable */}
+          <div className="px-5 py-4 border-b border-border/50">
+            {permission === "unsupported" ? (
+              <div className="flex items-center gap-3">
+                <Smartphone size={16} className="text-muted-foreground flex-shrink-0" />
+                <p className="text-sm text-muted-foreground">Push notifications require installing TwinTrack to your home screen.</p>
+              </div>
+            ) : !subscription ? (
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center flex-shrink-0">
+                    <BellOff size={16} className="text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">Push reminders off</p>
+                    <p className="text-xs text-muted-foreground">Get alerts for feeds, sleep &amp; more</p>
+                  </div>
+                </div>
+                <button
+                  onClick={subscribe}
+                  disabled={pushLoading || permission === "denied"}
+                  className="px-4 py-2 rounded-xl bg-primary text-white text-xs font-bold active:scale-95 transition-all disabled:opacity-50"
+                >
+                  {permission === "denied" ? "Blocked" : pushLoading ? "…" : "Enable"}
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center flex-shrink-0">
+                    <Bell size={16} className="text-emerald-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-emerald-700">Push reminders on</p>
+                    <p className="text-xs text-muted-foreground">This device will receive alerts</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={async () => { await sendTest(); setTestSent(true); setTimeout(() => setTestSent(false), 3000); }}
+                    disabled={testSent}
+                    className="text-xs font-semibold text-muted-foreground bg-muted rounded-lg px-2.5 py-1.5 active:scale-95 transition-all"
+                  >
+                    {testSent ? "Sent ✓" : "Test"}
+                  </button>
+                  <button
+                    onClick={unsubscribe}
+                    disabled={pushLoading}
+                    className="text-xs font-semibold text-red-500 bg-red-50 rounded-lg px-2.5 py-1.5 active:scale-95 transition-all"
+                  >
+                    {pushLoading ? "…" : "Disable"}
+                  </button>
+                </div>
+              </div>
+            )}
+            {permission === "denied" && (
+              <p className="text-xs text-amber-600 mt-2">Notifications are blocked. Enable them in your browser / device settings.</p>
+            )}
+          </div>
+
+          {/* Reminder toggles */}
+          <div className="divide-y divide-border/50">
+            {([
+              { key: "feedingReminders", label: "Feeding reminders", desc: "Smart alerts based on last feed time", emoji: "🍼" },
+              { key: "sleepReminders", label: "Sleep reminders", desc: "Nap window suggestions by age", emoji: "😴" },
+              { key: "pumpingReminders", label: "Pumping reminders", desc: "Regular pump schedule alerts", emoji: "🫙" },
+              { key: "medicationReminders", label: "Medication reminders", desc: "Vitamin and medication alerts", emoji: "💊" },
+              { key: "milestoneReminders", label: "Milestone tips", desc: "Age-appropriate development updates", emoji: "⭐" },
+              { key: "twinAiTips", label: "Twin AI insights", desc: "Personalised tips from Twin AI", emoji: "✨" },
+              { key: "weeklyInsights", label: "Weekly report", desc: "Summary of the past week's tracking", emoji: "📊" },
+              { key: "dailyLogReminder", label: "Daily log reminder", desc: "Evening nudge if nothing logged today", emoji: "📝" },
+            ] as const).map(({ key, label, desc, emoji }) => (
+              <div key={key} className="flex items-center justify-between px-5 py-3.5">
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <span className="text-lg leading-none flex-shrink-0">{emoji}</span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground leading-snug">{label}</p>
+                    <p className="text-xs text-muted-foreground">{desc}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => toggle(key)}
+                  className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ml-3 ${prefs[key] ? "bg-primary" : "bg-muted"}`}
+                  role="switch"
+                  aria-checked={prefs[key]}
+                >
+                  <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-all ${prefs[key] ? "left-[22px]" : "left-0.5"}`} />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Twin A */}
