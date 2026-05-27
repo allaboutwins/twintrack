@@ -52,8 +52,16 @@
       font-weight: 700;
       cursor: pointer;
       transition: opacity 0.2s;
+      min-width: 160px;
     }
     button:active { opacity: 0.85; transform: scale(0.98); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    #status {
+      font-size: 13px;
+      color: #6b9ea5;
+      min-height: 20px;
+    }
+    .reconnecting { color: #da5a9f; font-weight: 600; }
   </style>
 </head>
 <body>
@@ -62,9 +70,73 @@
     <h1>You're offline right now</h1>
     <p>No worries — even the most organised twin parents lose their signal sometimes.</p>
     <div class="tip">
-      Once you're back online, TwinTrack will reconnect automatically and sync everything you need. 💕
+      TwinTrack works offline for reading. Once you're back online, everything syncs automatically. 💕
     </div>
-    <button onclick="window.location.reload()">Try again</button>
+    <p id="status"></p>
+    <button id="retry-btn" onclick="tryAgain()">Try again</button>
   </div>
+
+  <script>
+    // Destination after recovery — default to /dashboard
+    var returnTo = (location.search.match(/[?&]returnTo=([^&]*)/) || [])[1] || '/dashboard';
+
+    function setStatus(msg, cls) {
+      var el = document.getElementById('status');
+      el.textContent = msg;
+      el.className = cls || '';
+    }
+
+    // Full escape hatch: unregister the service worker + clear all caches, then hard-navigate.
+    // This breaks the SW intercept loop so a stuck user always gets unstuck.
+    async function tryAgain() {
+      var btn = document.getElementById('retry-btn');
+      btn.disabled = true;
+      setStatus('Reconnecting…', 'reconnecting');
+
+      try {
+        // 1. Unregister every service worker for this origin
+        if ('serviceWorker' in navigator) {
+          var regs = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(regs.map(function(r) { return r.unregister(); }));
+        }
+
+        // 2. Wipe all caches so a stale app shell can't cause a blank screen
+        if ('caches' in window) {
+          var names = await caches.keys();
+          await Promise.all(names.map(function(n) { return caches.delete(n); }));
+        }
+      } catch(e) {
+        // Non-fatal — still attempt the reload
+      }
+
+      // 3. Hard navigate (not reload) — bypasses any remaining SW interception
+      //    Cache-busting query string ensures the server is actually reached
+      window.location.replace(returnTo + (returnTo.includes('?') ? '&' : '?') + '_cb=' + Date.now());
+    }
+
+    // Auto-redirect as soon as connectivity is confirmed
+    async function checkOnline() {
+      if (!navigator.onLine) return;
+      try {
+        // Probe the origin directly — HEAD is cheap, no-store bypasses SW cache
+        await fetch(location.origin + '/favicon.svg', { method: 'HEAD', cache: 'no-store' });
+        // Connectivity confirmed — go home
+        setStatus('Back online! Redirecting…', 'reconnecting');
+        await tryAgain();
+      } catch(e) {
+        // Still can't reach the server — stay on this page
+      }
+    }
+
+    // Check immediately on load (handles: user was never truly offline,
+    // just a stale SW; or connectivity returned before this page loaded)
+    checkOnline();
+
+    // Also check whenever the browser fires the online event
+    window.addEventListener('online', checkOnline);
+
+    // Poll every 5 seconds as a fallback (some browsers/carriers are slow to fire online)
+    setInterval(checkOnline, 5000);
+  </script>
 </body>
 </html>

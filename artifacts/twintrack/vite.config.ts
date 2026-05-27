@@ -44,8 +44,14 @@ export default defineConfig({
         ],
       },
       workbox: {
+        // Activate new SW immediately so stale app shells don't serve
+        // deleted JS chunks (which cause blank pages after a deploy).
+        skipWaiting: true,
+        clientsClaim: true,
+        cleanupOutdatedCaches: true,
+
         navigateFallback: "/offline.html",
-        navigateFallbackDenylist: [/^\/api\//],
+        navigateFallbackDenylist: [/^\/api\//, /^\/__/],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         importScripts: ["sw-push.js"],
         runtimeCaching: [

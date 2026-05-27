@@ -57,6 +57,36 @@
         justify-content: center;
       }
     </style>
+
+    <!-- Stale-cache / blank-page recovery.
+         After a new deployment the service worker may still serve the old HTML
+         which references hashed JS chunks that no longer exist → silent 404s →
+         blank screen. We detect the chunk-load error and self-heal by wiping
+         SW caches then hard-reloading so the browser fetches fresh assets.
+         Guard: only wipe once per session to avoid a reload loop. -->
+    <script>
+      window.addEventListener('error', function(e) {
+        var src = (e.target && e.target.src) || (e.target && e.target.href) || '';
+        var isChunk = src && (src.includes('/assets/') || src.match(/\.[0-9a-f]{8}\.(js|css)$/));
+        if (!isChunk) return;
+        if (sessionStorage.getItem('tt_cache_bust')) return; // already tried
+        sessionStorage.setItem('tt_cache_bust', '1');
+        (async function() {
+          try {
+            if ('serviceWorker' in navigator) {
+              var regs = await navigator.serviceWorker.getRegistrations();
+              await Promise.all(regs.map(function(r) { return r.unregister(); }));
+            }
+            if ('caches' in window) {
+              var names = await caches.keys();
+              await Promise.all(names.map(function(n) { return caches.delete(n); }));
+            }
+          } finally {
+            window.location.replace(window.location.pathname + '?_cb=' + Date.now());
+          }
+        })();
+      }, true /* capture phase catches resource errors */);
+    </script>
   </head>
   <body>
     <div id="root"></div>
