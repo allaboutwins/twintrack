@@ -31,7 +31,6 @@
     h1 { font-size: 22px; font-weight: 700; color: #1a4a50; }
     p { font-size: 15px; color: #6b9ea5; line-height: 1.6; max-width: 280px; }
     .tip {
-      margin-top: 8px;
       background: white;
       border: 1px solid #e8d5e4;
       border-radius: 16px;
@@ -41,7 +40,6 @@
       line-height: 1.5;
     }
     button {
-      margin-top: 8px;
       background: #da5a9f;
       color: white;
       border: none;
@@ -56,11 +54,7 @@
     }
     button:active { opacity: 0.85; transform: scale(0.98); }
     button:disabled { opacity: 0.6; cursor: not-allowed; }
-    #status {
-      font-size: 13px;
-      color: #6b9ea5;
-      min-height: 20px;
-    }
+    #status { font-size: 13px; color: #6b9ea5; min-height: 18px; }
     .reconnecting { color: #da5a9f; font-weight: 600; }
   </style>
 </head>
@@ -77,66 +71,54 @@
   </div>
 
   <script>
-    // Destination after recovery — default to /dashboard
-    var returnTo = (location.search.match(/[?&]returnTo=([^&]*)/) || [])[1] || '/dashboard';
-
     function setStatus(msg, cls) {
       var el = document.getElementById('status');
       el.textContent = msg;
       el.className = cls || '';
     }
 
-    // Full escape hatch: unregister the service worker + clear all caches, then hard-navigate.
-    // This breaks the SW intercept loop so a stuck user always gets unstuck.
+    // Manual retry: clear the stuck service worker state then go home.
+    // Always navigates to / (the root) — guaranteed to exist on the server.
     async function tryAgain() {
       var btn = document.getElementById('retry-btn');
       btn.disabled = true;
       setStatus('Reconnecting…', 'reconnecting');
 
       try {
-        // 1. Unregister every service worker for this origin
         if ('serviceWorker' in navigator) {
           var regs = await navigator.serviceWorker.getRegistrations();
           await Promise.all(regs.map(function(r) { return r.unregister(); }));
         }
-
-        // 2. Wipe all caches so a stale app shell can't cause a blank screen
         if ('caches' in window) {
           var names = await caches.keys();
           await Promise.all(names.map(function(n) { return caches.delete(n); }));
         }
       } catch(e) {
-        // Non-fatal — still attempt the reload
+        // Non-fatal — still navigate
       }
 
-      // 3. Hard navigate (not reload) — bypasses any remaining SW interception
-      //    Cache-busting query string ensures the server is actually reached
-      window.location.replace(returnTo + (returnTo.includes('?') ? '&' : '?') + '_cb=' + Date.now());
+      // Always go to root so the server always has a file to serve
+      window.location.replace('/?_cb=' + Date.now());
     }
 
-    // Auto-redirect as soon as connectivity is confirmed
-    async function checkOnline() {
-      if (!navigator.onLine) return;
-      try {
-        // Probe the origin directly — HEAD is cheap, no-store bypasses SW cache
-        await fetch(location.origin + '/favicon.svg', { method: 'HEAD', cache: 'no-store' });
-        // Connectivity confirmed — go home
-        setStatus('Back online! Redirecting…', 'reconnecting');
-        await tryAgain();
-      } catch(e) {
-        // Still can't reach the server — stay on this page
-      }
+    // Auto-redirect only when the browser fires the online event —
+    // NOT immediately on page load (that caused the blank screen bug).
+    window.addEventListener('online', function() {
+      setStatus('Back online! Loading…', 'reconnecting');
+      // Simple redirect without cache-clearing — just go home.
+      // The service worker will serve fresh assets normally.
+      setTimeout(function() {
+        window.location.replace('/');
+      }, 800);
+    });
+
+    // If already online when this page loads (e.g. stale SW served it by mistake),
+    // wait a beat then redirect home — no cache-clearing needed.
+    if (navigator.onLine) {
+      setTimeout(function() {
+        window.location.replace('/');
+      }, 1500);
     }
-
-    // Check immediately on load (handles: user was never truly offline,
-    // just a stale SW; or connectivity returned before this page loaded)
-    checkOnline();
-
-    // Also check whenever the browser fires the online event
-    window.addEventListener('online', checkOnline);
-
-    // Poll every 5 seconds as a fallback (some browsers/carriers are slow to fire online)
-    setInterval(checkOnline, 5000);
   </script>
 </body>
 </html>

@@ -50,8 +50,11 @@ export default defineConfig({
         clientsClaim: true,
         cleanupOutdatedCaches: true,
 
-        navigateFallback: "/offline.html",
-        navigateFallbackDenylist: [/^\/api\//, /^\/__/],
+        // For SPA routes (/dashboard, /sleep, etc.) serve the cached app shell
+        // so the React app loads and handles routing — not the offline page.
+        // offline.html is only shown by the OfflineBanner inside the React app.
+        navigateFallback: "/index.html",
+        navigateFallbackDenylist: [/^\/api\//, /^\/__/, /\/offline\.html$/],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         importScripts: ["sw-push.js"],
         runtimeCaching: [
