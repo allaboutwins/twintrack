@@ -7,6 +7,8 @@ import { useSubmitFeedback } from "@workspace/api-client-react";
 import NotificationCenter from "@/components/NotificationCenter";
 import InstallPrompt from "@/components/InstallPrompt";
 import OfflineBanner from "@/components/OfflineBanner";
+import { useAppPrefs } from "@/hooks/useAppPrefs";
+import { posthog } from "@/lib/posthog";
 
 const FEEDBACK_TYPES = [
   { key: "bug", label: "🐛 Bug report" },
@@ -131,12 +133,12 @@ function FeedbackButton() {
   );
 }
 
-const tabs = [
+const ALL_TABS = [
   { path: "/dashboard", icon: Home, label: "Home" },
   { path: "/sleep", icon: Moon, label: "Sleep" },
   { path: "/feeding", icon: Utensils, label: "Feed" },
   { path: "/stats", icon: BarChart2, label: "Stats" },
-  { path: "/twin-ai", icon: Sparkles, label: "Twin AI", highlight: true },
+  { path: "/twin-ai", icon: Sparkles, label: "Twin AI", highlight: true, pref: "showTwinAI" as const },
   { path: "/learn", icon: GraduationCap, label: "Learn" },
 ];
 
@@ -145,7 +147,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const { user } = useUser();
+  const { prefs } = useAppPrefs();
   const baseUrl = useRef((import.meta.env.BASE_URL ?? "/").replace(/\/$/, "")).current;
+
+  const tabs = ALL_TABS.filter((t) => !t.pref || prefs[t.pref]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -218,6 +223,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               <Link
                 key={path}
                 to={path}
+                onClick={() => posthog?.capture("nav_tab_clicked", { tab: label })}
                 className={`flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-xl transition-all flex-1 ${
                   active
                     ? "text-primary"

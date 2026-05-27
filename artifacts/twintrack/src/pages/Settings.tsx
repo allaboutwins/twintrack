@@ -9,9 +9,10 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { PageHeader } from "@/components/Layout";
-import { Save, LogOut, Video, ChevronRight, Trash2, AlertTriangle, Bell, BellOff, Smartphone } from "lucide-react";
+import { Save, LogOut, Video, ChevronRight, Trash2, AlertTriangle, Bell, BellOff, Smartphone, Sparkles } from "lucide-react";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNotificationPrefs } from "@/hooks/useNotificationPrefs";
+import { useAppPrefs } from "@/hooks/useAppPrefs";
 
 const COLOR_OPTIONS = [
   "#da5a9f",
@@ -40,6 +41,7 @@ export default function Settings() {
   const [, setLocation] = useLocation();
   const { permission, subscription, loading: pushLoading, subscribe, unsubscribe, sendTest } = usePushNotifications();
   const { prefs, toggle } = useNotificationPrefs();
+  const { prefs: appPrefs, toggle: toggleApp } = useAppPrefs();
   const [testSent, setTestSent] = useState(false);
 
   const { data: twins = [], isLoading } = useListTwins(
@@ -158,6 +160,45 @@ export default function Settings() {
       <PageHeader title="Settings" subtitle="Manage your twin profiles" />
 
       <div className="px-4 space-y-6 pb-4">
+        {/* App Experience */}
+        <div className="bg-white rounded-2xl border border-border overflow-hidden">
+          <div className="px-5 py-4 border-b border-border">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">App Experience</p>
+          </div>
+          <div className="divide-y divide-border/50">
+            <div className="flex items-center justify-between px-5 py-4">
+              <div className="flex items-center gap-3 flex-1 min-w-0">
+                <div className="w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center flex-shrink-0">
+                  <Sparkles size={16} className="text-violet-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground leading-snug">Show Twin AI</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {appPrefs.showTwinAI
+                      ? "Personalised AI tips visible in the navigation"
+                      : "Twin AI tab hidden — you can turn it back on any time"}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => toggleApp("showTwinAI")}
+                className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ml-3 ${
+                  appPrefs.showTwinAI ? "bg-violet-400" : "bg-muted"
+                }`}
+                role="switch"
+                aria-checked={appPrefs.showTwinAI}
+                data-testid="toggle-twin-ai"
+              >
+                <span
+                  className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-all ${
+                    appPrefs.showTwinAI ? "left-[22px]" : "left-0.5"
+                  }`}
+                />
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Account */}
         <div className="bg-white rounded-2xl border border-border overflow-hidden">
           <div className="px-5 py-4 border-b border-border">

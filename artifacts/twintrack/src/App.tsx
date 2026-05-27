@@ -11,6 +11,7 @@ import { useGetOnboarding, getGetOnboardingQueryKey } from "@workspace/api-clien
 import InAppBrowserGate from "@/components/InAppBrowserGate";
 import PageTransition from "@/components/PageTransition";
 import PushPermissionPrompt from "@/components/PushPermissionPrompt";
+import AppExperienceLayer from "@/components/AppExperienceLayer";
 import NotFound from "@/pages/not-found";
 import OnboardingFlow from "@/pages/OnboardingFlow";
 import Landing from "@/pages/Landing";
@@ -256,6 +257,7 @@ function ClerkProviderWithRoutes() {
         <PostHogIdentifier />
         <TooltipProvider>
           <PushPermissionPrompt />
+          <AppExperienceLayer />
           <PageTransition>
             <Switch>
               <Route path="/" component={HomeRedirect} />

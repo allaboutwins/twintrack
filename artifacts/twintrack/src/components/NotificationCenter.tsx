@@ -16,6 +16,53 @@ interface NotificationItem {
 
 const BASE_URL = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
 
+const WHATS_NEW_KEY = "tt_whats_new_v2";
+const WHATS_NEW_UPDATES = [
+  { icon: "🛠️", text: "Facebook & Instagram browser fix — links now open reliably" },
+  { icon: "🌐", text: "Offline page improved — no more blank screens" },
+  { icon: "✨", text: "Twin AI can now be hidden from Settings → App Experience" },
+  { icon: "🎉", text: "Welcome tour for new members + Early Access badge" },
+];
+
+function WhatsNewCard() {
+  const [dismissed, setDismissed] = useState(() => {
+    try { return !!localStorage.getItem(WHATS_NEW_KEY); } catch { return false; }
+  });
+
+  if (dismissed) return null;
+
+  function dismiss() {
+    try { localStorage.setItem(WHATS_NEW_KEY, "1"); } catch {}
+    setDismissed(true);
+  }
+
+  return (
+    <div className="mx-4 mt-3 mb-1 rounded-2xl border border-primary/20 bg-primary/4 overflow-hidden">
+      <div className="flex items-center justify-between px-4 pt-3 pb-1">
+        <div className="flex items-center gap-2">
+          <span className="text-base leading-none">🍒</span>
+          <p className="text-xs font-bold text-primary uppercase tracking-wide">What's New</p>
+        </div>
+        <button
+          onClick={dismiss}
+          className="p-1 rounded-lg hover:bg-primary/10 transition-colors"
+          aria-label="Dismiss"
+        >
+          <X size={12} className="text-muted-foreground" />
+        </button>
+      </div>
+      <div className="px-4 pb-3 space-y-1.5 mt-1">
+        {WHATS_NEW_UPDATES.map(({ icon, text }) => (
+          <div key={text} className="flex items-start gap-2">
+            <span className="text-sm leading-none mt-0.5 flex-shrink-0">{icon}</span>
+            <p className="text-xs text-foreground leading-snug">{text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const TYPE_EMOJI: Record<string, string> = {
   feeding: "🍼",
   sleep: "😴",
@@ -206,6 +253,9 @@ export default function NotificationCenter({ open, onClose }: NotificationCenter
 
         {/* Notification list */}
         <div className="flex-1 overflow-y-auto">
+          {/* What's New card — shown once per install */}
+          <WhatsNewCard />
+
           {fetching ? (
             <div className="p-8 text-center">
               <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto" />
