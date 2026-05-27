@@ -1,12 +1,11 @@
 /**
  * InAppBrowserGate
  *
- * Detects Instagram, Facebook, TikTok, Snapchat, LinkedIn, and similar
- * in-app browsers (WebViews) and shows a friendly overlay asking the user
- * to open TwinTrack in their default browser.
+ * Detects Instagram, Facebook, TikTok and similar in-app browsers and shows
+ * a friendly, non-scary screen explaining how to open in Safari/Chrome.
  *
- * Why: These in-app browsers block third-party cookies and OAuth popups,
- * which breaks Clerk authentication and causes "security" errors for users.
+ * Key design principle: users see this and think the link is BROKEN.
+ * Every word and button must make clear: the link works, one step needed.
  */
 
 import { useState } from "react";
@@ -34,7 +33,6 @@ function detectInAppBrowser(): InAppBrowser | null {
   if (/Twitter/i.test(ua)) return "twitter";
   if (/MicroMessenger/i.test(ua)) return "wechat";
   if (/Line\//i.test(ua)) return "line";
-  // Generic WebView detection
   if (
     /wv\)/i.test(ua) ||
     (/Android/i.test(ua) && /Version\/\d/i.test(ua) && !/Chrome\/\d/i.test(ua))
@@ -58,24 +56,23 @@ function browserLabel(browser: InAppBrowser): string {
     case "tiktok": return "TikTok";
     case "snapchat": return "Snapchat";
     case "linkedin": return "LinkedIn";
-    case "twitter": return "X (Twitter)";
+    case "twitter": return "X";
     case "wechat": return "WeChat";
     case "line": return "Line";
     default: return "this app";
   }
 }
 
-function browserIcon(browser: InAppBrowser): string {
-  switch (browser) {
-    case "instagram": return "📸";
-    case "facebook": return "👥";
-    case "tiktok": return "🎵";
-    case "snapchat": return "👻";
-    case "linkedin": return "💼";
-    case "twitter": return "🐦";
-    case "wechat": return "💬";
-    case "line": return "💬";
-    default: return "📱";
+function tryOpenInBrowser(url: string, platform: Platform) {
+  if (platform === "ios") {
+    // iOS: x-safari-https scheme opens directly in Safari from some in-app browsers
+    const safariUrl = url.replace(/^https:\/\//, "x-safari-https://");
+    window.location.href = safariUrl;
+  } else if (platform === "android") {
+    // Android: intent:// scheme opens in Chrome
+    const intent = url.replace(/^https?:\/\//, "intent://").replace(/\/$/, "") +
+      "#Intent;scheme=https;package=com.android.chrome;end";
+    window.location.href = intent;
   }
 }
 
@@ -86,26 +83,27 @@ type Props = {
 export default function InAppBrowserGate({ children }: Props) {
   const [dismissed, setDismissed] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [openTried, setOpenTried] = useState(false);
 
   const browser = detectInAppBrowser();
   const platform = detectPlatform();
 
-  // Not an in-app browser, or user explicitly dismissed — show the app
   if (!browser || dismissed) {
     return <>{children}</>;
   }
 
   const url = window.location.href;
+  const targetBrowser = platform === "ios" ? "Safari" : "Chrome";
+  const step = getOpenStep(browser, platform);
 
   function handleCopy() {
     navigator.clipboard
       .writeText(url)
       .then(() => {
         setCopied(true);
-        setTimeout(() => setCopied(false), 2500);
+        setTimeout(() => setCopied(false), 3000);
       })
       .catch(() => {
-        // Fallback for browsers without clipboard API
         const input = document.createElement("input");
         input.value = url;
         document.body.appendChild(input);
@@ -113,156 +111,125 @@ export default function InAppBrowserGate({ children }: Props) {
         document.execCommand("copy");
         document.body.removeChild(input);
         setCopied(true);
-        setTimeout(() => setCopied(false), 2500);
+        setTimeout(() => setCopied(false), 3000);
       });
   }
 
-  function handleShare() {
-    if (navigator.share) {
-      navigator
-        .share({ title: "TwinTrack", url })
-        .catch(() => {});
-    }
+  function handleOpenInBrowser() {
+    setOpenTried(true);
+    tryOpenInBrowser(url, platform);
+    // If it doesn't open automatically, fall back to copy
+    setTimeout(() => handleCopy(), 600);
   }
 
-  const iosSteps = getIosSteps(browser);
-  const androidSteps = getAndroidSteps(browser);
-  const steps = platform === "ios" ? iosSteps : platform === "android" ? androidSteps : null;
-  const targetBrowser = platform === "ios" ? "Safari" : "Chrome";
-
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#fdf8fa]">
-      <div className="w-full max-w-[380px] mx-auto px-6 py-8 flex flex-col items-center text-center gap-5">
-
-        {/* App identity */}
-        <div className="flex flex-col items-center gap-2">
-          <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center">
-            <img src="/logo.svg" alt="TwinTrack" className="w-10 h-10" onError={(e) => {
-              (e.target as HTMLImageElement).style.display = "none";
-            }} />
-          </div>
-          <p className="text-xl font-bold text-foreground">TwinTrack</p>
+    <div className="fixed inset-0 z-[9999] flex items-end justify-center bg-[#fdf8fa]">
+      {/* Top — reassuring brand */}
+      <div className="absolute top-0 left-0 right-0 flex flex-col items-center pt-16 pb-4 gap-3">
+        <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center">
+          <span className="text-3xl leading-none">🍒</span>
         </div>
-
-        {/* Warning */}
-        <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3.5 w-full">
-          <p className="text-sm font-semibold text-amber-800 mb-0.5">
-            {browserIcon(browser)} Opened inside {browserLabel(browser)}
-          </p>
-          <p className="text-xs text-amber-700 leading-relaxed">
-            TwinTrack can't sign you in safely from inside {browserLabel(browser)}.
-            Please open it in {platform === "ios" ? "Safari" : platform === "android" ? "Chrome" : "your browser"} for a secure experience.
-          </p>
+        <div className="text-center">
+          <p className="text-xl font-bold text-foreground">TwinTrack works!</p>
+          <p className="text-sm text-muted-foreground mt-0.5">One quick step to open it</p>
         </div>
+      </div>
 
-        {/* Steps */}
-        {steps && (
-          <div className="w-full text-left space-y-2">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide text-center">
-              How to open in {targetBrowser}
+      {/* Bottom sheet */}
+      <div className="w-full max-w-[430px] bg-white rounded-t-3xl px-6 pt-6 pb-10 space-y-5 shadow-xl">
+
+        {/* What's happening — no scary language */}
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-100 rounded-2xl px-4 py-3.5">
+          <span className="text-xl leading-none mt-0.5">⚠️</span>
+          <div>
+            <p className="text-sm font-bold text-amber-900">
+              Opened inside {browserLabel(browser)}
             </p>
-            <div className="space-y-2">
-              {steps.map((step, i) => (
-                <div key={i} className="flex gap-3 items-start">
-                  <div className="w-6 h-6 rounded-full bg-primary flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <span className="text-white text-xs font-bold">{i + 1}</span>
-                  </div>
-                  <p className="text-sm text-foreground leading-snug">{step}</p>
-                </div>
-              ))}
-            </div>
+            <p className="text-xs text-amber-800 leading-relaxed mt-0.5">
+              {browserLabel(browser)}'s browser can't keep you signed in securely.
+              Open TwinTrack in {targetBrowser} — it only takes a second.
+            </p>
           </div>
-        )}
+        </div>
 
-        {/* Actions */}
-        <div className="w-full space-y-2.5">
-          <button
-            onClick={handleCopy}
-            className="w-full py-3.5 rounded-2xl bg-primary text-white font-bold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all"
-          >
-            {copied ? "✓ Link Copied!" : "📋 Copy Link"}
-          </button>
+        {/* Single clear step */}
+        <div className="space-y-2">
+          <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">
+            How to open in {targetBrowser}
+          </p>
+          <div className="flex items-center gap-3 bg-primary/5 border border-primary/15 rounded-2xl px-4 py-3.5">
+            <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
+              <span className="text-white text-xs font-bold">1</span>
+            </div>
+            <p className="text-sm font-semibold text-foreground leading-snug">{step}</p>
+          </div>
+        </div>
 
-          {typeof navigator.share === "function" && (
+        {/* Primary CTA */}
+        <div className="space-y-3">
+          {platform !== "other" && (
             <button
-              onClick={handleShare}
-              className="w-full py-3 rounded-2xl border border-border bg-white text-foreground font-semibold text-sm active:scale-95 transition-all"
+              onClick={handleOpenInBrowser}
+              className="w-full py-4 rounded-2xl bg-primary text-white font-bold text-base active:scale-[0.98] transition-all flex items-center justify-center gap-2"
             >
-              Share Link…
+              {openTried ? "✓ Trying to open…" : `Open in ${targetBrowser}`}
             </button>
           )}
 
           <button
-            onClick={() => setDismissed(true)}
-            className="text-xs text-muted-foreground underline underline-offset-2"
+            onClick={handleCopy}
+            className="w-full py-3.5 rounded-2xl border-2 border-border bg-white text-foreground font-semibold text-sm active:scale-[0.98] transition-all flex items-center justify-center gap-2"
           >
-            Continue anyway (limited functionality)
+            {copied
+              ? "✓ Link copied — paste it in " + targetBrowser
+              : "📋 Copy link to open manually"}
           </button>
+
+          {copied && (
+            <p className="text-center text-xs text-primary font-semibold animate-pulse">
+              Now open {targetBrowser} and paste the link in the address bar 👆
+            </p>
+          )}
         </div>
 
-        {/* Footer note */}
-        <p className="text-[11px] text-muted-foreground leading-relaxed">
-          This is a security requirement — in-app browsers can't store your login securely.
-        </p>
+        {/* Escape hatch — make it visible, not hidden */}
+        <div className="text-center pt-1">
+          <button
+            onClick={() => setDismissed(true)}
+            className="text-sm font-medium text-muted-foreground underline underline-offset-4"
+          >
+            Continue in {browserLabel(browser)} (may have login issues)
+          </button>
+        </div>
       </div>
     </div>
   );
 }
 
-function getIosSteps(browser: InAppBrowser): string[] {
-  switch (browser) {
-    case "instagram":
-      return [
-        'Tap the ··· button in the top-right corner',
-        'Tap "Open in Safari"',
-        "Sign in normally — your data is safe",
-      ];
-    case "facebook":
-      return [
-        'Tap the ··· button in the top-right corner',
-        'Tap "Open in Safari" or "Open in Browser"',
-        "Sign in normally — your data is safe",
-      ];
-    case "tiktok":
-      return [
-        'Tap the ··· button (top right)',
-        'Tap "Open in Safari"',
-        "Sign in normally — your data is safe",
-      ];
-    default:
-      return [
-        'Look for a ··· or share button (top right)',
-        'Tap "Open in Safari" or "Open in Browser"',
-        "Sign in normally — your data is safe",
-      ];
-  }
-}
-
-function getAndroidSteps(browser: InAppBrowser): string[] {
-  switch (browser) {
-    case "instagram":
-      return [
-        "Tap the ··· button in the top-right corner",
-        'Tap "Open in Chrome" or "Open in browser"',
-        "Sign in normally — your data is safe",
-      ];
-    case "facebook":
-      return [
-        "Tap the ⋮ menu in the top-right corner",
-        'Tap "Open in Chrome" or "Open with…"',
-        "Sign in normally — your data is safe",
-      ];
-    case "tiktok":
-      return [
-        "Tap the ··· button (top right)",
-        'Tap "Open in browser"',
-        "Sign in normally — your data is safe",
-      ];
-    default:
-      return [
-        "Tap the ⋮ or share button (top right)",
-        'Tap "Open in Chrome" or "Open in browser"',
-        "Sign in normally — your data is safe",
-      ];
+function getOpenStep(browser: InAppBrowser, platform: Platform): string {
+  if (platform === "ios") {
+    switch (browser) {
+      case "facebook":
+        return 'Tap the ··· button (top right of the browser bar) → "Open in Safari"';
+      case "instagram":
+        return 'Tap the ··· button (top right) → "Open in external browser"';
+      case "tiktok":
+        return 'Tap the ··· button (top right) → "Open in Safari"';
+      default:
+        return 'Tap the ··· or share button → "Open in Safari"';
+    }
+  } else if (platform === "android") {
+    switch (browser) {
+      case "facebook":
+        return 'Tap the ⋮ menu (top right) → "Open in Chrome" or "Open with…"';
+      case "instagram":
+        return 'Tap the ··· button (top right) → "Open in external browser"';
+      case "tiktok":
+        return 'Tap the ··· button (top right) → "Open in browser"';
+      default:
+        return 'Tap the ⋮ or share button → "Open in Chrome"';
+    }
+  } else {
+    return 'Look for a ··· or share button and choose "Open in browser"';
   }
 }
