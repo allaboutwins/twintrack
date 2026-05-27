@@ -95,6 +95,17 @@ app.use(
   })),
 );
 
+// Prevent browsers, CDN, and proxies from caching ANY API response.
+// Without this, Replit's production proxy caches GET responses for hours/days,
+// causing the Admin panel and all live data to show stale results.
+app.use("/api", (_req, res, next) => {
+  res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.setHeader("Pragma", "no-cache");
+  res.setHeader("Expires", "0");
+  res.setHeader("Surrogate-Control", "no-store");
+  next();
+});
+
 app.use("/api", router);
 
 export default app;

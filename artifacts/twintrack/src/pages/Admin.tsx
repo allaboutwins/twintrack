@@ -230,13 +230,16 @@ export default function Admin() {
   const fetchStats = useCallback(async () => {
     if (!isAdmin) return;
     setLoading(true);
+    // _t busts any remaining HTTP cache layer; cache:'no-store' tells the
+    // browser to bypass its own cache and never store the response.
+    const t = Date.now();
     try {
       const [statsRes, aiRes, updatesRes, notifRes, retentionRes] = await Promise.all([
-        fetch(`${baseUrl}/api/admin/stats?${authQuery}`),
-        fetch(`${baseUrl}/api/admin/twin-ai-analytics?${authQuery}`),
-        fetch(`${baseUrl}/api/app-updates?limit=50`),
-        fetch(`${baseUrl}/api/admin/notifications/stats`),
-        fetch(`${baseUrl}/api/admin/retention?${authQuery}&days=30`),
+        fetch(`${baseUrl}/api/admin/stats?${authQuery}&_t=${t}`, { cache: "no-store" }),
+        fetch(`${baseUrl}/api/admin/twin-ai-analytics?${authQuery}&_t=${t}`, { cache: "no-store" }),
+        fetch(`${baseUrl}/api/app-updates?limit=50&_t=${t}`, { cache: "no-store" }),
+        fetch(`${baseUrl}/api/admin/notifications/stats?_t=${t}`, { cache: "no-store" }),
+        fetch(`${baseUrl}/api/admin/retention?${authQuery}&days=30&_t=${t}`, { cache: "no-store" }),
       ]);
       if (!statsRes.ok) throw new Error(`${statsRes.status}`);
       const data: AdminStats = await statsRes.json();
