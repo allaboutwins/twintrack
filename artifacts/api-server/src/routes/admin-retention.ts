@@ -43,35 +43,44 @@ router.get("/admin/retention", async (req, res): Promise<void> => {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - days);
 
+  // Helper: run a query and return empty rows on any error (table might not exist in prod yet)
+  async function safeQuery(query: Parameters<typeof db.execute>[0]) {
+    try {
+      return await db.execute(query);
+    } catch {
+      return { rows: [] };
+    }
+  }
+
   // Daily active users: users who logged anything per day (union of sleep/feeding/diaper)
   const [sleepDau, feedingDau, diaperDau, pushSubs, notifStats, signups] = await Promise.all([
-    db.execute(sql`
+    safeQuery(sql`
       SELECT DATE(created_at AT TIME ZONE 'UTC') AS day, COUNT(DISTINCT user_id) AS users
       FROM sleep_entries
       WHERE created_at >= ${cutoff.toISOString()}
       GROUP BY day ORDER BY day ASC
     `),
-    db.execute(sql`
+    safeQuery(sql`
       SELECT DATE(created_at AT TIME ZONE 'UTC') AS day, COUNT(DISTINCT user_id) AS users
       FROM feeding_entries
       WHERE created_at >= ${cutoff.toISOString()}
       GROUP BY day ORDER BY day ASC
     `),
-    db.execute(sql`
+    safeQuery(sql`
       SELECT DATE(created_at AT TIME ZONE 'UTC') AS day, COUNT(DISTINCT user_id) AS users
       FROM diaper_entries
       WHERE created_at >= ${cutoff.toISOString()}
       GROUP BY day ORDER BY day ASC
     `),
     // Push subscription opt-in count over time
-    db.execute(sql`
+    safeQuery(sql`
       SELECT DATE(created_at AT TIME ZONE 'UTC') AS day, COUNT(*) AS new_subs
       FROM push_subscriptions
       WHERE created_at >= ${cutoff.toISOString()}
       GROUP BY day ORDER BY day ASC
     `),
     // Notification open rate by day
-    db.execute(sql`
+    safeQuery(sql`
       SELECT DATE(sent_at AT TIME ZONE 'UTC') AS day,
              COUNT(*) AS sent,
              COUNT(opened_at) AS opened
@@ -80,7 +89,7 @@ router.get("/admin/retention", async (req, res): Promise<void> => {
       GROUP BY day ORDER BY day ASC
     `),
     // New signups per day
-    db.execute(sql`
+    safeQuery(sql`
       SELECT DATE(created_at AT TIME ZONE 'UTC') AS day, COUNT(*) AS signups
       FROM onboarding
       WHERE created_at >= ${cutoff.toISOString()}
@@ -134,16 +143,14 @@ router.get("/admin/retention", async (req, res): Promise<void> => {
     .map(([, total]) => ({ users: Math.round(total / 7) })); // avg DAU per week
 
   // Total push subscribers
-  const [{ totalSubs }] = (
-    await db.execute(sql`SELECT COUNT(*) AS "totalSubs" FROM push_subscriptions`)
-  ).rows as [{ totalSubs: string }];
+  const totalSubsRes = await safeQuery(sql`SELECT COUNT(*) AS "totalSubs" FROM push_subscriptions`);
+  const totalSubs = ((totalSubsRes.rows[0] as { totalSubs?: string } | undefined)?.totalSubs) ?? "0";
 
   // Total users who completed onboarding (registered)
-  const [{ totalOnboarded }] = (
-    await db.execute(
-      sql`SELECT COUNT(*) AS "totalOnboarded" FROM onboarding WHERE completed_at IS NOT NULL`,
-    )
-  ).rows as [{ totalOnboarded: string }];
+  const totalOnboardedRes = await safeQuery(
+    sql`SELECT COUNT(*) AS "totalOnboarded" FROM onboarding WHERE completed_at IS NOT NULL`,
+  );
+  const totalOnboarded = ((totalOnboardedRes.rows[0] as { totalOnboarded?: string } | undefined)?.totalOnboarded) ?? "0";
 
   // Push opt-in rate
   const pushOptInRate =
