@@ -61,15 +61,13 @@
     <!-- Stale-cache / blank-page recovery.
          After a new deployment the service worker may still serve the old HTML
          which references hashed JS chunks that no longer exist → silent 404s →
-         blank screen. We detect the chunk-load error and self-heal by wiping
-         SW caches then hard-reloading so the browser fetches fresh assets.
+         blank screen. Two failure modes are handled:
+         1. Resource load error  → window 'error' event (capture phase)
+         2. Dynamic import() fail → unhandledrejection (Vite code-split modules)
          Guard: only wipe once per session to avoid a reload loop. -->
     <script>
-      window.addEventListener('error', function(e) {
-        var src = (e.target && e.target.src) || (e.target && e.target.href) || '';
-        var isChunk = src && (src.includes('/assets/') || src.match(/\.[0-9a-f]{8}\.(js|css)$/));
-        if (!isChunk) return;
-        if (sessionStorage.getItem('tt_cache_bust')) return; // already tried
+      function _ttCacheBust() {
+        if (sessionStorage.getItem('tt_cache_bust')) return;
         sessionStorage.setItem('tt_cache_bust', '1');
         (async function() {
           try {
@@ -85,7 +83,30 @@
             window.location.replace(window.location.pathname + '?_cb=' + Date.now());
           }
         })();
+      }
+
+      // 1. Script/link resource load failures (e.g. <script src="..."> 404)
+      window.addEventListener('error', function(e) {
+        var src = (e.target && e.target.src) || (e.target && e.target.href) || '';
+        var isChunk = src && (src.includes('/assets/') || /\.[0-9a-f]{8}\.(js|css)$/.test(src));
+        if (isChunk) _ttCacheBust();
       }, true /* capture phase catches resource errors */);
+
+      // 2. Dynamic import() rejections — Vite splits routes into async chunks;
+      //    if the SW serves a stale manifest these imports throw a Promise rejection
+      //    that never becomes a window 'error' event.
+      window.addEventListener('unhandledrejection', function(e) {
+        var msg = (e.reason && (e.reason.message || String(e.reason))) || '';
+        if (
+          msg.includes('dynamically imported module') ||
+          msg.includes('Failed to fetch') ||
+          msg.includes('Importing a module script failed') ||
+          msg.includes('Loading chunk') ||
+          msg.includes('error loading')
+        ) {
+          _ttCacheBust();
+        }
+      });
     </script>
   </head>
   <body>

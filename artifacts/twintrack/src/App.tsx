@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/reac
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useGetOnboarding, getGetOnboardingQueryKey } from "@workspace/api-client-react";
+import AppErrorBoundary from "@/components/AppErrorBoundary";
 import InAppBrowserGate from "@/components/InAppBrowserGate";
 import PageTransition from "@/components/PageTransition";
 import PushPermissionPrompt from "@/components/PushPermissionPrompt";
@@ -84,7 +85,12 @@ const clerkAppearance = {
 function SignInPage() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
-      <SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} />
+      <SignIn
+        routing="path"
+        path={`${basePath}/sign-in`}
+        signUpUrl={`${basePath}/sign-up`}
+        forceRedirectUrl={`${basePath}/dashboard`}
+      />
     </div>
   );
 }
@@ -92,7 +98,12 @@ function SignInPage() {
 function SignUpPage() {
   return (
     <div className="flex min-h-[100dvh] items-center justify-center bg-background px-4">
-      <SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} />
+      <SignUp
+        routing="path"
+        path={`${basePath}/sign-up`}
+        signInUrl={`${basePath}/sign-in`}
+        forceRedirectUrl={`${basePath}/dashboard`}
+      />
     </div>
   );
 }
@@ -314,11 +325,13 @@ function ClerkProviderWithRoutes() {
 
 function App() {
   return (
-    <InAppBrowserGate>
-      <WouterRouter base={basePath}>
-        <ClerkProviderWithRoutes />
-      </WouterRouter>
-    </InAppBrowserGate>
+    <AppErrorBoundary>
+      <InAppBrowserGate>
+        <WouterRouter base={basePath}>
+          <ClerkProviderWithRoutes />
+        </WouterRouter>
+      </InAppBrowserGate>
+    </AppErrorBoundary>
   );
 }
 
