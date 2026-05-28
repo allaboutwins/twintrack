@@ -58,6 +58,44 @@
       }
     </style>
 
+    <!-- Last-resort blank-screen detector.
+         If #root still has no child elements after 5 seconds, ALL rendering
+         has failed (React crash before boundary, Clerk issue, SW chunk loss,
+         Facebook WebView quirk, etc). Show a branded recovery screen inline —
+         no JS framework required, always works. -->
+    <script>
+      setTimeout(function() {
+        var root = document.getElementById('root');
+        if (!root || root.children.length > 0) return;
+        root.innerHTML = [
+          '<div style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;',
+          'justify-content:center;background:#fdf8fa;font-family:Quicksand,sans-serif;',
+          'text-align:center;padding:32px;box-sizing:border-box;">',
+          '<div style="font-size:52px;margin-bottom:20px;">🍒</div>',
+          '<p style="font-size:19px;font-weight:700;color:#1a4a50;margin:0 0 10px;">',
+          'TwinTrack couldn\'t load</p>',
+          '<p style="font-size:14px;color:#6b9ea5;margin:0 0 32px;max-width:290px;line-height:1.6;">',
+          'This can happen after an update or in certain browsers. ',
+          'Tap below — it fixes it almost every time.</p>',
+          '<button onclick="(function(){',
+            'sessionStorage.clear();',
+            'if(\'serviceWorker\'in navigator)navigator.serviceWorker.getRegistrations()',
+              '.then(function(r){r.forEach(function(x){x.unregister();});});',
+            'if(\'caches\'in window)caches.keys()',
+              '.then(function(k){k.forEach(function(c){caches.delete(c);});});',
+            'setTimeout(function(){window.location.reload();},400);',
+          '})()" ',
+          'style="background:#da5a9f;color:white;border:none;padding:16px 40px;',
+          'border-radius:16px;font-size:16px;font-weight:700;cursor:pointer;',
+          'font-family:Quicksand,sans-serif;box-shadow:0 4px 20px rgba(218,90,159,0.35);">',
+          'Reload TwinTrack</button>',
+          '<p style="font-size:12px;color:#b0b0b0;margin-top:24px;">',
+          'Still stuck? Open this link in Safari or Chrome.</p>',
+          '</div>',
+        ].join('');
+      }, 5000);
+    </script>
+
     <!-- Stale-cache / blank-page recovery.
          After a new deployment the service worker may still serve the old HTML
          which references hashed JS chunks that no longer exist → silent 404s →

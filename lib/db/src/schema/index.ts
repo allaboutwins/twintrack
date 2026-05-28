@@ -12,3 +12,4 @@ export * from "./polls";
 export * from "./twin-ai-messages";
 export * from "./app-updates";
 export * from "./push-subscriptions";
+export * from "./heartbeats";

@@ -14,6 +14,7 @@ import InAppBrowserGate from "@/components/InAppBrowserGate";
 import PageTransition from "@/components/PageTransition";
 import PushPermissionPrompt from "@/components/PushPermissionPrompt";
 import AppExperienceLayer from "@/components/AppExperienceLayer";
+import HeartbeatReporter from "@/components/HeartbeatReporter";
 import NotFound from "@/pages/not-found";
 import OnboardingFlow from "@/pages/OnboardingFlow";
 import Landing from "@/pages/Landing";
@@ -324,6 +325,7 @@ function ClerkProviderWithRoutes() {
         <PostHogIdentifier />
         <TooltipProvider>
           <SwUpdateNotifier />
+          <HeartbeatReporter />
           <PushPermissionPrompt />
           <AppExperienceLayer />
           <PageTransition>

@@ -20,6 +20,7 @@ import usersRouter from "./users";
 import statsRouter from "./stats";
 import pushRouter from "./push";
 import notificationsSchedulerRouter from "./notifications-scheduler";
+import heartbeatRouter from "./heartbeat";
 
 const router: IRouter = Router();
 
@@ -44,5 +45,6 @@ router.use(usersRouter);
 router.use(statsRouter);
 router.use(pushRouter);
 router.use(notificationsSchedulerRouter);
+router.use(heartbeatRouter);
 
 export default router;

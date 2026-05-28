@@ -93,6 +93,19 @@ interface TwinAiAnalytics {
 
 interface PollOption { key: string; label: string; }
 
+interface LiveUserEntry {
+  userId: string;
+  lastSeen: string;
+  currentPage: string;
+  minutesAgo: number;
+}
+interface LiveUsersData {
+  online: LiveUserEntry[];
+  recent: LiveUserEntry[];
+  lastHour: LiveUserEntry[];
+  total: number;
+}
+
 const LABELS: Record<string, Record<string, string>> = {
   challenge: { sleep:"😴 Sleep deprivation", feeding:"🍼 Feeding two at once", time:"⏰ Finding time", schedules:"📅 Schedules", "mental-health":"🧠 Mental health", support:"🤝 Support", other:"💬 Other", unknown:"❓ N/A" },
   feature: { "sleep-tracker":"😴 Sleep Tracker", "feeding-log":"🍼 Feeding Log", milestones:"💕 Milestones", learn:"🎓 Learn Videos", routines:"📋 Routines", all:"✨ All of it!", unknown:"❓ N/A" },
@@ -208,6 +221,7 @@ export default function Admin() {
   const [notificationStats, setNotificationStats] = useState<NotificationStats | null>(null);
   const [twinAiAnalytics, setTwinAiAnalytics] = useState<TwinAiAnalytics | null>(null);
   const [retentionData, setRetentionData] = useState<RetentionData | null>(null);
+  const [liveUsers, setLiveUsers] = useState<LiveUsersData | null>(null);
   const [appUpdatesList, setAppUpdatesList] = useState<AppUpdateItem[]>([]);
   const [showUpdateForm, setShowUpdateForm] = useState(false);
   const [updateTitle, setUpdateTitle] = useState("");
@@ -255,6 +269,28 @@ export default function Admin() {
   }, [isAdmin, authQuery, baseUrl]);
 
   useEffect(() => { if (isAdmin) fetchStats(); }, [fetchStats]);
+
+  const fetchLiveUsers = useCallback(async () => {
+    if (!isAdmin) return;
+    const t = Date.now();
+    try {
+      const res = await fetch(`${baseUrl}/api/admin/live-users?${authQuery}&_t=${t}`, { cache: "no-store" });
+      if (res.ok) setLiveUsers(await res.json());
+    } catch { /* silent */ }
+  }, [isAdmin, authQuery, baseUrl]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    fetchLiveUsers();
+    const timer = setInterval(fetchLiveUsers, 30_000);
+    return () => clearInterval(timer);
+  }, [fetchLiveUsers, isAdmin]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    const timer = setInterval(() => { void fetchStats(); }, 120_000);
+    return () => clearInterval(timer);
+  }, [fetchStats, isAdmin]);
 
   function handlePasswordSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -451,6 +487,49 @@ export default function Admin() {
         </div>
       ) : stats ? (
         <div className="max-w-3xl mx-auto px-4 pt-6 space-y-6">
+
+          {/* ── LIVE USERS ── */}
+          <section>
+            <SectionHeader icon={<Activity size={16} />} title="Live Users" />
+            <div className="bg-white rounded-2xl border border-border p-4 space-y-3">
+              <div className="grid grid-cols-3 gap-3">
+                <div className="rounded-xl bg-green-50 border border-green-200 p-3 text-center">
+                  <div className="flex items-center justify-center gap-1.5 mb-0.5">
+                    <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                    <span className="text-xs text-green-600 font-semibold">Online now</span>
+                  </div>
+                  <p className="text-2xl font-bold text-green-700">{liveUsers?.online.length ?? "—"}</p>
+                  <p className="text-xs text-green-500">last 5 min</p>
+                </div>
+                <div className="rounded-xl bg-blue-50 border border-blue-200 p-3 text-center">
+                  <p className="text-xs text-blue-600 font-semibold mb-0.5">Active</p>
+                  <p className="text-2xl font-bold text-blue-700">{liveUsers ? liveUsers.online.length + liveUsers.recent.length : "—"}</p>
+                  <p className="text-xs text-blue-500">last 30 min</p>
+                </div>
+                <div className="rounded-xl bg-muted/50 border border-border p-3 text-center">
+                  <p className="text-xs text-muted-foreground font-semibold mb-0.5">Past hour</p>
+                  <p className="text-2xl font-bold text-foreground">{liveUsers?.total ?? "—"}</p>
+                  <p className="text-xs text-muted-foreground">unique users</p>
+                </div>
+              </div>
+              {liveUsers && liveUsers.total > 0 && (
+                <div className="space-y-1 max-h-48 overflow-y-auto">
+                  {[...liveUsers.online, ...liveUsers.recent, ...liveUsers.lastHour].map((u) => (
+                    <div key={u.userId} className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-muted/40 text-xs">
+                      <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${u.minutesAgo <= 5 ? "bg-green-500" : u.minutesAgo <= 30 ? "bg-blue-400" : "bg-gray-300"}`} />
+                      <span className="text-muted-foreground font-mono truncate flex-1">{u.userId.slice(0, 20)}…</span>
+                      <span className="text-muted-foreground/70 flex-shrink-0">{u.currentPage}</span>
+                      <span className="text-muted-foreground/50 flex-shrink-0 w-12 text-right">{u.minutesAgo === 0 ? "now" : `${u.minutesAgo}m`}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {liveUsers && liveUsers.total === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-2">No users active in the past hour</p>
+              )}
+              <p className="text-[10px] text-muted-foreground/50 text-right">Auto-refreshes every 30s</p>
+            </div>
+          </section>
 
           {/* ── USERS ── */}
           <section>

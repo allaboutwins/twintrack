@@ -1,3 +1,5 @@
+- [Blank screen recovery patterns](blank-screen-recovery.md) — Clerk `forceRedirectUrl` causes hard-nav failures; use `fallbackRedirectUrl`. index.html 5s timeout detector is last resort for all browsers incl. Facebook.
+- [Heartbeat system](heartbeat-system.md) — user_heartbeats table (PK: user_id), PUT /api/heartbeat, HeartbeatReporter component fires every 60s; admin live-users endpoint added to admin.ts (needs sql import from drizzle-orm).
 - [Notification scheduler pattern](notification-scheduler.md) — smart push scheduler lives in api-server/src/routes/notifications-scheduler.ts, uses quiet hours (10pm-7am UTC), check alreadySentRecently() before sending.
 - [Learn tab videos removed](learn-tab-cleanup.md) — Videos (library/saved) tabs removed from Learn.tsx; only 3 tabs remain: Magazine, Academy, Community. Video helper functions also removed.
 - [Dashboard emotional value cards](dashboard-emotional-cards.md) — StreakCard + GoodDayCard components compute streak from localStorage (tt_streak key), emotional state from dashboard summary feedings/diapers/sleep data.

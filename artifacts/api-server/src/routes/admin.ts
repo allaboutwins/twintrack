@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { desc, count, isNotNull, eq } from "drizzle-orm";
+import { desc, count, isNotNull, eq, sql } from "drizzle-orm";
 import {
   db,
   twinsTable,
@@ -216,6 +216,38 @@ router.post("/admin/polls", async (req, res): Promise<void> => {
 
   req.log.info({ pollId: poll.id, question: poll.question }, "admin: poll created");
   res.status(201).json(poll);
+});
+
+router.get("/admin/live-users", async (req, res): Promise<void> => {
+  if (!isAdminAuth(req)) {
+    res.status(403).json({ error: "Forbidden" });
+    return;
+  }
+
+  const rows = await db.execute(sql`
+    SELECT user_id, last_seen, current_page
+    FROM user_heartbeats
+    WHERE last_seen >= NOW() - INTERVAL '60 minutes'
+    ORDER BY last_seen DESC
+    LIMIT 200
+  `);
+
+  const now = Date.now();
+  const users = (rows.rows as { user_id: string; last_seen: string; current_page: string }[]).map(
+    (u) => ({
+      userId: u.user_id,
+      lastSeen: u.last_seen,
+      currentPage: u.current_page,
+      minutesAgo: Math.round((now - new Date(u.last_seen).getTime()) / 60_000),
+    }),
+  );
+
+  res.json({
+    online: users.filter((u) => u.minutesAgo <= 5),
+    recent: users.filter((u) => u.minutesAgo > 5 && u.minutesAgo <= 30),
+    lastHour: users.filter((u) => u.minutesAgo > 30),
+    total: users.length,
+  });
 });
 
 export default router;
