@@ -50,7 +50,8 @@ function FeedbackButton() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-[76px] right-3 z-40 flex items-center gap-1.5 bg-white border border-border/70 shadow-md rounded-full px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-primary hover:border-primary/30 transition-all"
+        className="fixed right-3 z-40 flex items-center gap-1.5 bg-white border border-border/70 shadow-md rounded-full px-3 py-2 text-xs font-semibold text-muted-foreground hover:text-primary hover:border-primary/30 transition-all"
+        style={{ bottom: "calc(env(safe-area-inset-bottom) + 58px)" }}
         data-testid="feedback-button"
         aria-label="Send feedback"
       >
@@ -172,10 +173,14 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="relative flex flex-col min-h-[100dvh] max-w-[430px] mx-auto bg-background">
+    // Outer shell fills exactly the viewport height — no overflow, no fixed tricks.
+    // This is far more reliable than `position:fixed` for the nav, especially in
+    // Facebook/Instagram WebView and iOS Safari where fixed + transform can fail.
+    <div className="flex flex-col h-[100dvh] max-w-[430px] mx-auto bg-background overflow-hidden">
       <OfflineBanner />
-      {/* Top header */}
-      <div className="bg-white border-b border-border/30">
+
+      {/* Top header — never scrolls */}
+      <div className="flex-shrink-0 bg-white border-b border-border/30">
         <div className="flex items-center justify-between px-4 h-16">
           <img src={logoAat} alt="All About Twins" className="h-16 w-auto" />
           <div className="flex items-center">
@@ -207,15 +212,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         </div>
       </div>
 
-      <main className="flex-1 overflow-y-auto pb-20">{children}</main>
+      {/* Scrollable content area — min-h-0 is required for flex children to shrink below content height */}
+      <main className="flex-1 min-h-0 overflow-y-auto">{children}</main>
 
       <NotificationCenter open={showNotifications} onClose={closeNotifications} />
       <InstallPrompt />
       <FeedbackButton />
 
-      {/* Bottom Navigation — extra padding for iPhone home indicator */}
-      <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-border"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+      {/* Bottom Navigation — in-flow at the bottom of the flex column.
+          No fixed/transform positioning needed, so it works in all browsers. */}
+      <nav
+        className="flex-shrink-0 bg-white border-t border-border z-10"
+        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
+      >
         <div className="flex items-center justify-around px-1 py-1.5">
           {tabs.map(({ path, icon: Icon, label, highlight }) => {
             const active = location === path || location.startsWith(path + "/");

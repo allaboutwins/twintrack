@@ -16,12 +16,12 @@ interface NotificationItem {
 
 const BASE_URL = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
 
-const WHATS_NEW_KEY = "tt_whats_new_v2";
+const WHATS_NEW_KEY = "tt_whats_new_v3";
 const WHATS_NEW_UPDATES = [
-  { icon: "🛠️", text: "Facebook & Instagram browser fix — links now open reliably" },
-  { icon: "🌐", text: "Offline page improved — no more blank screens" },
-  { icon: "✨", text: "Twin AI can now be hidden from Settings → App Experience" },
-  { icon: "🎉", text: "Welcome tour for new members + Early Access badge" },
+  { icon: "📊", text: "Stats tab — daily & weekly charts for sleep, feeds, and diapers" },
+  { icon: "🟢", text: "Live user presence — admins can now see who's online in real time" },
+  { icon: "🛡️", text: "Blank-screen recovery — automatic fix screen if the app fails to load" },
+  { icon: "🔔", text: "Smart notification scheduler — quiet hours and context-aware reminders" },
 ];
 
 function WhatsNewCard() {
@@ -161,7 +161,7 @@ export default function NotificationCenter({ open, onClose }: NotificationCenter
   return (
     <div className="fixed inset-0 z-50 flex items-end">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white w-full max-w-[430px] mx-auto rounded-t-3xl max-h-[88dvh] flex flex-col safe-area-pb">
+      <div className="relative bg-white w-full max-w-[430px] mx-auto rounded-t-3xl max-h-[93dvh] flex flex-col safe-area-pb">
 
         {/* Header */}
         <div className="flex-shrink-0 flex items-center justify-between px-5 py-4 border-b border-border">
@@ -251,11 +251,12 @@ export default function NotificationCenter({ open, onClose }: NotificationCenter
           </div>
         )}
 
-        {/* Notification list */}
-        <div className="flex-1 overflow-y-auto">
-          {/* What's New card — shown once per install */}
-          <WhatsNewCard />
+        {/* What's New card — shown once, above the scrollable list so
+            notifications are immediately visible without scrolling */}
+        <WhatsNewCard />
 
+        {/* Notification list */}
+        <div className="flex-1 overflow-y-auto overscroll-contain">
           {fetching ? (
             <div className="p-8 text-center">
               <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto" />

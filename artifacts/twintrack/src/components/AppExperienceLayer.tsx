@@ -40,12 +40,22 @@ export default function AppExperienceLayer() {
   const [layer, setLayer] = useState<Layer>(null);
   const [ready, setReady] = useState(false);
 
+  // Days since the user first completed onboarding.
+  // Welcome + Early Access cards are gated on this so they don't
+  // re-appear when the user signs in on a new device/browser with
+  // a fresh localStorage (Facebook WebView, incognito, etc.).
+  const daysSinceOnboarding = onboarding?.completedAt
+    ? (Date.now() - new Date(onboarding.completedAt).getTime()) / (1000 * 60 * 60 * 24)
+    : 999;
+
   const resolve = useCallback(() => {
-    if (!hasSeenWelcome()) { setLayer("welcome"); return; }
-    if (!hasSeenEarlyAccess()) { setLayer("early"); return; }
+    // Welcome tour — only for users who onboarded within the last 7 days
+    if (!hasSeenWelcome() && daysSinceOnboarding < 7) { setLayer("welcome"); return; }
+    // Early Access card — only for users who onboarded within the last 14 days
+    if (!hasSeenEarlyAccess() && daysSinceOnboarding < 14) { setLayer("early"); return; }
     if (shouldShowReview()) { setLayer("review"); return; }
     setLayer(null);
-  }, []);
+  }, [daysSinceOnboarding]);
 
   useEffect(() => {
     if (!userId || isLoading) return;
