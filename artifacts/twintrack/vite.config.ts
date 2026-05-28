@@ -44,10 +44,12 @@ export default defineConfig({
         ],
       },
       workbox: {
-        // Activate new SW immediately so stale app shells don't serve
-        // deleted JS chunks (which cause blank pages after a deploy).
+        // skipWaiting: new SW activates immediately for brand-new sessions.
+        // clientsClaim is intentionally OMITTED — it would take over existing
+        // tabs mid-session and invalidate their loaded JS chunks, causing blank
+        // screens after every deploy. Existing tabs keep their old SW until
+        // they close and reopen, at which point they get the new version cleanly.
         skipWaiting: true,
-        clientsClaim: true,
         cleanupOutdatedCaches: true,
 
         // For SPA routes (/dashboard, /sleep, etc.) serve the cached app shell

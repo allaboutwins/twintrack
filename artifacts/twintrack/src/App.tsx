@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { posthog } from "./lib/posthog";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk, useUser } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
@@ -6,6 +6,7 @@ import { shadcn } from "@clerk/themes";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
+import { useToast } from "@/hooks/use-toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useGetOnboarding, getGetOnboardingQueryKey } from "@workspace/api-client-react";
 import AppErrorBoundary from "@/components/AppErrorBoundary";
@@ -106,6 +107,61 @@ function SignUpPage() {
       />
     </div>
   );
+}
+
+/**
+ * Silently watches for a new service worker to become installed.
+ * When detected it shows a one-tap "Reload for update" toast.
+ * This replaces the old clientsClaim approach, which forced all open tabs
+ * onto the new SW mid-session and wiped their loaded JS chunks → blank screen.
+ */
+function SwUpdateNotifier() {
+  const { toast } = useToast();
+  const toastShown = useRef(false);
+
+  const promptReload = useCallback(() => {
+    if (toastShown.current) return;
+    toastShown.current = true;
+    toast({
+      title: "TwinTrack just updated 🍒",
+      description: "Tap to reload and get the latest version.",
+      duration: 0, // stay until dismissed
+      action: (
+        <button
+          onClick={() => window.location.reload()}
+          className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-white"
+        >
+          Reload
+        </button>
+      ),
+    });
+  }, [toast]);
+
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+
+    // When a *new* SW has finished installing (state = "installed"), the old SW
+    // is still controlling this tab (no clientsClaim). We prompt the user to
+    // reload so they pick up the update cleanly on their own terms.
+    navigator.serviceWorker.ready
+      .then((reg) => {
+        reg.addEventListener("updatefound", () => {
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener("statechange", () => {
+            if (
+              newWorker.state === "installed" &&
+              navigator.serviceWorker.controller
+            ) {
+              promptReload();
+            }
+          });
+        });
+      })
+      .catch(() => {/* non-fatal */});
+  }, [promptReload]);
+
+  return null;
 }
 
 function PostHogIdentifier() {
@@ -267,6 +323,7 @@ function ClerkProviderWithRoutes() {
         <ClerkQueryClientCacheInvalidator />
         <PostHogIdentifier />
         <TooltipProvider>
+          <SwUpdateNotifier />
           <PushPermissionPrompt />
           <AppExperienceLayer />
           <PageTransition>
