@@ -1,0 +1,98 @@
+Latest TwinTrack fixes + improvements 💕🚀
+
+Please implement the following updates:
+
+---
+
+1. FEEDING IMPROVEMENTS
+
+New twin moms feedback:
+
+💡 Manual breastfeeding time entry
+
+"Would be helpful to be able to log a time manually for a breastfeed in case we forget to use the timer at the time and want to record it retrospectively"
+Please allow moms to manually enter breastfeeding duration/time retrospectively in case they forgot to start the timer.
+
+Example:
+
+* start time
+* end time
+* duration auto-calculated
+
+---
+
+💡 Pause breastfeeding timer
+
+"Pausing breastfeeding rather than just stopping and logging it would be helpful. Really easy to flick between twins If you go into AI mode you can’t then click back, I had to restart my phone "
+Instead of only “Stop & Log”, please add:
+
+* Pause
+* Resume
+
+This is important because moms often switch between twins during feeding.
+
+Also fix the "Ask Twin AI" make it easy to go back, by keeping the bottom menu available 
+
+---
+
+🐛 Manual feed time adjustment BEFORE saving
+
+"Being able to adjust feeding time when adding it instead of having to save it and then go back and edit it. Not always able to add feed time when the feeding starts and having to go back and edit makes an extra unnecessary step"
+Currently moms must:
+
+1. save the feed
+2. reopen/edit it
+
+Please allow editing:
+
+* feed start time
+* duration
+* oz/ml
+  BEFORE saving the entry.
+
+This removes unnecessary friction.
+
+---
+
+2. HOME PAGE NOTIFICATIONS
+
+If a user dismisses a card like:
+“3 days in a row! 🔥”
+
+Please do NOT show it again during the same day/session.
+
+Use localStorage or daily timestamp logic.
+
+The goal:
+
+* warm encouragement
+* not repetitive annoyance
+
+---
+
+3. LEARN PAGE → ACADEMY SECTION
+
+The current placeholder Academy titles do NOT match the real Twins Academy library.
+
+Please replace all Academy headlines/cards with REAL course titles from:
+https://allaboutwins.com/courses
+
+Examples:
+
+* Helping Twins Sleep Tight – Giving Twin Parents Their Nights Back
+  https://allaboutwins.com/courses/helping-twins-sleep-tight/lesson/my-journey
+
+* A Guide to Breastfeeding Your Twins at Home
+  https://allaboutwins.com/courses/a-guide-to-breastfeeding-twins-at-home/lesson/hospital-packing-list-for-breastfeeding-twins
+
+Goal:
+The Learn tab should feel like a real premium educational ecosystem connected to the actual All About Twins brand.
+
+Please:
+
+* use accurate titles
+* matching thumbnails if possible
+* proper links
+* clean premium card layout
+
+No placeholder content anymore 💕

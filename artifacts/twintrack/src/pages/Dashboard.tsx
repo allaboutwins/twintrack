@@ -395,15 +395,23 @@ function getStreakMessage(streak: number) {
 }
 
 function StreakCard({ streak }: { streak: number }) {
-  const [dismissed, setDismissed] = useState(false);
+  const today = new Date().toDateString();
+  const [dismissed, setDismissed] = useState(() => {
+    try { return localStorage.getItem("tt_streak_dismissed") === today; } catch { return false; }
+  });
   const msg = getStreakMessage(streak);
   if (!msg || dismissed) return null;
+
+  function dismiss() {
+    setDismissed(true);
+    try { localStorage.setItem("tt_streak_dismissed", today); } catch {}
+  }
 
   return (
     <div className="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/60 rounded-2xl p-4 relative overflow-hidden" data-testid="streak-card">
       <div className="absolute top-0 right-0 w-24 h-24 rounded-full bg-amber-100/50 -mr-8 -mt-8" />
       <button
-        onClick={() => setDismissed(true)}
+        onClick={dismiss}
         className="absolute top-3 right-3 p-1 rounded-lg text-amber-400 hover:text-amber-600 transition-colors z-10"
         aria-label="Dismiss"
         data-testid="streak-card-dismiss"
@@ -438,8 +446,16 @@ const GOOD_DAY_MESSAGES = [
 ];
 
 function GoodDayCard({ feedings, diapers, sleepMins }: { feedings: number; diapers: number; sleepMins: number }) {
-  const [dismissed, setDismissed] = useState(false);
+  const today = new Date().toDateString();
+  const [dismissed, setDismissed] = useState(() => {
+    try { return localStorage.getItem("tt_goodday_dismissed") === today; } catch { return false; }
+  });
   if (dismissed) return null;
+
+  function dismiss() {
+    setDismissed(true);
+    try { localStorage.setItem("tt_goodday_dismissed", today); } catch {}
+  }
 
   const highlights = [
     feedings > 0 && `${feedings} feeding${feedings === 1 ? "" : "s"}`,
@@ -452,7 +468,7 @@ function GoodDayCard({ feedings, diapers, sleepMins }: { feedings: number; diape
   return (
     <div className="bg-gradient-to-br from-rose-50 to-pink-50 border border-rose-200/60 rounded-2xl p-4 relative" data-testid="good-day-card">
       <button
-        onClick={() => setDismissed(true)}
+        onClick={dismiss}
         className="absolute top-3 right-3 p-1 rounded-lg text-rose-300 hover:text-rose-500 transition-colors"
         aria-label="Dismiss"
         data-testid="good-day-dismiss"

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Sparkles, Send, RotateCcw, AlertCircle, ThumbsUp, ThumbsDown } from "lucide-react";
+import Layout from "@/components/Layout";
 
 interface Message {
   role: "user" | "assistant";
@@ -279,9 +280,10 @@ export default function TwinAI() {
   const showSuggestions = messages.length === 0 && !isStreaming;
 
   return (
-    <div className="flex flex-col h-[100dvh] max-w-[430px] mx-auto bg-background">
+    <Layout>
+      <div className="flex flex-col min-h-full">
       {/* Header */}
-      <div className="flex-shrink-0 px-5 pt-6 pb-4 bg-white border-b border-border">
+      <div className="sticky top-0 z-10 flex-shrink-0 px-5 pt-4 pb-4 bg-white border-b border-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
@@ -305,7 +307,7 @@ export default function TwinAI() {
       </div>
 
       {/* Messages area */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+      <div className="flex-1 px-4 py-4 space-y-4">
         {showSuggestions ? (
           <div className="flex flex-col items-center pt-4 pb-2">
             <div className="w-16 h-16 rounded-3xl bg-primary/10 flex items-center justify-center mb-4">
@@ -356,12 +358,11 @@ export default function TwinAI() {
           </div>
         )}
 
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Daily limit reached */}
       {limitReached && (
-        <div className="flex-shrink-0 mx-4 mb-2 px-4 py-3.5 rounded-2xl bg-violet-50 border border-violet-200/60 text-center">
+        <div className="mx-4 mb-2 px-4 py-3.5 rounded-2xl bg-violet-50 border border-violet-200/60 text-center">
           <p className="text-sm font-semibold text-violet-700">You've reached today's Twin AI limit 💕</p>
           <p className="text-xs text-violet-500 mt-0.5">Check back tomorrow for more support. You're doing amazing! 🌙</p>
         </div>
@@ -369,14 +370,14 @@ export default function TwinAI() {
 
       {/* Disclaimer (in-chat) */}
       {messages.length > 0 && !limitReached && (
-        <div className="flex-shrink-0 mx-4 mb-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200/60 flex gap-2">
+        <div className="mx-4 mb-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-200/60 flex gap-2">
           <AlertCircle size={12} className="text-amber-400 flex-shrink-0 mt-0.5" />
           <p className="text-[10px] text-amber-600 leading-relaxed">{DISCLAIMER}</p>
         </div>
       )}
 
       {/* Input */}
-      <div className="flex-shrink-0 px-4 pb-24 pt-2 bg-white border-t border-border">
+      <div className="sticky bottom-0 px-4 pb-4 pt-2 bg-white border-t border-border">
         {limitReached ? (
           <p className="text-center text-sm text-muted-foreground py-2">
             Come back tomorrow for more Twin AI support 🍒
@@ -415,6 +416,9 @@ export default function TwinAI() {
           </>
         )}
       </div>
-    </div>
+
+      <div ref={messagesEndRef} />
+      </div>
+    </Layout>
   );
 }

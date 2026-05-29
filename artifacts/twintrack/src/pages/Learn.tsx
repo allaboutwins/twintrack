@@ -208,13 +208,55 @@ function MagazineLibrary() {
   );
 }
 
-const ACADEMY_ARTICLES = [
-  { emoji: "💤", title: "Syncing Twin Sleep Schedules", subtitle: "The #1 game-changer for twin families", badge: "Sleep", url: "https://allaboutwins.com/twin-sleep-schedule" },
-  { emoji: "🍼", title: "Tandem Nursing: A Complete Guide", subtitle: "Feed both twins at once — step by step", badge: "Feeding", url: "https://allaboutwins.com/tandem-nursing" },
-  { emoji: "🧠", title: "Managing Twin Parent Burnout", subtitle: "Signs, tools, and real recovery strategies", badge: "Mindset", url: "https://allaboutwins.com/twin-parent-burnout" },
-  { emoji: "📅", title: "Building Your Daily Routine", subtitle: "Flexible structure that grows with your twins", badge: "Routines", url: "https://allaboutwins.com/twin-daily-routine" },
-  { emoji: "🤰", title: "Twin Pregnancy: What to Expect", subtitle: "Hospital prep, NICU plan & home setup", badge: "Pregnancy", url: "https://allaboutwins.com/twin-pregnancy" },
-  { emoji: "💛", title: "Navigating the NICU Journey", subtitle: "Support, milestones, and coming home", badge: "NICU", url: "https://allaboutwins.com/nicu-twins" },
+const ACADEMY_COURSES = [
+  {
+    emoji: "😴",
+    title: "Helping Twins Sleep Tight",
+    subtitle: "Giving twin parents their nights back — practical sleep strategies that really work",
+    badge: "Sleep",
+    lessons: 12,
+    url: "https://allaboutwins.com/courses/helping-twins-sleep-tight/",
+  },
+  {
+    emoji: "🤱",
+    title: "Breastfeeding Twins at Home",
+    subtitle: "A complete guide from hospital to home — tandem feeding, supply, and more",
+    badge: "Feeding",
+    lessons: 15,
+    url: "https://allaboutwins.com/courses/a-guide-to-breastfeeding-twins-at-home/",
+  },
+  {
+    emoji: "🏥",
+    title: "Navigating the NICU Journey",
+    subtitle: "What to expect, how to bond, and how to bring your twins home with confidence",
+    badge: "NICU",
+    lessons: 8,
+    url: "https://allaboutwins.com/courses",
+  },
+  {
+    emoji: "📅",
+    title: "Building Your Twin Routine",
+    subtitle: "Flexible schedules and rhythms that sync both babies and save your sanity",
+    badge: "Routines",
+    lessons: 10,
+    url: "https://allaboutwins.com/courses",
+  },
+  {
+    emoji: "🤰",
+    title: "Twin Pregnancy Prep",
+    subtitle: "Hospital bag, birth plan, NICU prep, and home setup for two",
+    badge: "Pregnancy",
+    lessons: 9,
+    url: "https://allaboutwins.com/courses",
+  },
+  {
+    emoji: "🧠",
+    title: "Twin Parent Mental Wellness",
+    subtitle: "Real strategies for burnout, overwhelm, and building resilience as a twin parent",
+    badge: "Mindset",
+    lessons: 7,
+    url: "https://allaboutwins.com/courses",
+  },
 ];
 
 const BADGE_COLORS: Record<string, string> = {
@@ -269,28 +311,38 @@ function AcademySection({ userId }: { userId: string }) {
         </a>
       </div>
 
-      {/* Article cards */}
-      <div className="space-y-2.5">
-        {ACADEMY_ARTICLES.map((article) => (
+      {/* Course cards */}
+      <div className="space-y-3">
+        {ACADEMY_COURSES.map((course, idx) => (
           <a
-            key={article.title}
-            href={article.url}
+            key={course.title}
+            href={course.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3.5 p-4 bg-white rounded-2xl border border-border hover:bg-muted/20 active:bg-muted/40 transition-colors"
-            data-testid={`academy-article-${article.badge.toLowerCase()}`}
+            className="block bg-white rounded-2xl border border-border overflow-hidden hover:border-primary/30 active:scale-[0.99] transition-all shadow-sm"
+            data-testid={`academy-course-${course.badge.toLowerCase()}`}
           >
-            <div className="w-12 h-12 rounded-xl bg-primary/8 flex items-center justify-center text-2xl flex-shrink-0">
-              {article.emoji}
+            <div className="flex items-stretch">
+              {/* Thumbnail strip */}
+              <div className="w-[72px] flex-shrink-0 flex flex-col items-center justify-center gap-1 text-white text-3xl py-4"
+                style={{ background: idx % 2 === 0 ? "linear-gradient(135deg, #da5a9f, #b8459c)" : "linear-gradient(135deg, #2e818c, #246b75)" }}>
+                {course.emoji}
+              </div>
+              {/* Content */}
+              <div className="flex-1 min-w-0 px-3.5 py-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full ${BADGE_COLORS[course.badge] ?? "bg-muted text-muted-foreground"}`}>
+                    {course.badge}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground font-medium">{course.lessons} lessons</span>
+                </div>
+                <p className="font-bold text-sm text-foreground leading-snug">{course.title}</p>
+                <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{course.subtitle}</p>
+              </div>
+              <div className="flex items-center pr-3.5 flex-shrink-0">
+                <ChevronRight size={15} className="text-muted-foreground" />
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full mb-1 ${BADGE_COLORS[article.badge] ?? "bg-muted text-muted-foreground"}`}>
-                {article.badge}
-              </span>
-              <p className="font-semibold text-sm text-foreground leading-snug">{article.title}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">{article.subtitle}</p>
-            </div>
-            <ChevronRight size={15} className="text-muted-foreground flex-shrink-0" />
           </a>
         ))}
       </div>

@@ -17,7 +17,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { TwinTabs, PageHeader } from "@/components/Layout";
-import { Trash2, Pencil, X, Check, Plus, ChevronDown, ChevronUp, Play, Square, Clock, Droplets } from "lucide-react";
+import { Trash2, Pencil, X, Check, Plus, ChevronDown, ChevronUp, Play, Pause, Square, Clock, Droplets } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // ── Constants ─────────────────────────────────────────────────────────────
@@ -129,9 +129,12 @@ function reactionBadge(reaction: string | null | undefined) {
 
 interface TimerState {
   side: "left" | "right" | null;
-  startedAt: number; // epoch ms
-  elapsed: number;   // seconds ticked so far
+  startedAt: number;    // epoch ms when timer first started (used for saved feed time)
+  resumedAt: number;    // epoch ms when timer last resumed
+  accumulated: number;  // seconds accumulated before current run (pause support)
+  elapsed: number;      // total elapsed seconds
   running: boolean;
+  paused: boolean;
 }
 
 function BreastfeedingTimer({
@@ -139,16 +142,31 @@ function BreastfeedingTimer({
   onDone,
 }: {
   color: string;
-  onDone: (side: "left" | "right" | null, durationMinutes: number) => void;
+  onDone: (side: "left" | "right" | null, durationMinutes: number, startedAt: number) => void;
 }) {
-  const [timer, setTimer] = useState<TimerState>({ side: null, startedAt: 0, elapsed: 0, running: false });
+  const [timer, setTimer] = useState<TimerState>({
+    side: null, startedAt: 0, resumedAt: 0, accumulated: 0, elapsed: 0, running: false, paused: false,
+  });
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const start = useCallback((side: "left" | "right") => {
     const now = Date.now();
-    setTimer({ side, startedAt: now, elapsed: 0, running: true });
+    setTimer({ side, startedAt: now, resumedAt: now, accumulated: 0, elapsed: 0, running: true, paused: false });
     intervalRef.current = setInterval(() => {
-      setTimer((t) => ({ ...t, elapsed: Math.floor((Date.now() - t.startedAt) / 1000) }));
+      setTimer((t) => ({ ...t, elapsed: t.accumulated + Math.floor((Date.now() - t.resumedAt) / 1000) }));
+    }, 1000);
+  }, []);
+
+  const pause = useCallback(() => {
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    setTimer((t) => ({ ...t, running: false, paused: true, accumulated: t.elapsed }));
+  }, []);
+
+  const resume = useCallback(() => {
+    const now = Date.now();
+    setTimer((t) => ({ ...t, running: true, paused: false, resumedAt: now }));
+    intervalRef.current = setInterval(() => {
+      setTimer((t) => ({ ...t, elapsed: t.accumulated + Math.floor((Date.now() - t.resumedAt) / 1000) }));
     }, 1000);
   }, []);
 
@@ -156,14 +174,14 @@ function BreastfeedingTimer({
     if (intervalRef.current) clearInterval(intervalRef.current);
     setTimer((t) => {
       const minutes = Math.max(1, Math.round(t.elapsed / 60));
-      onDone(t.side, minutes);
+      onDone(t.side, minutes, t.startedAt);
       return { ...t, running: false };
     });
   }, [onDone]);
 
   useEffect(() => () => { if (intervalRef.current) clearInterval(intervalRef.current); }, []);
 
-  if (!timer.running && timer.elapsed === 0) {
+  if (!timer.running && !timer.paused && timer.elapsed === 0) {
     return (
       <div className="space-y-3">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Tap a side to start timer</p>
@@ -191,19 +209,37 @@ function BreastfeedingTimer({
         style={{ backgroundColor: color }}
       >
         <p className="text-xs font-semibold uppercase tracking-wide opacity-80">
-          {timer.side === "left" ? "⬅️ Left" : "Right ➡️"} — timing
+          {timer.side === "left" ? "⬅️ Left" : "Right ➡️"} — {timer.paused ? "⏸ paused" : "timing"}
         </p>
         <p className="text-5xl font-bold tracking-tight font-mono">{formatElapsed(timer.elapsed)}</p>
         <p className="text-xs opacity-70">{Math.round(timer.elapsed / 60)} min</p>
       </div>
-      <button
-        onClick={stop}
-        className="w-full py-3.5 rounded-2xl bg-white border-2 text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-all"
-        style={{ borderColor: color, color }}
-      >
-        <Square size={14} />
-        Stop & Log
-      </button>
+      <div className="grid grid-cols-2 gap-2">
+        {timer.paused ? (
+          <button
+            onClick={resume}
+            className="py-3.5 rounded-2xl text-white text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-all shadow-sm"
+            style={{ backgroundColor: color }}
+          >
+            <Play size={14} /> Resume
+          </button>
+        ) : (
+          <button
+            onClick={pause}
+            className="py-3.5 rounded-2xl bg-white border-2 text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-all"
+            style={{ borderColor: color, color }}
+          >
+            <Pause size={14} /> Pause
+          </button>
+        )}
+        <button
+          onClick={stop}
+          className="py-3.5 rounded-2xl bg-white border-2 text-sm font-bold flex items-center justify-center gap-2 active:scale-95 transition-all"
+          style={{ borderColor: color, color }}
+        >
+          <Square size={14} /> Stop & Log
+        </button>
+      </div>
     </div>
   );
 }
@@ -214,6 +250,7 @@ type LogSheetProps = {
   feedingType: FeedingType;
   onClose: () => void;
   onLog: (data: {
+    time?: string | null;
     side?: string | null;
     durationMinutes?: number | null;
     amountMl?: number | null;
@@ -234,11 +271,14 @@ function LogFeedingSheet({ feedingType, onClose, onLog, isPending }: LogSheetPro
   const [foodName, setFoodName] = useState("");
   const [notes, setNotes] = useState("");
   const [timerDone, setTimerDone] = useState(false);
+  const [feedingTime, setFeedingTime] = useState(() => toDatetimeLocal(new Date().toISOString()));
+  const [breastEndTime, setBreastEndTime] = useState("");
 
-  function handleTimerDone(s: "left" | "right" | null, mins: number) {
+  function handleTimerDone(s: "left" | "right" | null, mins: number, startedAt: number) {
     setSide(s);
     setDuration(mins);
     setTimerDone(true);
+    setFeedingTime(toDatetimeLocal(new Date(startedAt).toISOString()));
   }
 
   function handleLog() {
@@ -247,7 +287,10 @@ function LogFeedingSheet({ feedingType, onClose, onLog, isPending }: LogSheetPro
       const val = parseFloat(amountInput);
       if (!isNaN(val)) amountMl = amountUnit === "oz" ? val * OZ_TO_ML : val;
     }
+    let logTime: string;
+    try { logTime = new Date(feedingTime).toISOString(); } catch { logTime = new Date().toISOString(); }
     onLog({
+      time: logTime,
       side: (feedingType === "breastfeeding" || feedingType === "pumping") ? side : null,
       durationMinutes: (feedingType === "breastfeeding" || feedingType === "pumping") ? duration : null,
       amountMl,
@@ -317,22 +360,61 @@ function LogFeedingSheet({ feedingType, onClose, onLog, isPending }: LogSheetPro
                   </div>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Duration</p>
-                  <div className="flex flex-wrap gap-2">
-                    {DURATION_OPTIONS.map((mins) => (
-                      <button
-                        key={mins}
-                        onClick={() => setDuration(duration === mins ? null : mins)}
-                        className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
-                          duration === mins ? "text-white" : "bg-muted/60 text-muted-foreground"
-                        }`}
-                        style={duration === mins ? { backgroundColor: ft.color } : {}}
-                      >
-                        {mins}m
-                      </button>
-                    ))}
-                  </div>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Start time</p>
+                  <input
+                    type="datetime-local"
+                    value={feedingTime}
+                    max={toDatetimeLocal(new Date().toISOString())}
+                    onChange={(e) => {
+                      setFeedingTime(e.target.value);
+                      if (breastEndTime && e.target.value) {
+                        const mins = Math.round((new Date(breastEndTime).getTime() - new Date(e.target.value).getTime()) / 60000);
+                        if (mins > 0) setDuration(mins);
+                      }
+                    }}
+                    className="w-full px-4 py-3 rounded-xl bg-muted/30 border border-border text-sm outline-none focus:ring-2 ring-primary/30"
+                  />
                 </div>
+                <div>
+                  <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">End time</p>
+                  <input
+                    type="datetime-local"
+                    value={breastEndTime}
+                    max={toDatetimeLocal(new Date().toISOString())}
+                    onChange={(e) => {
+                      setBreastEndTime(e.target.value);
+                      if (feedingTime && e.target.value) {
+                        const mins = Math.round((new Date(e.target.value).getTime() - new Date(feedingTime).getTime()) / 60000);
+                        if (mins > 0) setDuration(mins);
+                      }
+                    }}
+                    className="w-full px-4 py-3 rounded-xl bg-muted/30 border border-border text-sm outline-none focus:ring-2 ring-primary/30"
+                  />
+                </div>
+                {duration !== null && duration > 0 && (
+                  <p className="text-xs font-semibold px-1" style={{ color: ft.color }}>
+                    Duration: {duration} min
+                  </p>
+                )}
+                {!breastEndTime && (
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Or choose duration</p>
+                    <div className="flex flex-wrap gap-2">
+                      {DURATION_OPTIONS.map((mins) => (
+                        <button
+                          key={mins}
+                          onClick={() => setDuration(duration === mins ? null : mins)}
+                          className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                            duration === mins ? "text-white" : "bg-muted/60 text-muted-foreground"
+                          }`}
+                          style={duration === mins ? { backgroundColor: ft.color } : {}}
+                        >
+                          {mins}m
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </>
             )}
           </>
@@ -510,6 +592,20 @@ function LogFeedingSheet({ feedingType, onClose, onLog, isPending }: LogSheetPro
               placeholder="Any notes..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl bg-muted/30 border border-border text-sm outline-none focus:ring-2 ring-primary/30"
+            />
+          </div>
+        )}
+
+        {/* When? time picker — skip for breastfeeding manual (feedingTime is used as start time there) */}
+        {showLogButton && !(feedingType === "breastfeeding" && mode === "manual" && !timerDone) && (
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">When?</p>
+            <input
+              type="datetime-local"
+              value={feedingTime}
+              max={toDatetimeLocal(new Date().toISOString())}
+              onChange={(e) => setFeedingTime(e.target.value)}
               className="w-full px-4 py-3 rounded-xl bg-muted/30 border border-border text-sm outline-none focus:ring-2 ring-primary/30"
             />
           </div>
@@ -943,6 +1039,7 @@ export default function Feeding() {
   }
 
   function handleLog(type: FeedingType, details: {
+    time?: string | null;
     side?: string | null;
     durationMinutes?: number | null;
     amountMl?: number | null;
@@ -955,7 +1052,7 @@ export default function Feeding() {
         data: {
           twinId,
           feedingType: type,
-          time: new Date().toISOString(),
+          time: details.time ?? new Date().toISOString(),
           side: details.side ?? null,
           durationMinutes: details.durationMinutes ?? null,
           amountMl: details.amountMl ?? null,
