@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { Component, useEffect, useRef, useState, useCallback, type ReactNode, type ErrorInfo } from "react";
 import { posthog } from "./lib/posthog";
 import { ClerkProvider, SignIn, SignUp, Show, useClerk, useUser } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
@@ -200,8 +200,104 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
+/** POST a crash report to the server (used from error boundaries). */
+function reportCrash(payload: Record<string, unknown>) {
+  try {
+    const body = JSON.stringify({
+      ...payload,
+      url: window.location.href,
+      userAgent: navigator.userAgent,
+      ts: Date.now(),
+    });
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon("/api/client-errors", new Blob([body], { type: "application/json" }));
+    } else {
+      fetch("/api/client-errors", { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {});
+    }
+  } catch { /* never crash the crash reporter */ }
+}
+
+/**
+ * Per-route error boundary.
+ * Catches a crash in a single route and shows a minimal recovery UI without
+ * taking down the whole app. Reports to /api/client-errors so crashes are
+ * visible in production logs.
+ */
+class RouteErrorBoundary extends Component<
+  { children: ReactNode; route: string },
+  { error: Error | null }
+> {
+  state = { error: null as Error | null };
+
+  static getDerivedStateFromError(error: Error) {
+    return { error };
+  }
+
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    console.error(`[RouteErrorBoundary:${this.props.route}]`, error);
+    reportCrash({
+      type: "route_error_boundary",
+      route: this.props.route,
+      message: error.message,
+      stack: error.stack?.slice(0, 2000),
+      component: info.componentStack?.slice(0, 1000),
+    });
+  }
+
+  render() {
+    if (!this.state.error) return this.props.children;
+    return (
+      <div
+        style={{
+          minHeight: "100dvh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#fdf8fa",
+          padding: "32px 24px",
+          fontFamily: "'Quicksand', sans-serif",
+          textAlign: "center",
+          gap: 16,
+        }}
+      >
+        <div style={{ fontSize: 48 }}>🍒</div>
+        <p style={{ fontSize: 18, fontWeight: 700, color: "#1a4a50", margin: 0 }}>
+          This page hit an error
+        </p>
+        <p style={{ fontSize: 13, color: "#6b9ea5", margin: 0, maxWidth: 280, lineHeight: 1.6 }}>
+          Your data is safe. Tap below to go back to the dashboard.
+        </p>
+        <button
+          onClick={() => { this.setState({ error: null }); window.location.replace("/"); }}
+          style={{
+            background: "#da5a9f", color: "white", border: "none",
+            borderRadius: 14, padding: "12px 28px",
+            fontFamily: "'Quicksand', sans-serif", fontSize: 15, fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          Go to Dashboard
+        </button>
+        <p style={{ fontSize: 11, color: "#b0b0b0", margin: 0 }}>
+          {this.state.error.message.slice(0, 100)}
+        </p>
+      </div>
+    );
+  }
+}
+
+function LoadingScreen({ message }: { message: string }) {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[100dvh] bg-background gap-4">
+      <span className="text-4xl animate-pulse select-none">🍒</span>
+      <p className="text-sm text-muted-foreground font-medium">{message}</p>
+    </div>
+  );
+}
+
 function OnboardingGate({ children }: { children: React.ReactNode }) {
-  const { user } = useUser();
+  const { user, isLoaded: clerkLoaded } = useUser();
   const qc = useQueryClient();
   const userId = user?.id ?? "";
 
@@ -216,27 +312,31 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
 
   const [localComplete, setLocalComplete] = useState(false);
 
-  if (!userId || isLoading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[100dvh] bg-background gap-4">
-        <span className="text-4xl animate-pulse select-none">🍒</span>
-        <p className="text-sm text-muted-foreground font-medium">Loading your twins' day…</p>
-      </div>
-    );
+  // Show loading checkpoints so the user can see exactly where the app is
+  if (!clerkLoaded) {
+    return <LoadingScreen message="Signing you in…" />;
+  }
+  if (!userId) {
+    return <LoadingScreen message="Verifying account…" />;
+  }
+  if (isLoading) {
+    return <LoadingScreen message="Loading your twins' day…" />;
   }
 
   const needsOnboarding = !localComplete && (isError || !onboarding?.completedAt);
 
   if (needsOnboarding) {
     return (
-      <OnboardingFlow
-        userId={userId}
-        userEmail={user?.primaryEmailAddress?.emailAddress ?? ""}
-        onComplete={() => {
-          setLocalComplete(true);
-          qc.invalidateQueries({ queryKey: getGetOnboardingQueryKey(userId) });
-        }}
-      />
+      <AppErrorBoundary boundary="OnboardingFlow">
+        <OnboardingFlow
+          userId={userId}
+          userEmail={user?.primaryEmailAddress?.emailAddress ?? ""}
+          onComplete={() => {
+            setLocalComplete(true);
+            qc.invalidateQueries({ queryKey: getGetOnboardingQueryKey(userId) });
+          }}
+        />
+      </AppErrorBoundary>
     );
   }
 
@@ -334,43 +434,67 @@ function ClerkProviderWithRoutes() {
               <Route path="/sign-in/*?" component={SignInPage} />
               <Route path="/sign-up/*?" component={SignUpPage} />
               <Route path="/dashboard">
-                <ProtectedRoute component={Dashboard} />
+                <RouteErrorBoundary route="dashboard">
+                  <ProtectedRoute component={Dashboard} />
+                </RouteErrorBoundary>
               </Route>
               <Route path="/sleep">
-                <ProtectedRoute component={Sleep} />
+                <RouteErrorBoundary route="sleep">
+                  <ProtectedRoute component={Sleep} />
+                </RouteErrorBoundary>
               </Route>
               <Route path="/feeding">
-                <ProtectedRoute component={Feeding} />
+                <RouteErrorBoundary route="feeding">
+                  <ProtectedRoute component={Feeding} />
+                </RouteErrorBoundary>
               </Route>
               <Route path="/diapers">
-                <ProtectedRoute component={Diapers} />
+                <RouteErrorBoundary route="diapers">
+                  <ProtectedRoute component={Diapers} />
+                </RouteErrorBoundary>
               </Route>
               <Route path="/routines">
-                <ProtectedRoute component={Routines} />
+                <RouteErrorBoundary route="routines">
+                  <ProtectedRoute component={Routines} />
+                </RouteErrorBoundary>
               </Route>
               <Route path="/tv">
-                <ProtectedRoute component={Learn} />
+                <RouteErrorBoundary route="tv">
+                  <ProtectedRoute component={Learn} />
+                </RouteErrorBoundary>
               </Route>
               <Route path="/learn">
-                <ProtectedRoute component={Learn} />
+                <RouteErrorBoundary route="learn">
+                  <ProtectedRoute component={Learn} />
+                </RouteErrorBoundary>
               </Route>
               <Route path="/milestones">
-                <ProtectedRoute component={Milestones} />
+                <RouteErrorBoundary route="milestones">
+                  <ProtectedRoute component={Milestones} />
+                </RouteErrorBoundary>
               </Route>
               <Route path="/admin/videos">
-                <ProtectedRoute component={VideoAdmin} />
+                <RouteErrorBoundary route="admin-videos">
+                  <ProtectedRoute component={VideoAdmin} />
+                </RouteErrorBoundary>
               </Route>
               <Route path="/admin">
                 <AdminRoute component={Admin} />
               </Route>
               <Route path="/twin-ai">
-                <ProtectedRoute component={TwinAI} />
+                <RouteErrorBoundary route="twin-ai">
+                  <ProtectedRoute component={TwinAI} />
+                </RouteErrorBoundary>
               </Route>
               <Route path="/stats">
-                <ProtectedRoute component={Stats} />
+                <RouteErrorBoundary route="stats">
+                  <ProtectedRoute component={Stats} />
+                </RouteErrorBoundary>
               </Route>
               <Route path="/settings">
-                <ProtectedRoute component={Settings} />
+                <RouteErrorBoundary route="settings">
+                  <ProtectedRoute component={Settings} />
+                </RouteErrorBoundary>
               </Route>
               <Route component={NotFound} />
             </Switch>

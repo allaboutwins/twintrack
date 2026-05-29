@@ -1,30 +1,14 @@
-import { useEffect, useRef, useState } from "react";
-import { useLocation } from "wouter";
-
+/**
+ * PageTransition
+ *
+ * Previously this component briefly set opacity:0 during route changes (10ms
+ * window). On slow Android devices the JS event loop can stretch that window
+ * to 100-500ms, creating a visible white flash — which some users reported as
+ * "blank white screen after logo appears".
+ *
+ * Fix: render children directly. The per-route error boundaries in App.tsx now
+ * provide crash isolation; we don't need a flash-based transition on top.
+ */
 export default function PageTransition({ children }: { children: React.ReactNode }) {
-  const [location] = useLocation();
-  const [visible, setVisible] = useState(true);
-  const prevLocation = useRef(location);
-
-  useEffect(() => {
-    if (location !== prevLocation.current) {
-      prevLocation.current = location;
-      setVisible(false);
-      const t = setTimeout(() => setVisible(true), 10);
-      return () => clearTimeout(t);
-    }
-    return undefined;
-  }, [location]);
-
-  return (
-    <div
-      style={{
-        opacity: visible ? 1 : 0,
-        transform: visible ? "translateY(0)" : "translateY(4px)",
-        transition: "opacity 0.16s ease-out, transform 0.16s ease-out",
-      }}
-    >
-      {children}
-    </div>
-  );
+  return <>{children}</>;
 }

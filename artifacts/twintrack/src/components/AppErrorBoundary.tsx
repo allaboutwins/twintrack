@@ -2,6 +2,8 @@ import { Component, type ErrorInfo, type ReactNode } from "react";
 
 interface Props {
   children: ReactNode;
+  /** Optional label shown in telemetry to identify which boundary caught the error */
+  boundary?: string;
 }
 
 interface State {
@@ -9,10 +11,33 @@ interface State {
   recovering: boolean;
 }
 
+/** POST crash details to the server so they show up in production logs. */
+function reportToServer(payload: Record<string, unknown>) {
+  try {
+    const body = JSON.stringify({
+      ...payload,
+      url: window.location.href,
+      userAgent: navigator.userAgent,
+      ts: Date.now(),
+    });
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon("/api/client-errors", new Blob([body], { type: "application/json" }));
+    } else {
+      fetch("/api/client-errors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body,
+        keepalive: true,
+      }).catch(() => {});
+    }
+  } catch { /* never crash inside the crash reporter */ }
+}
+
 /**
- * Top-level error boundary.
+ * Top-level (and per-route) error boundary.
  * Catches any React render error and shows a recovery screen instead of
- * a silent blank page. The recovery button clears all caches and reloads.
+ * a silent blank page. Reports to the server so crashes are visible in
+ * production logs.
  */
 export default class AppErrorBoundary extends Component<Props, State> {
   state: State = { error: null, recovering: false };
@@ -22,11 +47,23 @@ export default class AppErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
-    // Surface in production logs / PostHog if available
-    console.error("[AppErrorBoundary]", error, info.componentStack);
+    const boundary = this.props.boundary ?? "AppErrorBoundary";
+    console.error(`[${boundary}]`, error, info.componentStack);
+
+    // Report to server — this is how we see crashes in production
+    reportToServer({
+      type: "react_error_boundary",
+      boundary,
+      message: error.message,
+      stack: error.stack?.slice(0, 2000),
+      component: info.componentStack?.slice(0, 1000),
+    });
+
+    // PostHog (best-effort)
     try {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (window as any).posthog?.capture("app_crash", {
+        boundary,
         error: error.message,
         stack: error.stack?.slice(0, 500),
         component: info.componentStack?.slice(0, 500),

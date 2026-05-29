@@ -21,6 +21,7 @@ import statsRouter from "./stats";
 import pushRouter from "./push";
 import notificationsSchedulerRouter from "./notifications-scheduler";
 import heartbeatRouter from "./heartbeat";
+import clientErrorsRouter from "./client-errors";
 
 const router: IRouter = Router();
 
@@ -46,5 +47,6 @@ router.use(statsRouter);
 router.use(pushRouter);
 router.use(notificationsSchedulerRouter);
 router.use(heartbeatRouter);
+router.use(clientErrorsRouter);
 
 export default router;

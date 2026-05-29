@@ -43,70 +43,89 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    <!-- Inline splash/loading styles so the first paint is branded, not white -->
+    <!-- Inline splash styles: branded background before React loads -->
     <style>
       html, body { background-color: #fdf8fa; margin: 0; padding: 0; }
-      #root:empty::after {
-        content: '';
-        display: block;
-        position: fixed;
-        inset: 0;
-        background: #fdf8fa;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-      }
     </style>
 
-    <!-- Last-resort blank-screen detector.
-         If #root still has no child elements after 5 seconds, ALL rendering
-         has failed (React crash before boundary, Clerk issue, SW chunk loss,
-         Facebook WebView quirk, etc). Show a branded recovery screen inline —
-         no JS framework required, always works. -->
     <script>
-      setTimeout(function() {
-        var root = document.getElementById('root');
-        if (!root || root.children.length > 0) return;
-        root.innerHTML = [
-          '<div style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;',
-          'justify-content:center;background:#fdf8fa;font-family:Quicksand,sans-serif;',
-          'text-align:center;padding:32px;box-sizing:border-box;">',
-          '<div style="font-size:52px;margin-bottom:20px;">🍒</div>',
-          '<p style="font-size:19px;font-weight:700;color:#1a4a50;margin:0 0 10px;">',
-          'TwinTrack couldn\'t load</p>',
-          '<p style="font-size:14px;color:#6b9ea5;margin:0 0 32px;max-width:290px;line-height:1.6;">',
-          'This can happen after an update or in certain browsers. ',
-          'Tap below — it fixes it almost every time.</p>',
-          '<button onclick="(function(){',
-            'sessionStorage.clear();',
-            'if(\'serviceWorker\'in navigator)navigator.serviceWorker.getRegistrations()',
-              '.then(function(r){r.forEach(function(x){x.unregister();});});',
-            'if(\'caches\'in window)caches.keys()',
-              '.then(function(k){k.forEach(function(c){caches.delete(c);});});',
-            'setTimeout(function(){window.location.reload();},400);',
-          '})()" ',
-          'style="background:#da5a9f;color:white;border:none;padding:16px 40px;',
-          'border-radius:16px;font-size:16px;font-weight:700;cursor:pointer;',
-          'font-family:Quicksand,sans-serif;box-shadow:0 4px 20px rgba(218,90,159,0.35);">',
-          'Reload TwinTrack</button>',
-          '<p style="font-size:12px;color:#b0b0b0;margin-top:24px;">',
-          'Still stuck? Open this link in Safari or Chrome.</p>',
-          '</div>',
-        ].join('');
-      }, 5000);
-    </script>
+    (function() {
+      'use strict';
 
-    <!-- Stale-cache / blank-page recovery.
-         After a new deployment the service worker may still serve the old HTML
-         which references hashed JS chunks that no longer exist → silent 404s →
-         blank screen. Two failure modes are handled:
-         1. Resource load error  → window 'error' event (capture phase)
-         2. Dynamic import() fail → unhandledrejection (Vite code-split modules)
-         Guard: only wipe once per session to avoid a reload loop. -->
-    <script>
+      /* ─── 1. Telemetry ─────────────────────────────────────────────────────
+         Sends crash reports to the server BEFORE React loads.
+         Uses sendBeacon (fire-and-forget, survives page unload) with fetch as
+         fallback. All fields are clamped to avoid oversized payloads.        */
+
+      function _ttReport(payload) {
+        try {
+          payload.userAgent = (navigator.userAgent || '').slice(0, 500);
+          payload.url       = (window.location.href || '').slice(0, 300);
+          payload.ts        = Date.now();
+          var body = JSON.stringify(payload);
+          var url  = '/api/client-errors';
+          if (navigator.sendBeacon) {
+            navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }));
+          } else {
+            fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: body, keepalive: true }).catch(function(){});
+          }
+        } catch(e) { /* never crash the crash reporter */ }
+      }
+
+      /* ─── 2. Global JS error capture ──────────────────────────────────────
+         Catches synchronous errors that escape all try/catch blocks.         */
+      window.onerror = function(msg, src, line, col, err) {
+        _ttReport({
+          type:    'window.onerror',
+          message: String(msg || '').slice(0, 500),
+          source:  String(src  || '').slice(0, 200),
+          line:    line,
+          col:     col,
+          stack:   (err && err.stack) ? err.stack.slice(0, 2000) : '',
+        });
+        return false; // don't suppress default console output
+      };
+
+      /* ─── 3. Unhandled promise rejection capture ───────────────────────────
+         Catches dynamic import() failures and uncaught async errors.
+         Also triggers stale-cache recovery for chunk 404s.                  */
+      window.addEventListener('unhandledrejection', function(e) {
+        var reason = e.reason || {};
+        var msg = (reason.message || String(reason) || '').slice(0, 500);
+        _ttReport({
+          type:    'unhandledrejection',
+          message: msg,
+          stack:   (reason.stack || '').slice(0, 2000),
+        });
+        // Stale-chunk recovery
+        if (
+          msg.includes('dynamically imported module') ||
+          msg.includes('Failed to fetch') ||
+          msg.includes('Importing a module script failed') ||
+          msg.includes('Loading chunk') ||
+          msg.includes('error loading')
+        ) {
+          _ttCacheBust();
+        }
+      });
+
+      /* ─── 4. Script/link resource 404 capture ──────────────────────────── */
+      window.addEventListener('error', function(e) {
+        var target = e.target;
+        var src = (target && (target.src || target.href)) || '';
+        var isChunk = src && (src.includes('/assets/') || /\.[0-9a-f]{8}\.(js|css)$/.test(src));
+        if (isChunk) {
+          _ttReport({ type: 'resource_404', message: 'Chunk 404: ' + src.slice(0, 200) });
+          _ttCacheBust();
+        }
+      }, true);
+
+      /* ─── 5. Stale-cache bust ──────────────────────────────────────────────
+         Wipes SW registrations + all caches then reloads once per session.  */
       function _ttCacheBust() {
         if (sessionStorage.getItem('tt_cache_bust')) return;
         sessionStorage.setItem('tt_cache_bust', '1');
+        _ttReport({ type: 'cache_bust', message: 'Triggering stale-cache recovery' });
         (async function() {
           try {
             if ('serviceWorker' in navigator) {
@@ -123,28 +142,84 @@
         })();
       }
 
-      // 1. Script/link resource load failures (e.g. <script src="..."> 404)
-      window.addEventListener('error', function(e) {
-        var src = (e.target && e.target.src) || (e.target && e.target.href) || '';
-        var isChunk = src && (src.includes('/assets/') || /\.[0-9a-f]{8}\.(js|css)$/.test(src));
-        if (isChunk) _ttCacheBust();
-      }, true /* capture phase catches resource errors */);
+      /* ─── 6. Persistent blank-screen detector ─────────────────────────────
+         The old one-shot 5-second timer had a fatal race: if #root had the
+         loading spinner at t=5s (it almost always does), the timer exited.
+         Then the real crash happened at t=6-8s and NOTHING recovered it.
 
-      // 2. Dynamic import() rejections — Vite splits routes into async chunks;
-      //    if the SW serves a stale manifest these imports throw a Promise rejection
-      //    that never becomes a window 'error' event.
-      window.addEventListener('unhandledrejection', function(e) {
-        var msg = (e.reason && (e.reason.message || String(e.reason))) || '';
-        if (
-          msg.includes('dynamically imported module') ||
-          msg.includes('Failed to fetch') ||
-          msg.includes('Importing a module script failed') ||
-          msg.includes('Loading chunk') ||
-          msg.includes('error loading')
-        ) {
-          _ttCacheBust();
+         Fix: use MutationObserver + periodic poll so we detect the moment
+         #root becomes empty AFTER having content — which is exactly the
+         "crash after first render" signature on Android.                     */
+
+      var _ttHadContent  = false;
+      var _ttRecovered   = false;
+      var _ttStartMs     = Date.now();
+
+      function _ttShowRecovery(reason) {
+        if (_ttRecovered) return;
+        _ttRecovered = true;
+        _ttReport({ type: 'blank_screen_recovery', message: reason || 'blank screen detected' });
+        var root = document.getElementById('root');
+        if (!root) return;
+        root.innerHTML = [
+          '<div id="tt-recovery" style="position:fixed;inset:0;display:flex;flex-direction:column;',
+          'align-items:center;justify-content:center;background:#fdf8fa;',
+          'font-family:Quicksand,sans-serif;text-align:center;padding:32px;box-sizing:border-box;">',
+          '<div style="font-size:52px;margin-bottom:20px;">🍒</div>',
+          '<p style="font-size:19px;font-weight:700;color:#1a4a50;margin:0 0 10px;">',
+          'TwinTrack couldn\'t load</p>',
+          '<p style="font-size:14px;color:#6b9ea5;margin:0 0 8px;max-width:290px;line-height:1.6;">',
+          'This can happen after an update or in certain browsers.</p>',
+          '<p style="font-size:12px;color:#b0b0b0;margin:0 0 28px;max-width:290px;line-height:1.5;">',
+          reason ? ('(' + reason.slice(0, 80) + ')') : '', '</p>',
+          '<button onclick="(function(){',
+            'sessionStorage.clear();',
+            'if(\'serviceWorker\'in navigator)navigator.serviceWorker.getRegistrations()',
+              '.then(function(r){r.forEach(function(x){x.unregister();});});',
+            'if(\'caches\'in window)caches.keys()',
+              '.then(function(k){k.forEach(function(c){caches.delete(c);});});',
+            'setTimeout(function(){window.location.reload(true);},400);',
+          '})()" ',
+          'style="background:#da5a9f;color:white;border:none;padding:16px 40px;',
+          'border-radius:16px;font-size:16px;font-weight:700;cursor:pointer;',
+          'font-family:Quicksand,sans-serif;box-shadow:0 4px 20px rgba(218,90,159,0.35);">',
+          'Reload TwinTrack</button>',
+          '<p style="font-size:12px;color:#b0b0b0;margin-top:24px;">',
+          'Still stuck? Open this link in Chrome or Safari.</p>',
+          '</div>',
+        ].join('');
+      }
+
+      function _ttCheck() {
+        if (_ttRecovered) return;
+        var root = document.getElementById('root');
+        if (!root) return;
+        if (root.children.length > 0) {
+          _ttHadContent = true;
+          return; // content present — all good
         }
-      });
+        var elapsed = Date.now() - _ttStartMs;
+        if (_ttHadContent) {
+          // Had content, now empty → crash after first render
+          _ttShowRecovery('app crashed after first render (elapsed: ' + elapsed + 'ms)');
+        } else if (elapsed > 10000) {
+          // Never got content in 10 seconds
+          _ttShowRecovery('app never rendered after ' + elapsed + 'ms');
+        }
+      }
+
+      // Poll every 500ms — cheap, catches crashes between Observer callbacks
+      setInterval(_ttCheck, 500);
+
+      // MutationObserver for immediate detection when content disappears
+      try {
+        var root = document.getElementById('root');
+        if (root && window.MutationObserver) {
+          new MutationObserver(_ttCheck).observe(root, { childList: true });
+        }
+      } catch(e) {}
+
+    })();
     </script>
   </head>
   <body>
