@@ -15,6 +15,7 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { PageHeader } from "@/components/Layout";
 import { Moon, Utensils, Baby, ChevronRight, Star, Heart, BarChart2, Sparkles, X, Flame, Trophy } from "lucide-react";
+import { posthog } from "@/lib/posthog";
 
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -313,28 +314,10 @@ export default function Dashboard() {
               <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
             </button>
 
-            {/* Twin AI Promo */}
-            <button
-              onClick={() => setLocation("/twin-ai")}
-              className="w-full bg-gradient-to-br from-violet-50 to-pink-50 rounded-2xl border border-violet-200/60 p-4 text-left hover:border-violet-300 active:scale-[0.99] transition-all"
-              data-testid="twin-ai-promo"
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <Sparkles size={15} className="text-violet-500 flex-shrink-0" />
-                <p className="text-xs font-bold text-violet-600 uppercase tracking-wide">Twin AI</p>
-              </div>
-              <p className="text-sm font-semibold text-foreground mb-2.5">Ask me anything about your twins</p>
-              <div className="flex flex-wrap gap-1.5">
-                {["Why won't they sync schedules?", "Sleep regression tips?", "Is their weight normal?"].map((q) => (
-                  <span key={q} className="text-[11px] bg-white/80 border border-violet-200 text-violet-700 px-2 py-0.5 rounded-full font-medium">{q}</span>
-                ))}
-              </div>
-            </button>
-
-            {/* Memory Recap */}
-            {latestMilestone && (
+            {/* Memories Card — always visible */}
+            {latestMilestone ? (
               <button
-                onClick={() => setLocation("/milestones")}
+                onClick={() => { posthog?.capture("memories_opened", { source: "home_card" }); setLocation("/milestones"); }}
                 className="w-full bg-gradient-to-br from-primary/8 to-primary/4 rounded-2xl border border-primary/20 p-4 flex items-center gap-4 text-left hover:border-primary/35 active:scale-[0.99] transition-all"
                 data-testid="memory-recap"
               >
@@ -351,7 +334,44 @@ export default function Dashboard() {
                 </div>
                 <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
               </button>
+            ) : (
+              <button
+                onClick={() => { posthog?.capture("memories_opened", { source: "home_empty_cta" }); setLocation("/milestones"); }}
+                className="w-full bg-gradient-to-br from-primary/8 to-primary/4 rounded-2xl border border-primary/20 p-4 flex items-center gap-4 text-left hover:border-primary/35 active:scale-[0.99] transition-all"
+                data-testid="memory-recap-empty"
+              >
+                <div className="w-12 h-12 rounded-xl bg-white border border-primary/20 flex items-center justify-center text-2xl flex-shrink-0 shadow-sm">
+                  💕
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <Heart size={10} className="text-primary fill-primary" />
+                    <p className="text-[10px] font-bold text-primary uppercase tracking-wide">Memories</p>
+                  </div>
+                  <p className="font-semibold text-sm text-foreground leading-snug">Log your first milestone</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">First smile, first steps, first word — record it here 💕</p>
+                </div>
+                <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
+              </button>
             )}
+
+            {/* Twin AI Promo */}
+            <button
+              onClick={() => { posthog?.capture("twin_ai_discovery_card_clicked"); setLocation("/twin-ai"); }}
+              className="w-full bg-gradient-to-br from-violet-50 to-pink-50 rounded-2xl border border-violet-200/60 p-4 text-left hover:border-violet-300 active:scale-[0.99] transition-all"
+              data-testid="twin-ai-promo"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles size={15} className="text-violet-500 flex-shrink-0" />
+                <p className="text-xs font-bold text-violet-600 uppercase tracking-wide">Ask Twin AI</p>
+              </div>
+              <p className="text-sm font-semibold text-foreground mb-2.5">Your AI twin parenting companion</p>
+              <div className="flex flex-wrap gap-1.5">
+                {["How do I sync twin naps?", "My twins wake each other up", "How much should my preemie twins eat?"].map((q) => (
+                  <span key={q} className="text-[11px] bg-white/80 border border-violet-200 text-violet-700 px-2 py-0.5 rounded-full font-medium">{q}</span>
+                ))}
+              </div>
+            </button>
 
           </div>
         )}
@@ -581,6 +601,7 @@ function PollWidget({ userId }: { userId: string }) {
 
   function vote(optionKey: string) {
     if (!poll || poll.hasResponded) return;
+    posthog?.capture("poll_voted", { pollId: poll.id, optionKey });
     respond.mutate(
       { id: poll.id, data: { userId, optionKey } },
       { onSuccess: () => qc.invalidateQueries({ queryKey: getGetActivePollQueryKey({ userId }) }) },

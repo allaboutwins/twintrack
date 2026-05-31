@@ -1,0 +1,126 @@
+Latest feedback + admin improvements 💕🚀
+
+1. MILESTONES VISIBILITY
+
+New twin mom feedback:
+
+😕 Confusion:
+"Where did the milestones section go? I was really excited about that feature."
+
+Please investigate.
+
+Milestones/Memories is one of our strongest emotional features and should never feel hidden.
+
+Suggestions:
+
+* make Memories more visible from the Home page
+* add a shortcut card on Home
+* occasionally surface recent memories/milestones
+* encourage moms to add milestones naturally
+
+Goal:
+Make Memories feel like a core feature, not a hidden one.
+
+---
+
+2. ADMIN PANEL → LIVE USERS
+
+Currently I can only see:
+
+* Online now
+* Active
+* Past hour
+
+Please add:
+
+* Active today
+* Active this week
+* Active this month
+* Last 30 days
+
+Also allow deeper user insights later.
+
+---
+
+3. PUSH NOTIFICATIONS ADOPTION
+
+Current stats:
+
+* 184 onboarded users
+* 3 push subscribers
+* 2% push opt-in rate
+
+This is far too low.
+
+Please review the onboarding flow.
+
+Suggested improvement:
+
+* Ask for notification permission at the moment of highest value
+* Explain benefits clearly:
+
+  * feeding reminders
+  * sleep reminders
+  * milestone reminders
+  * daily summaries
+
+Do NOT request permission silently.
+
+Help moms understand why notifications are useful.
+
+Goal:
+Increase opt-in rate significantly.
+
+---
+
+4. TWIN AI DISCOVERY
+
+Current usage:
+✨ Twin AI Usage = 9
+
+This suggests discovery is the problem, not necessarily the feature.
+
+Please improve visibility:
+
+* Add "Ask Twin AI" card on Home
+* Add example prompts:
+
+  * "How do I sync twin naps?"
+  * "My twins wake each other up"
+  * "How much should my preemie twins eat?"
+* Show occasional AI tips
+* Add a badge/new indicator for users who have never opened Twin AI
+
+Goal:
+Help moms discover and try the feature naturally.
+
+---
+
+5. UPDATE CENTER
+
+Please simplify the Update Center.
+
+Show:
+
+* latest 3 updates only
+
+Then add:
+"Show more"
+
+This keeps the experience clean and easier to scan.
+
+---
+
+6. ANALYTICS REQUEST
+
+Please add click tracking for:
+
+* Memories opens
+* Milestone creation
+* Academy clicks
+* Magazine opens
+* Poll participation
+* Twin AI prompts sent
+* Notification Center opens
+
+This will help us understand what moms truly value and what deserves future premium investment.

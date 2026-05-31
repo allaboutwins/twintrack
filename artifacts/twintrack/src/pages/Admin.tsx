@@ -104,6 +104,10 @@ interface LiveUsersData {
   recent: LiveUserEntry[];
   lastHour: LiveUserEntry[];
   total: number;
+  activeToday: number;
+  activeThisWeek: number;
+  activeThisMonth: number;
+  last30Days: number;
 }
 
 const LABELS: Record<string, Record<string, string>> = {
@@ -492,7 +496,7 @@ export default function Admin() {
           <section>
             <SectionHeader icon={<Activity size={16} />} title="Live Users" />
             <div className="bg-white rounded-2xl border border-border p-4 space-y-3">
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-3 gap-3 mb-3">
                 <div className="rounded-xl bg-green-50 border border-green-200 p-3 text-center">
                   <div className="flex items-center justify-center gap-1.5 mb-0.5">
                     <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
@@ -510,6 +514,24 @@ export default function Admin() {
                   <p className="text-xs text-muted-foreground font-semibold mb-0.5">Past hour</p>
                   <p className="text-2xl font-bold text-foreground">{liveUsers?.total ?? "—"}</p>
                   <p className="text-xs text-muted-foreground">unique users</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-4 gap-2">
+                <div className="rounded-xl bg-violet-50 border border-violet-200 p-2.5 text-center">
+                  <p className="text-xs text-violet-600 font-semibold mb-0.5">Today</p>
+                  <p className="text-xl font-bold text-violet-700">{liveUsers?.activeToday ?? "—"}</p>
+                </div>
+                <div className="rounded-xl bg-indigo-50 border border-indigo-200 p-2.5 text-center">
+                  <p className="text-xs text-indigo-600 font-semibold mb-0.5">This week</p>
+                  <p className="text-xl font-bold text-indigo-700">{liveUsers?.activeThisWeek ?? "—"}</p>
+                </div>
+                <div className="rounded-xl bg-sky-50 border border-sky-200 p-2.5 text-center">
+                  <p className="text-xs text-sky-600 font-semibold mb-0.5">This month</p>
+                  <p className="text-xl font-bold text-sky-700">{liveUsers?.activeThisMonth ?? "—"}</p>
+                </div>
+                <div className="rounded-xl bg-teal-50 border border-teal-200 p-2.5 text-center">
+                  <p className="text-xs text-teal-600 font-semibold mb-0.5">30 days</p>
+                  <p className="text-xl font-bold text-teal-700">{liveUsers?.last30Days ?? "—"}</p>
                 </div>
               </div>
               {liveUsers && liveUsers.total > 0 && (

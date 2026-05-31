@@ -77,21 +77,22 @@ export default function PushPermissionPrompt({ onGrant }: Props) {
           </div>
 
           <div>
-            <h2 className="text-lg font-bold text-foreground">Stay in the loop</h2>
+            <h2 className="text-lg font-bold text-foreground">Never miss a moment 💕</h2>
             <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-              Get gentle reminders for feeds, nap times, and daily summaries — so nothing slips through the cracks.
+              Turn on notifications so TwinTrack can support you at exactly the right time — not just when you remember to open the app.
             </p>
           </div>
 
           <div className="w-full space-y-2 text-left mt-1">
             {[
-              { emoji: "⏰", text: "Feed & nap reminders" },
-              { emoji: "📊", text: "Daily twin summary at 8 PM" },
-              { emoji: "💕", text: "Milestone & routine nudges" },
+              { emoji: "🍼", text: "Feeding reminders when it's time to nurse or bottle-feed" },
+              { emoji: "😴", text: "Sleep window alerts to help sync both twins" },
+              { emoji: "⭐", text: "Milestone nudges so you never forget to log a first" },
+              { emoji: "📊", text: "Daily twin summary every evening at 8 PM" },
             ].map(({ emoji, text }) => (
-              <div key={text} className="flex items-center gap-3 py-2 px-3 bg-muted/30 rounded-xl">
-                <span className="text-lg leading-none">{emoji}</span>
-                <span className="text-sm font-medium text-foreground">{text}</span>
+              <div key={text} className="flex items-start gap-3 py-2 px-3 bg-muted/30 rounded-xl">
+                <span className="text-lg leading-none flex-shrink-0">{emoji}</span>
+                <span className="text-sm font-medium text-foreground leading-snug">{text}</span>
               </div>
             ))}
           </div>

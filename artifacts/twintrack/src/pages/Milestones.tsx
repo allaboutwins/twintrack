@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useUser } from "@clerk/react";
+import { posthog } from "@/lib/posthog";
 import {
   useListMilestones,
   useCreateMilestone,
@@ -472,6 +473,7 @@ export default function Milestones() {
       },
       {
         onSuccess: () => {
+          posthog?.capture("milestone_created", { category: form.category });
           qc.invalidateQueries({ queryKey: getListMilestonesQueryKey({ userId: user.id }) });
           setShowModal(false);
           const enc = ENCOURAGEMENTS[Math.floor(Math.random() * ENCOURAGEMENTS.length)];

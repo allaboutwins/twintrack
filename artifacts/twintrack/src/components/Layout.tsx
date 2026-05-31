@@ -143,10 +143,15 @@ const ALL_TABS = [
   { path: "/learn", icon: GraduationCap, label: "Learn" },
 ];
 
+const TWIN_AI_OPENED_KEY = "tt_twin_ai_opened";
+
 export default function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [showNotifications, setShowNotifications] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [twinAiOpened, setTwinAiOpened] = useState(() => {
+    try { return !!localStorage.getItem(TWIN_AI_OPENED_KEY); } catch { return false; }
+  });
   const { user } = useUser();
   const { prefs } = useAppPrefs();
   const baseUrl = useRef((import.meta.env.BASE_URL ?? "/").replace(/\/$/, "")).current;
@@ -164,6 +169,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }, [user?.id, baseUrl]);
 
   function openNotifications() {
+    posthog?.capture("notification_center_opened");
     setShowNotifications(true);
   }
 
@@ -228,11 +234,19 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className="flex items-center justify-around px-1 py-1.5">
           {tabs.map(({ path, icon: Icon, label, highlight }) => {
             const active = location === path || location.startsWith(path + "/");
+            const isTwinAi = path === "/twin-ai";
+            const showNewBadge = isTwinAi && !twinAiOpened && !active;
             return (
               <Link
                 key={path}
                 to={path}
-                onClick={() => posthog?.capture("nav_tab_clicked", { tab: label })}
+                onClick={() => {
+                  posthog?.capture("nav_tab_clicked", { tab: label });
+                  if (isTwinAi && !twinAiOpened) {
+                    try { localStorage.setItem(TWIN_AI_OPENED_KEY, "1"); } catch {}
+                    setTwinAiOpened(true);
+                  }
+                }}
                 className={`flex flex-col items-center gap-0.5 px-1.5 py-1.5 rounded-xl transition-all flex-1 ${
                   active
                     ? "text-primary"
@@ -245,7 +259,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 {highlight && !active ? (
                   <div className="relative">
                     <Icon size={20} className="transition-transform" strokeWidth={1.8} />
-                    <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-violet-400" />
+                    {showNewBadge ? (
+                      <span className="absolute -top-1 -right-2 bg-violet-500 text-white text-[7px] font-bold px-1 py-0.5 rounded-full leading-none">NEW</span>
+                    ) : (
+                      <span className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-violet-400" />
+                    )}
                   </div>
                 ) : (
                   <Icon

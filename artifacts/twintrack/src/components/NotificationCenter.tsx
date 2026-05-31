@@ -28,6 +28,7 @@ function WhatsNewCard() {
   const [dismissed, setDismissed] = useState(() => {
     try { return !!localStorage.getItem(WHATS_NEW_KEY); } catch { return false; }
   });
+  const [expanded, setExpanded] = useState(false);
 
   if (dismissed) return null;
 
@@ -35,6 +36,9 @@ function WhatsNewCard() {
     try { localStorage.setItem(WHATS_NEW_KEY, "1"); } catch {}
     setDismissed(true);
   }
+
+  const visible = expanded ? WHATS_NEW_UPDATES : WHATS_NEW_UPDATES.slice(0, 3);
+  const hasMore = WHATS_NEW_UPDATES.length > 3;
 
   return (
     <div className="mx-4 mt-3 mb-1 rounded-2xl border border-primary/20 bg-primary/4 overflow-hidden">
@@ -52,12 +56,20 @@ function WhatsNewCard() {
         </button>
       </div>
       <div className="px-4 pb-3 space-y-1.5 mt-1">
-        {WHATS_NEW_UPDATES.map(({ icon, text }) => (
+        {visible.map(({ icon, text }) => (
           <div key={text} className="flex items-start gap-2">
             <span className="text-sm leading-none mt-0.5 flex-shrink-0">{icon}</span>
             <p className="text-xs text-foreground leading-snug">{text}</p>
           </div>
         ))}
+        {hasMore && !expanded && (
+          <button
+            onClick={() => setExpanded(true)}
+            className="text-[10px] font-semibold text-primary mt-1 hover:underline"
+          >
+            Show more →
+          </button>
+        )}
       </div>
     </div>
   );

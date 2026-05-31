@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Sparkles, Send, RotateCcw, AlertCircle, ThumbsUp, ThumbsDown } from "lucide-react";
 import Layout from "@/components/Layout";
+import { posthog } from "@/lib/posthog";
 
 interface Message {
   role: "user" | "assistant";
@@ -158,6 +159,8 @@ export default function TwinAI() {
   async function sendMessage(text: string, category?: string) {
     const trimmed = text.trim();
     if (!trimmed || isStreaming || limitReached) return;
+
+    posthog?.capture("twin_ai_prompt_sent", { category: category ?? "general", promptLength: trimmed.length });
 
     setStreamError(null);
     const userMessage: Message = { role: "user", content: trimmed };

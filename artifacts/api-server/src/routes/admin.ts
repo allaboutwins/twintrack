@@ -224,13 +224,19 @@ router.get("/admin/live-users", async (req, res): Promise<void> => {
     return;
   }
 
-  const rows = await db.execute(sql`
-    SELECT user_id, last_seen, current_page
-    FROM user_heartbeats
-    WHERE last_seen >= NOW() - INTERVAL '60 minutes'
-    ORDER BY last_seen DESC
-    LIMIT 200
-  `);
+  const [rows, todayRes, weekRes, monthRes, last30Res] = await Promise.all([
+    db.execute(sql`
+      SELECT user_id, last_seen, current_page
+      FROM user_heartbeats
+      WHERE last_seen >= NOW() - INTERVAL '60 minutes'
+      ORDER BY last_seen DESC
+      LIMIT 200
+    `),
+    db.execute(sql`SELECT COUNT(*) AS cnt FROM user_heartbeats WHERE last_seen >= DATE_TRUNC('day', NOW())`),
+    db.execute(sql`SELECT COUNT(*) AS cnt FROM user_heartbeats WHERE last_seen >= NOW() - INTERVAL '7 days'`),
+    db.execute(sql`SELECT COUNT(*) AS cnt FROM user_heartbeats WHERE last_seen >= DATE_TRUNC('month', NOW())`),
+    db.execute(sql`SELECT COUNT(*) AS cnt FROM user_heartbeats WHERE last_seen >= NOW() - INTERVAL '30 days'`),
+  ]);
 
   const now = Date.now();
   const users = (rows.rows as { user_id: string; last_seen: string; current_page: string }[]).map(
@@ -242,11 +248,17 @@ router.get("/admin/live-users", async (req, res): Promise<void> => {
     }),
   );
 
+  const toNum = (r: { rows: unknown[] }) => Number((r.rows[0] as { cnt: string }).cnt ?? 0);
+
   res.json({
     online: users.filter((u) => u.minutesAgo <= 5),
     recent: users.filter((u) => u.minutesAgo > 5 && u.minutesAgo <= 30),
     lastHour: users.filter((u) => u.minutesAgo > 30),
     total: users.length,
+    activeToday: toNum(todayRes),
+    activeThisWeek: toNum(weekRes),
+    activeThisMonth: toNum(monthRes),
+    last30Days: toNum(last30Res),
   });
 });
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useUser } from "@clerk/react";
+import { posthog } from "@/lib/posthog";
 import { FaInstagram, FaYoutube, FaFacebook, FaTiktok, FaPinterest } from "react-icons/fa";
 import {
   useGetActivePoll,
@@ -153,7 +154,7 @@ function MagazineLibrary() {
         {MAGAZINES.map((mag) => (
           <button
             key={mag.id}
-            onClick={() => setSelected(mag)}
+            onClick={() => { posthog?.capture("magazine_opened", { issue: mag.id }); setSelected(mag); }}
             className="block rounded-2xl overflow-hidden shadow-sm active:scale-[0.97] transition-all text-left w-full"
             data-testid={`magazine-${mag.id}`}
           >
@@ -596,7 +597,7 @@ export default function Learn() {
         ].map(({ key, label }) => (
           <button
             key={key}
-            onClick={() => setActiveTab(key as typeof activeTab)}
+            onClick={() => { posthog?.capture("learn_tab_clicked", { tab: key }); setActiveTab(key as typeof activeTab); }}
             className={`px-4 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap flex-shrink-0 ${
               activeTab === key ? "bg-primary text-white" : "bg-muted text-muted-foreground"
             }`}
