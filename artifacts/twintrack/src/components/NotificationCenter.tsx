@@ -19,7 +19,6 @@ const BASE_URL = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
 const WHATS_NEW_KEY = "tt_whats_new_v3";
 const WHATS_NEW_UPDATES = [
   { icon: "📊", text: "Stats tab — daily & weekly charts for sleep, feeds, and diapers" },
-  { icon: "🟢", text: "Live user presence — admins can now see who's online in real time" },
   { icon: "🛡️", text: "Blank-screen recovery — automatic fix screen if the app fails to load" },
   { icon: "🔔", text: "Smart notification scheduler — quiet hours and context-aware reminders" },
 ];

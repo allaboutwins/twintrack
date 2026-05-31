@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useUser } from "@clerk/react";
 import { posthog } from "@/lib/posthog";
+import logoAatUrl from "../assets/logo-aat.png";
 import {
   useListMilestones,
   useCreateMilestone,
@@ -64,7 +65,7 @@ function wrapTextLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: nu
 async function createShareCard(
   milestone: { title: string; category: string; achievedDate: string; note?: string | null; photoUrl?: string | null; twinId: number },
   twin: { name: string; label: string; colorTheme: string } | undefined,
-  preset: { emoji: string } | undefined,
+  _preset: { emoji: string } | undefined,
 ): Promise<Blob | null> {
   const W = 1080;
   const H = 1080;
@@ -75,15 +76,17 @@ async function createShareCard(
   if (!ctx) return null;
 
   const twinColor = twin?.colorTheme ?? "#da5a9f";
-  const twinName = twin?.name || twin?.label || "Our twins";
-  const emoji = preset?.emoji ?? "⭐";
+  const twinName = twin?.name || twin?.label || "Our Twins";
   const hexToRgb = (hex: string) => ({
     r: parseInt(hex.slice(1, 3), 16),
     g: parseInt(hex.slice(3, 5), 16),
     b: parseInt(hex.slice(5, 7), 16),
   });
   const rgb = hexToRgb(twinColor);
+  const SERIF = `Georgia, "Times New Roman", serif`;
+  const SANS = `-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
 
+  // Load photo
   let photoImg: HTMLImageElement | null = null;
   let photoBlobUrl: string | null = null;
   if (milestone.photoUrl) {
@@ -104,39 +107,60 @@ async function createShareCard(
     } catch { photoImg = null; }
   }
 
+  // Load AAT logo
+  let aatLogo: HTMLImageElement | null = null;
+  try {
+    aatLogo = await new Promise<HTMLImageElement>((res, rej) => {
+      const img = new Image();
+      img.onload = () => res(img);
+      img.onerror = rej;
+      img.src = logoAatUrl;
+    });
+  } catch { aatLogo = null; }
+
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, W, H);
 
-  if (photoImg) {
-    const HEADER_H = 280;
-    const PHOTO_H = 600;
-    const FOOTER_H = 200;
+  // Shared helper: draw bottom branding row inside a footer rect
+  const c = ctx;
+  function drawBranding(footerY: number, footerH: number, onDark: boolean) {
+    const midY = footerY + footerH - 44;
+    c.save();
+    c.textAlign = "left";
+    c.textBaseline = "middle";
+    c.fillStyle = onDark ? "rgba(255,255,255,0.5)" : `rgba(${rgb.r},${rgb.g},${rgb.b},0.45)`;
+    c.font = `400 24px ${SANS}`;
+    c.fillText("Made with TwinTrack 💕", 38, midY);
+    c.restore();
+    if (aatLogo) {
+      const logoH = 52;
+      const logoW = Math.round((aatLogo.width / aatLogo.height) * logoH);
+      c.globalAlpha = onDark ? 0.7 : 0.55;
+      c.drawImage(aatLogo, W - 38 - logoW, midY - logoH / 2, logoW, logoH);
+      c.globalAlpha = 1;
+    }
+  }
 
-    const grad = ctx.createLinearGradient(0, 0, 0, HEADER_H);
-    grad.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},1)`);
-    grad.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0.75)`);
-    ctx.fillStyle = grad;
+  if (photoImg) {
+    const HEADER_H = 88;
+    const FOOTER_H = 230;
+    const PHOTO_H = H - HEADER_H - FOOTER_H; // 762
+
+    // ── Thin top band ──
+    const topGrad = ctx.createLinearGradient(0, 0, 0, HEADER_H);
+    topGrad.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},0.97)`);
+    topGrad.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0.80)`);
+    ctx.fillStyle = topGrad;
     ctx.fillRect(0, 0, W, HEADER_H);
 
-    ctx.font = "90px serif";
+    // Twin name · date in header
+    ctx.fillStyle = "rgba(255,255,255,0.93)";
+    ctx.font = `500 30px ${SANS}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(emoji, W / 2, 95);
+    ctx.fillText(`${twinName}  ·  ${formatDate(milestone.achievedDate)}`, W / 2, HEADER_H / 2);
 
-    ctx.fillStyle = "#ffffff";
-    ctx.font = `bold 54px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "top";
-    const titleLines = wrapTextLines(ctx, milestone.title, W - 120);
-    let ty = 160;
-    for (const line of titleLines.slice(0, 2)) {
-      ctx.fillText(line, W / 2, ty);
-      ty += 62;
-    }
-    ctx.font = `36px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
-    ctx.fillStyle = "rgba(255,255,255,0.88)";
-    ctx.fillText(twinName, W / 2, ty + 4);
-
+    // ── Photo (hero) ──
     const aspectSrc = photoImg.width / photoImg.height;
     const aspectDst = W / PHOTO_H;
     let sx = 0, sy = 0, sw = photoImg.width, sh = photoImg.height;
@@ -149,74 +173,116 @@ async function createShareCard(
     }
     ctx.drawImage(photoImg, sx, sy, sw, sh, 0, HEADER_H, W, PHOTO_H);
 
+    // Subtle shadow fade at bottom of photo into footer
+    const photoFade = ctx.createLinearGradient(0, HEADER_H + PHOTO_H - 80, 0, HEADER_H + PHOTO_H);
+    photoFade.addColorStop(0, "rgba(255,255,255,0)");
+    photoFade.addColorStop(1, "rgba(255,255,255,0.3)");
+    ctx.fillStyle = photoFade;
+    ctx.fillRect(0, HEADER_H + PHOTO_H - 80, W, 80);
+
+    // ── Footer ──
     const footerY = HEADER_H + PHOTO_H;
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, footerY, W, FOOTER_H);
+
+    // Thin accent rule at top of footer
     ctx.fillStyle = twinColor;
-    ctx.fillRect(0, footerY, W, 5);
+    ctx.fillRect(0, footerY, W, 3);
 
-    ctx.fillStyle = twinColor;
-    ctx.font = `bold 44px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText("Made with TwinTrack 💕", W / 2, footerY + 90);
-    ctx.fillStyle = "#aaaaaa";
-    ctx.font = `30px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
-    ctx.fillText("All About Twins", W / 2, footerY + 152);
-  } else {
-    const grad = ctx.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, "#ffffff");
-    grad.addColorStop(0.65, `rgba(${rgb.r},${rgb.g},${rgb.b},0.07)`);
-    grad.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0.14)`);
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
-
-    ctx.fillStyle = twinColor;
-    ctx.fillRect(0, 0, W, 18);
-
-    ctx.font = "190px serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(emoji, W / 2, 290);
-
-    ctx.fillStyle = "#1a1a2e";
-    ctx.font = `bold 70px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+    // Title in elegant serif
+    ctx.fillStyle = "#18181b";
+    ctx.font = `bold 50px ${SERIF}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
-    const titleLines = wrapTextLines(ctx, milestone.title, W - 160);
-    let y = 440;
-    for (const line of titleLines.slice(0, 3)) {
-      ctx.fillText(line, W / 2, y);
-      y += 80;
+    const titleLines = wrapTextLines(ctx, milestone.title, W - 120);
+    let ty = footerY + 28;
+    for (const line of titleLines.slice(0, 2)) {
+      ctx.fillText(line, W / 2, ty);
+      ty += 60;
     }
 
+    drawBranding(footerY, FOOTER_H, false);
+  } else {
+    // ── No-photo: elegant minimal layout ──
+    const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+    bgGrad.addColorStop(0, "#faf9f8");
+    bgGrad.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0.07)`);
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    // Top accent line
     ctx.fillStyle = twinColor;
-    ctx.font = `bold 52px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
-    ctx.fillText(twinName, W / 2, y + 18);
-    y += 82;
+    ctx.fillRect(0, 0, W, 10);
 
+    // Bottom accent line
+    ctx.fillStyle = twinColor;
+    ctx.fillRect(0, H - 10, W, 10);
+
+    // Small decorative dots
+    ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.22)`;
+    for (let i = 0; i < 5; i++) {
+      ctx.beginPath();
+      ctx.arc(W / 2 - 40 + i * 20, 290, 5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Title (large Georgia serif)
+    ctx.fillStyle = "#18181b";
+    ctx.font = `bold 72px ${SERIF}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    const titleLines = wrapTextLines(ctx, milestone.title, W - 180);
+    let y = 340;
+    for (const line of titleLines.slice(0, 3)) {
+      ctx.fillText(line, W / 2, y);
+      y += 88;
+    }
+
+    // Thin decorative rule
+    ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.32)`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(W / 2 - 90, y + 22);
+    ctx.lineTo(W / 2 + 90, y + 22);
+    ctx.stroke();
+
+    // Twin name
+    ctx.fillStyle = twinColor;
+    ctx.font = `600 48px ${SANS}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    ctx.fillText(twinName, W / 2, y + 50);
+
+    // Date
     ctx.fillStyle = "#999999";
-    ctx.font = `40px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
-    ctx.fillText(formatDate(milestone.achievedDate), W / 2, y + 14);
-    y += 68;
+    ctx.font = `36px ${SANS}`;
+    ctx.fillText(formatDate(milestone.achievedDate), W / 2, y + 114);
 
-    if (milestone.note && y < 820) {
+    // Note
+    if (milestone.note) {
       ctx.fillStyle = "#666666";
-      ctx.font = `italic 36px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
-      const noteLines = wrapTextLines(ctx, `"${milestone.note}"`, W - 200);
+      ctx.font = `italic 33px ${SERIF}`;
+      const noteLines = wrapTextLines(ctx, `"${milestone.note}"`, W - 220);
+      let ny = y + 178;
       for (const line of noteLines.slice(0, 2)) {
-        ctx.fillText(line, W / 2, y + 12);
-        y += 52;
+        ctx.fillText(line, W / 2, ny);
+        ny += 50;
       }
     }
 
-    ctx.fillStyle = twinColor;
-    ctx.fillRect(0, H - 130, W, 130);
-    ctx.fillStyle = "#ffffff";
-    ctx.font = `bold 46px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
-    ctx.textAlign = "center";
+    // Branding at bottom
+    ctx.textAlign = "left";
     ctx.textBaseline = "middle";
-    ctx.fillText("Made with TwinTrack 💕", W / 2, H - 65);
+    ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.45)`;
+    ctx.font = `400 24px ${SANS}`;
+    ctx.fillText("Made with TwinTrack 💕", 38, H - 54);
+    if (aatLogo) {
+      const logoH = 52;
+      const logoW = Math.round((aatLogo.width / aatLogo.height) * logoH);
+      ctx.globalAlpha = 0.55;
+      ctx.drawImage(aatLogo, W - 38 - logoW, H - 54 - logoH / 2, logoW, logoH);
+      ctx.globalAlpha = 1;
+    }
   }
 
   if (photoBlobUrl) URL.revokeObjectURL(photoBlobUrl);
@@ -315,6 +381,9 @@ export default function Milestones() {
   const [encouragement, setEncouragement] = useState("");
   const [celebrationEmoji, setCelebrationEmoji] = useState("💕");
   const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationMilestone, setCelebrationMilestone] = useState<{
+    id: number; category: string; title: string; achievedDate: string; note?: string | null; photoUrl?: string | null; twinId: number;
+  } | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<number | null>(null);
 
   const [form, setForm] = useState({
@@ -472,9 +541,10 @@ export default function Milestones() {
         },
       },
       {
-        onSuccess: () => {
+        onSuccess: (data) => {
           posthog?.capture("milestone_created", { category: form.category });
           qc.invalidateQueries({ queryKey: getListMilestonesQueryKey({ userId: user.id }) });
+          setCelebrationMilestone(data as typeof celebrationMilestone);
           setShowModal(false);
           const enc = ENCOURAGEMENTS[Math.floor(Math.random() * ENCOURAGEMENTS.length)];
           setEncouragement(enc);
@@ -484,7 +554,7 @@ export default function Milestones() {
           setShowCelebration(true);
           setTimeout(() => {
             setConfetti(false);
-            setTimeout(() => setShowCelebration(false), 2200);
+            setTimeout(() => setShowCelebration(false), 4200);
           }, 3000);
         },
       },
@@ -525,7 +595,7 @@ export default function Milestones() {
       {showCelebration && (
         <div className="fixed inset-0 z-40 flex items-center justify-center p-8 pointer-events-none">
           <div
-            className="bg-white/98 border border-primary/25 rounded-3xl px-8 py-8 text-center shadow-2xl w-full max-w-sm"
+            className="pointer-events-auto bg-white/98 border border-primary/25 rounded-3xl px-8 py-8 text-center shadow-2xl w-full max-w-sm"
             style={{ animation: "fadeScaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both" }}
           >
             <style>{`
@@ -536,10 +606,21 @@ export default function Milestones() {
             `}</style>
             <div className="text-6xl mb-3" style={{ lineHeight: 1 }}>{celebrationEmoji}</div>
             <p className="font-bold text-foreground text-xl leading-snug mb-3">{encouragement}</p>
-            <div className="flex items-center justify-center gap-2">
+            <div className="flex items-center justify-center gap-2 mb-5">
               <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
               <span className="text-xs text-muted-foreground">Memory saved to your timeline</span>
             </div>
+            {celebrationMilestone && (
+              <button
+                onClick={() => handleShare(celebrationMilestone)}
+                disabled={isSharing === celebrationMilestone.id}
+                className="w-full py-3 rounded-2xl bg-primary text-white font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-60"
+                data-testid="celebration-share-btn"
+              >
+                <Share2 size={15} />
+                {isSharing === celebrationMilestone.id ? "Creating card…" : "Share this memory 💕"}
+              </button>
+            )}
           </div>
         </div>
       )}
