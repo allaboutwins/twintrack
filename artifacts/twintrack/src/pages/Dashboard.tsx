@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useUser } from "@clerk/react";
 import { useLocation } from "wouter";
 import {
@@ -124,6 +124,22 @@ export default function Dashboard() {
 
   const noTwins = !isLoading && (!summary?.twins || summary.twins.length === 0);
   const routineSuggestion = getRoutineSuggestion();
+
+  const twinA = twins.find((t) => t.label === "Twin A");
+  const memoryOfMonth = useMemo(() => {
+    if (!twinA?.birthdate) return null;
+    const months = getAgeMonths(twinA.birthdate);
+    const milestoneMonths = [1,2,3,4,5,6,7,8,9,10,11,12,15,18,21,24,30,36];
+    if (!milestoneMonths.includes(months)) return null;
+    const label =
+      months < 12 ? `${months} Month${months === 1 ? "" : "s"}` :
+      months === 12 ? "1 Year" :
+      months === 18 ? "18 Months" :
+      months === 24 ? "2 Years" :
+      months === 30 ? "30 Months" : "3 Years";
+    const emoji = months === 12 ? "🎂" : months === 24 ? "🎈" : months === 36 ? "⭐" : months <= 3 ? "🎉" : months <= 6 ? "🌸" : "🌟";
+    return { months, label, emoji, title: `Your twins are ${label} old! 🎊` };
+  }, [twinA?.birthdate]);
 
   // Compute emotional value from today's data
   const totalFeedings = summary?.twins.reduce((acc, t) => acc + t.todayFeedingCount, 0) ?? 0;
@@ -352,6 +368,30 @@ export default function Dashboard() {
                   <p className="text-xs text-muted-foreground mt-0.5">First smile, first steps, first word — record it here 💕</p>
                 </div>
                 <ChevronRight size={16} className="text-muted-foreground flex-shrink-0" />
+              </button>
+            )}
+
+            {/* Memory of the Month */}
+            {memoryOfMonth && (
+              <button
+                onClick={() => {
+                  posthog?.capture("memory_of_month_tapped", { age_months: memoryOfMonth.months, age_label: memoryOfMonth.label });
+                  setLocation("/milestones");
+                }}
+                className="w-full bg-gradient-to-br from-rose-50 to-pink-50 rounded-2xl border border-rose-200/60 p-4 flex items-center gap-4 text-left hover:border-rose-300/70 active:scale-[0.99] transition-all"
+                data-testid="memory-of-month"
+              >
+                <div className="w-12 h-12 rounded-xl bg-white border border-rose-100 flex items-center justify-center text-2xl flex-shrink-0 shadow-sm">
+                  {memoryOfMonth.emoji}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <Heart size={10} className="text-rose-500 fill-rose-500" />
+                    <p className="text-[10px] font-bold text-rose-600 uppercase tracking-wide">Memory of the Month 💕</p>
+                  </div>
+                  <p className="font-bold text-sm text-foreground leading-snug">{memoryOfMonth.title}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">Create their memory card in one tap →</p>
+                </div>
               </button>
             )}
 

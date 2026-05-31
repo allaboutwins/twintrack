@@ -13,7 +13,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { PageHeader } from "@/components/Layout";
-import { Plus, Trash2, X, Check, Camera, Share2, ImageIcon } from "lucide-react";
+import { Plus, Trash2, X, Check, Camera, Share2, ImageIcon, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 
 const MILESTONE_PRESETS = [
   { key: "first-smile", label: "First Smile", emoji: "😊" },
@@ -41,8 +41,127 @@ const ENCOURAGEMENTS = [
   "Precious. Just precious. 🥹",
 ];
 
+type CardTheme = "modern" | "minimal" | "floral" | "signature";
+
+const CARD_THEMES: { id: CardTheme; name: string; desc: string; preview: string }[] = [
+  { id: "modern", name: "Modern", desc: "Clean header · photo hero", preview: "modern" },
+  { id: "minimal", name: "Minimal", desc: "Photo first · ultra clean", preview: "minimal" },
+  { id: "floral", name: "Floral", desc: "Botanical warmth · cream", preview: "floral" },
+  { id: "signature", name: "Signature", desc: "TwinTrack branded · hearts", preview: "signature" },
+];
+
+const QUICK_PRESETS = {
+  age: [
+    { label: "1 Month Old", emoji: "🎉", key: "age-1m" },
+    { label: "2 Months Old", emoji: "🌱", key: "age-2m" },
+    { label: "3 Months Old", emoji: "☀️", key: "age-3m" },
+    { label: "4 Months Old", emoji: "🌟", key: "age-4m" },
+    { label: "5 Months Old", emoji: "💫", key: "age-5m" },
+    { label: "6 Months Old", emoji: "🎊", key: "age-6m" },
+    { label: "7 Months Old", emoji: "🌈", key: "age-7m" },
+    { label: "8 Months Old", emoji: "🌸", key: "age-8m" },
+    { label: "9 Months Old", emoji: "✨", key: "age-9m" },
+    { label: "10 Months Old", emoji: "🍀", key: "age-10m" },
+    { label: "11 Months Old", emoji: "🌙", key: "age-11m" },
+    { label: "1 Year Old", emoji: "🎂", key: "age-1y" },
+    { label: "18 Months Old", emoji: "🌻", key: "age-18m" },
+    { label: "2 Years Old", emoji: "🎈", key: "age-2y" },
+    { label: "3 Years Old", emoji: "⭐", key: "age-3y" },
+  ],
+  twin: [
+    { label: "First Twin Hug", emoji: "🤗", key: "twin-hug" },
+    { label: "Holding Hands", emoji: "🤝", key: "twin-hands" },
+    { label: "First Twin Giggle", emoji: "😂", key: "twin-giggle" },
+    { label: "Best Friends Forever", emoji: "💕", key: "twin-bff" },
+    { label: "First Bath Together", emoji: "🛁", key: "twin-bath" },
+    { label: "Tummy Time Together", emoji: "💪", key: "twin-tummy" },
+    { label: "Sleeping Together", emoji: "😴", key: "twin-sleep" },
+    { label: "First Twin Photo", emoji: "📸", key: "twin-photo" },
+  ],
+  holiday: [
+    { label: "Merry Christmas", emoji: "🎄", key: "holiday-xmas" },
+    { label: "Happy Easter", emoji: "🐰", key: "holiday-easter" },
+    { label: "Happy Halloween", emoji: "🎃", key: "holiday-halloween" },
+    { label: "Happy New Year", emoji: "🎆", key: "holiday-newyear" },
+    { label: "Mother's Day", emoji: "🌸", key: "holiday-mothers" },
+    { label: "Father's Day", emoji: "👨‍👧‍👦", key: "holiday-fathers" },
+    { label: "Valentine's Day", emoji: "❤️", key: "holiday-valentine" },
+    { label: "Happy Hanukkah", emoji: "🕎", key: "holiday-hanukkah" },
+  ],
+};
+
 function formatDate(iso: string) {
   return new Date(iso + "T00:00:00").toLocaleDateString([], { month: "long", day: "numeric", year: "numeric" });
+}
+
+function drawFloralCorner(
+  c: CanvasRenderingContext2D,
+  x: number, y: number, rotation: number,
+  rgb: { r: number; g: number; b: number },
+) {
+  c.save();
+  c.translate(x, y);
+  c.rotate(rotation);
+  for (let i = 0; i < 5; i++) {
+    const ang = (i * Math.PI * 2) / 5;
+    c.save();
+    c.rotate(ang);
+    c.beginPath();
+    c.ellipse(52, 0, 34, 17, 0, 0, Math.PI * 2);
+    c.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.13)`;
+    c.fill();
+    c.restore();
+  }
+  c.beginPath();
+  c.arc(0, 0, 18, 0, Math.PI * 2);
+  c.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.22)`;
+  c.fill();
+  for (let i = 0; i < 3; i++) {
+    const la = Math.PI * 0.3 + (i * Math.PI * 2) / 3;
+    c.save();
+    c.rotate(la);
+    c.beginPath();
+    c.moveTo(18, 0);
+    c.bezierCurveTo(42, -14, 88, -4, 110, 0);
+    c.bezierCurveTo(88, 4, 42, 14, 18, 0);
+    c.fillStyle = "rgba(100,148,75,0.16)";
+    c.fill();
+    c.restore();
+  }
+  c.save();
+  c.translate(92, -72);
+  for (let i = 0; i < 5; i++) {
+    const ang = (i * Math.PI * 2) / 5;
+    c.save();
+    c.rotate(ang);
+    c.beginPath();
+    c.ellipse(26, 0, 18, 10, 0, 0, Math.PI * 2);
+    c.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.10)`;
+    c.fill();
+    c.restore();
+  }
+  c.beginPath();
+  c.arc(0, 0, 10, 0, Math.PI * 2);
+  c.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.18)`;
+  c.fill();
+  c.restore();
+  c.restore();
+}
+
+function drawHeartAt(
+  c: CanvasRenderingContext2D,
+  x: number, y: number, size: number, color: string, alpha: number,
+) {
+  c.save();
+  c.globalAlpha = alpha;
+  c.fillStyle = color;
+  c.beginPath();
+  c.moveTo(x, y + size * 0.3);
+  c.bezierCurveTo(x - size * 0.5, y - size * 0.15, x - size * 0.92, y + size * 0.28, x, y + size * 0.92);
+  c.bezierCurveTo(x + size * 0.92, y + size * 0.28, x + size * 0.5, y - size * 0.15, x, y + size * 0.3);
+  c.closePath();
+  c.fill();
+  c.restore();
 }
 
 function wrapTextLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number): string[] {
@@ -66,6 +185,7 @@ async function createShareCard(
   milestone: { title: string; category: string; achievedDate: string; note?: string | null; photoUrl?: string | null; twinId: number },
   twin: { name: string; label: string; colorTheme: string } | undefined,
   _preset: { emoji: string } | undefined,
+  theme: CardTheme = "modern",
 ): Promise<Blob | null> {
   const W = 1080;
   const H = 1080;
@@ -86,7 +206,6 @@ async function createShareCard(
   const SERIF = `Georgia, "Times New Roman", serif`;
   const SANS = `-apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
 
-  // Load photo
   let photoImg: HTMLImageElement | null = null;
   let photoBlobUrl: string | null = null;
   if (milestone.photoUrl) {
@@ -107,7 +226,6 @@ async function createShareCard(
     } catch { photoImg = null; }
   }
 
-  // Load AAT logo
   let aatLogo: HTMLImageElement | null = null;
   try {
     aatLogo = await new Promise<HTMLImageElement>((res, rej) => {
@@ -121,8 +239,18 @@ async function createShareCard(
   ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, W, H);
 
-  // Shared helper: draw bottom branding row inside a footer rect
   const c = ctx;
+
+  function coverPhoto(px: number, py: number, pw: number, ph: number) {
+    if (!photoImg) return;
+    const ar = photoImg.width / photoImg.height;
+    const dr = pw / ph;
+    let sx = 0, sy = 0, sw = photoImg.width, sh = photoImg.height;
+    if (ar > dr) { sw = Math.round(photoImg.height * dr); sx = Math.round((photoImg.width - sw) / 2); }
+    else { sh = Math.round(photoImg.width / dr); sy = Math.round((photoImg.height - sh) / 2); }
+    c.drawImage(photoImg, sx, sy, sw, sh, px, py, pw, ph);
+  }
+
   function drawBranding(footerY: number, footerH: number, onDark: boolean) {
     const midY = footerY + footerH - 44;
     c.save();
@@ -133,160 +261,217 @@ async function createShareCard(
     c.fillText("Made with TwinTrack 💕", 38, midY);
     c.restore();
     if (aatLogo) {
-      const logoH = 52;
-      const logoW = Math.round((aatLogo.width / aatLogo.height) * logoH);
+      const lh = 52;
+      const lw = Math.round((aatLogo.width / aatLogo.height) * lh);
       c.globalAlpha = onDark ? 0.7 : 0.55;
-      c.drawImage(aatLogo, W - 38 - logoW, midY - logoH / 2, logoW, logoH);
+      c.drawImage(aatLogo, W - 38 - lw, midY - lh / 2, lw, lh);
       c.globalAlpha = 1;
     }
   }
 
-  if (photoImg) {
-    const HEADER_H = 88;
-    const FOOTER_H = 230;
-    const PHOTO_H = H - HEADER_H - FOOTER_H; // 762
-
-    // ── Thin top band ──
-    const topGrad = ctx.createLinearGradient(0, 0, 0, HEADER_H);
-    topGrad.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},0.97)`);
-    topGrad.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0.80)`);
-    ctx.fillStyle = topGrad;
-    ctx.fillRect(0, 0, W, HEADER_H);
-
-    // Twin name · date in header
-    ctx.fillStyle = "rgba(255,255,255,0.93)";
-    ctx.font = `500 30px ${SANS}`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText(`${twinName}  ·  ${formatDate(milestone.achievedDate)}`, W / 2, HEADER_H / 2);
-
-    // ── Photo (hero) ──
-    const aspectSrc = photoImg.width / photoImg.height;
-    const aspectDst = W / PHOTO_H;
-    let sx = 0, sy = 0, sw = photoImg.width, sh = photoImg.height;
-    if (aspectSrc > aspectDst) {
-      sw = Math.round(photoImg.height * aspectDst);
-      sx = Math.round((photoImg.width - sw) / 2);
+  // ═══════════════════════════════════════════════════════ MODERN ══
+  if (theme === "modern") {
+    if (photoImg) {
+      const HEADER_H = 88;
+      const FOOTER_H = 230;
+      const PHOTO_H = H - HEADER_H - FOOTER_H;
+      const topGrad = ctx.createLinearGradient(0, 0, 0, HEADER_H);
+      topGrad.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},0.97)`);
+      topGrad.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0.80)`);
+      ctx.fillStyle = topGrad;
+      ctx.fillRect(0, 0, W, HEADER_H);
+      ctx.fillStyle = "rgba(255,255,255,0.93)";
+      ctx.font = `500 30px ${SANS}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(`${twinName}  ·  ${formatDate(milestone.achievedDate)}`, W / 2, HEADER_H / 2);
+      coverPhoto(0, HEADER_H, W, PHOTO_H);
+      const fade = ctx.createLinearGradient(0, HEADER_H + PHOTO_H - 80, 0, HEADER_H + PHOTO_H);
+      fade.addColorStop(0, "rgba(255,255,255,0)");
+      fade.addColorStop(1, "rgba(255,255,255,0.28)");
+      ctx.fillStyle = fade;
+      ctx.fillRect(0, HEADER_H + PHOTO_H - 80, W, 80);
+      const footerY = HEADER_H + PHOTO_H;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, footerY, W, FOOTER_H);
+      ctx.fillStyle = twinColor;
+      ctx.fillRect(0, footerY, W, 3);
+      ctx.fillStyle = "#18181b";
+      ctx.font = `bold 50px ${SERIF}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "top";
+      const lines = wrapTextLines(ctx, milestone.title, W - 120);
+      let ty = footerY + 28;
+      for (const line of lines.slice(0, 2)) { ctx.fillText(line, W / 2, ty); ty += 60; }
+      drawBranding(footerY, FOOTER_H, false);
     } else {
-      sh = Math.round(photoImg.width / aspectDst);
-      sy = Math.round((photoImg.height - sh) / 2);
-    }
-    ctx.drawImage(photoImg, sx, sy, sw, sh, 0, HEADER_H, W, PHOTO_H);
-
-    // Subtle shadow fade at bottom of photo into footer
-    const photoFade = ctx.createLinearGradient(0, HEADER_H + PHOTO_H - 80, 0, HEADER_H + PHOTO_H);
-    photoFade.addColorStop(0, "rgba(255,255,255,0)");
-    photoFade.addColorStop(1, "rgba(255,255,255,0.3)");
-    ctx.fillStyle = photoFade;
-    ctx.fillRect(0, HEADER_H + PHOTO_H - 80, W, 80);
-
-    // ── Footer ──
-    const footerY = HEADER_H + PHOTO_H;
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, footerY, W, FOOTER_H);
-
-    // Thin accent rule at top of footer
-    ctx.fillStyle = twinColor;
-    ctx.fillRect(0, footerY, W, 3);
-
-    // Title in elegant serif
-    ctx.fillStyle = "#18181b";
-    ctx.font = `bold 50px ${SERIF}`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "top";
-    const titleLines = wrapTextLines(ctx, milestone.title, W - 120);
-    let ty = footerY + 28;
-    for (const line of titleLines.slice(0, 2)) {
-      ctx.fillText(line, W / 2, ty);
-      ty += 60;
-    }
-
-    drawBranding(footerY, FOOTER_H, false);
-  } else {
-    // ── No-photo: elegant minimal layout ──
-    const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
-    bgGrad.addColorStop(0, "#faf9f8");
-    bgGrad.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0.07)`);
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, W, H);
-
-    // Top accent line
-    ctx.fillStyle = twinColor;
-    ctx.fillRect(0, 0, W, 10);
-
-    // Bottom accent line
-    ctx.fillStyle = twinColor;
-    ctx.fillRect(0, H - 10, W, 10);
-
-    // Small decorative dots
-    ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.22)`;
-    for (let i = 0; i < 5; i++) {
-      ctx.beginPath();
-      ctx.arc(W / 2 - 40 + i * 20, 290, 5, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    // Title (large Georgia serif)
-    ctx.fillStyle = "#18181b";
-    ctx.font = `bold 72px ${SERIF}`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "top";
-    const titleLines = wrapTextLines(ctx, milestone.title, W - 180);
-    let y = 340;
-    for (const line of titleLines.slice(0, 3)) {
-      ctx.fillText(line, W / 2, y);
-      y += 88;
-    }
-
-    // Thin decorative rule
-    ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.32)`;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(W / 2 - 90, y + 22);
-    ctx.lineTo(W / 2 + 90, y + 22);
-    ctx.stroke();
-
-    // Twin name
-    ctx.fillStyle = twinColor;
-    ctx.font = `600 48px ${SANS}`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "top";
-    ctx.fillText(twinName, W / 2, y + 50);
-
-    // Date
-    ctx.fillStyle = "#999999";
-    ctx.font = `36px ${SANS}`;
-    ctx.fillText(formatDate(milestone.achievedDate), W / 2, y + 114);
-
-    // Note
-    if (milestone.note) {
-      ctx.fillStyle = "#666666";
-      ctx.font = `italic 33px ${SERIF}`;
-      const noteLines = wrapTextLines(ctx, `"${milestone.note}"`, W - 220);
-      let ny = y + 178;
-      for (const line of noteLines.slice(0, 2)) {
-        ctx.fillText(line, W / 2, ny);
-        ny += 50;
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+      bgGrad.addColorStop(0, "#faf9f8");
+      bgGrad.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0.07)`);
+      ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = twinColor; ctx.fillRect(0, 0, W, 10);
+      ctx.fillStyle = twinColor; ctx.fillRect(0, H - 10, W, 10);
+      ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.22)`;
+      for (let i = 0; i < 5; i++) { ctx.beginPath(); ctx.arc(W/2 - 40 + i*20, 290, 5, 0, Math.PI*2); ctx.fill(); }
+      ctx.fillStyle = "#18181b"; ctx.font = `bold 72px ${SERIF}`; ctx.textAlign = "center"; ctx.textBaseline = "top";
+      const lines = wrapTextLines(ctx, milestone.title, W - 180);
+      let y = 340;
+      for (const line of lines.slice(0, 3)) { ctx.fillText(line, W/2, y); y += 88; }
+      ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.32)`; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(W/2-90, y+22); ctx.lineTo(W/2+90, y+22); ctx.stroke();
+      ctx.fillStyle = twinColor; ctx.font = `600 48px ${SANS}`; ctx.fillText(twinName, W/2, y+50);
+      ctx.fillStyle = "#999999"; ctx.font = `36px ${SANS}`; ctx.fillText(formatDate(milestone.achievedDate), W/2, y+114);
+      if (milestone.note) {
+        ctx.fillStyle = "#666666"; ctx.font = `italic 33px ${SERIF}`;
+        const nl = wrapTextLines(ctx, `"${milestone.note}"`, W - 220); let ny = y + 178;
+        for (const line of nl.slice(0, 2)) { ctx.fillText(line, W/2, ny); ny += 50; }
       }
+      drawBranding(0, H, false);
     }
+  }
 
-    // Branding at bottom
-    ctx.textAlign = "left";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.45)`;
-    ctx.font = `400 24px ${SANS}`;
-    ctx.fillText("Made with TwinTrack 💕", 38, H - 54);
-    if (aatLogo) {
-      const logoH = 52;
-      const logoW = Math.round((aatLogo.width / aatLogo.height) * logoH);
-      ctx.globalAlpha = 0.55;
-      ctx.drawImage(aatLogo, W - 38 - logoW, H - 54 - logoH / 2, logoW, logoH);
-      ctx.globalAlpha = 1;
+  // ═══════════════════════════════════════════════════════ MINIMAL ══
+  else if (theme === "minimal") {
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, W, H);
+    if (photoImg) {
+      const PHOTO_H = 760;
+      const FOOTER_H = H - PHOTO_H;
+      coverPhoto(0, 0, W, PHOTO_H);
+      const capGrad = ctx.createLinearGradient(0, 0, 0, 96);
+      capGrad.addColorStop(0, "rgba(0,0,0,0.48)"); capGrad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = capGrad; ctx.fillRect(0, 0, W, 96);
+      ctx.fillStyle = "rgba(255,255,255,0.88)"; ctx.font = `400 28px ${SANS}`;
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(`${twinName}  ·  ${formatDate(milestone.achievedDate)}`, W/2, 46);
+      const footerY = PHOTO_H;
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, footerY, W, FOOTER_H);
+      ctx.fillStyle = twinColor; ctx.fillRect(0, footerY, W, 2);
+      ctx.fillStyle = "#111111"; ctx.font = `bold 54px ${SERIF}`;
+      ctx.textAlign = "center"; ctx.textBaseline = "top";
+      const lines = wrapTextLines(ctx, milestone.title, W - 120);
+      let ty = footerY + 42;
+      for (const line of lines.slice(0, 2)) { ctx.fillText(line, W/2, ty); ty += 66; }
+      ctx.fillStyle = twinColor; ctx.font = `500 30px ${SANS}`; ctx.fillText(twinName, W/2, ty + 10); ty += 50;
+      ctx.fillStyle = "#bbbbbb"; ctx.font = `26px ${SANS}`; ctx.fillText(formatDate(milestone.achievedDate), W/2, ty + 6);
+      drawBranding(footerY, FOOTER_H, false);
+    } else {
+      ctx.fillStyle = twinColor; ctx.fillRect(0, 0, W, 6);
+      ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.22)`; ctx.fillRect(0, H-6, W, 6);
+      ctx.fillStyle = "#111111"; ctx.font = `bold 78px ${SERIF}`; ctx.textAlign = "center"; ctx.textBaseline = "top";
+      const lines = wrapTextLines(ctx, milestone.title, W - 200);
+      let y = 340;
+      for (const line of lines.slice(0, 3)) { ctx.fillText(line, W/2, y); y += 94; }
+      ctx.strokeStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.26)`; ctx.lineWidth = 1.5;
+      ctx.beginPath(); ctx.moveTo(W/2-110, y+18); ctx.lineTo(W/2+110, y+18); ctx.stroke();
+      ctx.fillStyle = twinColor; ctx.font = `600 46px ${SANS}`; ctx.fillText(twinName, W/2, y+44); y += 100;
+      ctx.fillStyle = "#cccccc"; ctx.font = `34px ${SANS}`; ctx.fillText(formatDate(milestone.achievedDate), W/2, y);
+      if (milestone.note) {
+        ctx.fillStyle = "#888888"; ctx.font = `italic 32px ${SERIF}`;
+        const nl = wrapTextLines(ctx, `"${milestone.note}"`, W-220); let ny = y+60;
+        for (const line of nl.slice(0, 2)) { ctx.fillText(line, W/2, ny); ny += 48; }
+      }
+      drawBranding(0, H, false);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════ FLORAL ══
+  else if (theme === "floral") {
+    ctx.fillStyle = "#faf7f2"; ctx.fillRect(0, 0, W, H);
+    drawFloralCorner(ctx, 0, 0, 0, rgb);
+    drawFloralCorner(ctx, W, H, Math.PI, rgb);
+    if (photoImg) {
+      const HEADER_H = 96;
+      const FOOTER_H = 290;
+      const PHOTO_H = H - HEADER_H - FOOTER_H;
+      const topGrad = ctx.createLinearGradient(0, 0, 0, HEADER_H);
+      topGrad.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},0.12)`); topGrad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = topGrad; ctx.fillRect(0, 0, W, HEADER_H);
+      ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.85)`; ctx.font = `500 30px ${SANS}`;
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(`${twinName}  ·  ${formatDate(milestone.achievedDate)}`, W/2, HEADER_H/2);
+      coverPhoto(0, HEADER_H, W, PHOTO_H);
+      const footerY = HEADER_H + PHOTO_H;
+      ctx.fillStyle = "#faf7f2"; ctx.fillRect(0, footerY, W, FOOTER_H);
+      ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.20)`; ctx.fillRect(0, footerY, W, 2);
+      ctx.fillStyle = "#3a2310"; ctx.font = `italic bold 48px ${SERIF}`;
+      ctx.textAlign = "center"; ctx.textBaseline = "top";
+      const lines = wrapTextLines(ctx, milestone.title, W - 140);
+      let ty = footerY + 34;
+      for (const line of lines.slice(0, 2)) { ctx.fillText(line, W/2, ty); ty += 62; }
+      drawBranding(footerY, FOOTER_H, false);
+    } else {
+      drawFloralCorner(ctx, W, 0, Math.PI/2, rgb);
+      drawFloralCorner(ctx, 0, H, -Math.PI/2, rgb);
+      ctx.fillStyle = "#3a2310"; ctx.font = `italic bold 74px ${SERIF}`; ctx.textAlign = "center"; ctx.textBaseline = "top";
+      const lines = wrapTextLines(ctx, milestone.title, W - 200);
+      let y = 320;
+      for (const line of lines.slice(0, 3)) { ctx.fillText(line, W/2, y); y += 90; }
+      ctx.fillStyle = `rgba(${rgb.r},${rgb.g},${rgb.b},0.30)`;
+      for (let i = 0; i < 3; i++) { ctx.beginPath(); ctx.arc(W/2-20+i*20, y+22, 4, 0, Math.PI*2); ctx.fill(); }
+      ctx.fillStyle = twinColor; ctx.font = `500 46px ${SANS}`; ctx.fillText(twinName, W/2, y+48); y += 104;
+      ctx.fillStyle = "#a07850"; ctx.font = `36px ${SANS}`; ctx.fillText(formatDate(milestone.achievedDate), W/2, y);
+      if (milestone.note) {
+        ctx.fillStyle = "#7a5a3a"; ctx.font = `italic 32px ${SERIF}`;
+        const nl = wrapTextLines(ctx, `"${milestone.note}"`, W-220); let ny = y+60;
+        for (const line of nl.slice(0, 2)) { ctx.fillText(line, W/2, ny); ny += 48; }
+      }
+      drawBranding(0, H, false);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════ SIGNATURE ══
+  else {
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, W, H);
+    if (photoImg) {
+      const HEADER_H = 100;
+      const FOOTER_H = 250;
+      const PHOTO_H = H - HEADER_H - FOOTER_H;
+      const hGrad = ctx.createLinearGradient(0, 0, W, 0);
+      hGrad.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},0.97)`);
+      hGrad.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0.82)`);
+      ctx.fillStyle = hGrad; ctx.fillRect(0, 0, W, HEADER_H);
+      const hPos = [[0.08,0.25],[0.19,0.75],[0.33,0.28],[0.55,0.72],[0.70,0.22],[0.83,0.68],[0.93,0.38]];
+      for (const [hx,hy] of hPos) drawHeartAt(ctx, hx*W, hy*HEADER_H, 16, "rgba(255,255,255,0.14)", 1);
+      ctx.fillStyle = "#ffffff"; ctx.font = `600 30px ${SANS}`; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(`${twinName}  ·  ${formatDate(milestone.achievedDate)}`, W/2, HEADER_H/2);
+      coverPhoto(0, HEADER_H, W, PHOTO_H);
+      const footerY = HEADER_H + PHOTO_H;
+      ctx.fillStyle = "#ffffff"; ctx.fillRect(0, footerY, W, FOOTER_H);
+      const fGrad = ctx.createLinearGradient(0, footerY, 0, H);
+      fGrad.addColorStop(0, `rgba(${rgb.r},${rgb.g},${rgb.b},0.04)`);
+      fGrad.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0.10)`);
+      ctx.fillStyle = fGrad; ctx.fillRect(0, footerY, W, FOOTER_H);
+      ctx.fillStyle = twinColor; ctx.fillRect(0, footerY, W, 3);
+      ctx.fillStyle = "#18181b"; ctx.font = `bold 50px ${SERIF}`; ctx.textAlign = "center"; ctx.textBaseline = "top";
+      const lines = wrapTextLines(ctx, milestone.title, W - 120);
+      let ty = footerY + 28;
+      for (const line of lines.slice(0, 2)) { ctx.fillText(line, W/2, ty); ty += 62; }
+      drawHeartAt(ctx, 50, footerY + FOOTER_H - 72, 18, twinColor, 0.32);
+      drawHeartAt(ctx, W-50, footerY + FOOTER_H - 72, 18, twinColor, 0.32);
+      drawBranding(footerY, FOOTER_H, false);
+    } else {
+      const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
+      bgGrad.addColorStop(0, "#ffffff"); bgGrad.addColorStop(1, `rgba(${rgb.r},${rgb.g},${rgb.b},0.09)`);
+      ctx.fillStyle = bgGrad; ctx.fillRect(0, 0, W, H);
+      drawHeartAt(ctx, W/2, H*0.08, 290, twinColor, 0.06);
+      ctx.fillStyle = twinColor; ctx.fillRect(0, 0, W, 10);
+      ctx.fillStyle = "#18181b"; ctx.font = `bold 72px ${SERIF}`; ctx.textAlign = "center"; ctx.textBaseline = "top";
+      const lines = wrapTextLines(ctx, milestone.title, W - 180);
+      let y = 330;
+      for (const line of lines.slice(0, 3)) { ctx.fillText(line, W/2, y); y += 88; }
+      ctx.fillStyle = twinColor; ctx.font = `600 50px ${SANS}`;
+      ctx.fillText(`❤ ${twinName} ❤`, W/2, y+30); y += 92;
+      ctx.fillStyle = "#aaaaaa"; ctx.font = `36px ${SANS}`; ctx.fillText(formatDate(milestone.achievedDate), W/2, y);
+      if (milestone.note) {
+        ctx.fillStyle = "#777777"; ctx.font = `italic 33px ${SERIF}`;
+        const nl = wrapTextLines(ctx, `"${milestone.note}"`, W-220); let ny = y+62;
+        for (const line of nl.slice(0, 2)) { ctx.fillText(line, W/2, ny); ny += 50; }
+      }
+      drawBranding(0, H, false);
     }
   }
 
   if (photoBlobUrl) URL.revokeObjectURL(photoBlobUrl);
-
   return new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/png"));
 }
 
@@ -372,6 +557,110 @@ function PremiumConfetti({ show }: { show: boolean }) {
   );
 }
 
+function ThemePreviewCard({ theme }: { theme: CardTheme }) {
+  if (theme === "modern") return (
+    <div className="h-full flex flex-col rounded-lg overflow-hidden border border-border/60">
+      <div className="h-7 bg-primary/50" />
+      <div className="flex-1 bg-slate-200/70" />
+      <div className="h-7 bg-white border-t-2 border-primary/30" />
+    </div>
+  );
+  if (theme === "minimal") return (
+    <div className="h-full flex flex-col rounded-lg overflow-hidden border border-slate-100">
+      <div className="flex-1 bg-slate-200/60 relative">
+        <div className="absolute inset-x-0 top-0 h-5 bg-gradient-to-b from-black/18 to-transparent" />
+      </div>
+      <div className="h-2 bg-primary/40" style={{ height: 2 }} />
+      <div className="h-9 bg-white flex items-center justify-center">
+        <div className="h-2 w-16 rounded-full bg-slate-200/80" />
+      </div>
+    </div>
+  );
+  if (theme === "floral") return (
+    <div className="h-full flex flex-col rounded-lg overflow-hidden" style={{ background: "#faf7f2" }}>
+      <div className="h-7 flex items-center justify-around px-2" style={{ background: "linear-gradient(to bottom, rgba(218,90,159,0.10), transparent)" }}>
+        <span className="text-[9px] opacity-60">✿</span>
+        <span className="text-[7px] opacity-40">✿</span>
+        <span className="text-[9px] opacity-60">✿</span>
+      </div>
+      <div className="flex-1 bg-slate-200/60" />
+      <div className="h-9" style={{ background: "#faf7f2", borderTop: "1.5px solid rgba(218,90,159,0.18)" }}>
+        <div className="flex justify-center gap-1 pt-2">
+          {[0,1,2].map(i => <div key={i} className="w-1.5 h-1.5 rounded-full" style={{ background: "rgba(218,90,159,0.25)" }} />)}
+        </div>
+      </div>
+    </div>
+  );
+  return (
+    <div className="h-full flex flex-col rounded-lg overflow-hidden border border-border/60">
+      <div className="h-7 flex items-center justify-center gap-2 bg-primary/70">
+        <span className="text-[9px] text-white/80">❤</span>
+        <span className="text-[7px] text-white/60">❤</span>
+        <span className="text-[9px] text-white/80">❤</span>
+      </div>
+      <div className="flex-1 bg-slate-200/60" />
+      <div className="h-9 bg-white/95 border-t-2 border-primary/25 flex items-center justify-center">
+        <div className="h-2 w-14 rounded-full bg-slate-200/80" />
+      </div>
+    </div>
+  );
+}
+
+function ThemePickerModal({
+  onSelect,
+  onClose,
+}: {
+  onSelect: (theme: CardTheme) => void;
+  onClose: () => void;
+}) {
+  const [picked, setPicked] = useState<CardTheme>("modern");
+  return (
+    <div className="fixed inset-0 z-50 flex items-end">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="relative bg-white w-full max-w-[430px] mx-auto rounded-t-3xl overflow-hidden shadow-2xl">
+        <div className="px-5 pt-4 pb-3 border-b border-border flex items-center justify-between">
+          <div>
+            <p className="font-bold text-foreground text-lg">Choose Card Style</p>
+            <p className="text-xs text-muted-foreground mt-0.5">Pick a design for your memory card</p>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl bg-muted"><X size={18} /></button>
+        </div>
+        <div className="px-4 py-4 space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            {CARD_THEMES.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setPicked(t.id)}
+                className={`rounded-2xl overflow-hidden border-2 transition-all text-left ${
+                  picked === t.id ? "border-primary shadow-md" : "border-border hover:border-primary/30"
+                }`}
+              >
+                <div className="h-24 p-2">
+                  <ThemePreviewCard theme={t.id} />
+                </div>
+                <div className="px-3 py-2.5 border-t border-border">
+                  <p className="text-sm font-bold text-foreground flex items-center gap-1.5">
+                    {picked === t.id && <Check size={11} className="text-primary flex-shrink-0" />}
+                    {t.name}
+                  </p>
+                  <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">{t.desc}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+          <button
+            onClick={() => onSelect(picked)}
+            className="w-full py-4 rounded-2xl bg-primary text-white font-bold text-base flex items-center justify-center gap-2 active:scale-[0.98] transition-all shadow-sm"
+          >
+            <ImageIcon size={18} />
+            Create Memory Card 💕
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Milestones() {
   const { user } = useUser();
   const qc = useQueryClient();
@@ -399,6 +688,10 @@ export default function Milestones() {
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [shareToast, setShareToast] = useState<number | null>(null);
   const [isSharing, setIsSharing] = useState<number | null>(null);
+  const [pendingShare, setPendingShare] = useState<{
+    id: number; category: string; title: string; achievedDate: string; note?: string | null; photoUrl?: string | null; twinId: number;
+  } | null>(null);
+  const [showQuickCards, setShowQuickCards] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const requestUploadUrl = useRequestUploadUrl();
 
@@ -430,14 +723,14 @@ export default function Milestones() {
     (a, b) => new Date(b.achievedDate).getTime() - new Date(a.achievedDate).getTime(),
   );
 
-  function openModal() {
+  function openModal(prefill?: { title: string; category: string; isCustom: boolean }) {
     setForm({
       twinId: twinA?.id ?? 0,
-      category: "",
-      title: "",
+      category: prefill?.category ?? "",
+      title: prefill?.title ?? "",
       achievedDate: new Date().toISOString().split("T")[0],
       note: "",
-      isCustom: false,
+      isCustom: prefill?.isCustom ?? false,
       photoUrl: null,
     });
     setPhotoPreview(null);
@@ -468,10 +761,23 @@ export default function Milestones() {
     }
   }
 
-  async function handleShare(milestone: { id: number; category: string; title: string; achievedDate: string; note?: string | null; photoUrl?: string | null; twinId: number }) {
+  type ShareableMilestone = { id: number; category: string; title: string; achievedDate: string; note?: string | null; photoUrl?: string | null; twinId: number };
+
+  function startShare(milestone: ShareableMilestone) {
+    setPendingShare(milestone);
+  }
+
+  async function executeShare(milestone: ShareableMilestone, theme: CardTheme) {
+    setPendingShare(null);
     const twin = getTwinForMilestone(milestone.twinId);
     const preset = MILESTONE_PRESETS.find((m) => m.key === milestone.category);
     const twinName = twin?.name || twin?.label || "Our twin";
+    const isHoliday = milestone.category.startsWith("holiday-");
+    const isAge = milestone.category.startsWith("age-");
+
+    posthog?.capture("memory_cards_created", { theme, category: milestone.category, has_photo: !!milestone.photoUrl });
+    if (isHoliday) posthog?.capture("holiday_card_used", { key: milestone.category });
+    if (isAge) posthog?.capture("monthly_card_used", { key: milestone.category });
 
     const fallbackText = [
       `${preset?.emoji ?? "🎉"} ${twinName} just hit a milestone: ${milestone.title}!`,
@@ -482,11 +788,12 @@ export default function Milestones() {
 
     setIsSharing(milestone.id);
     try {
-      const blob = await createShareCard(milestone, twin ?? undefined, preset);
+      const blob = await createShareCard(milestone, twin ?? undefined, preset, theme);
       if (blob) {
         const file = new File([blob], "my-memory.png", { type: "image/png" });
         if (navigator.share && navigator.canShare?.({ files: [file] })) {
           await navigator.share({ files: [file], title: milestone.title, text: "Made with TwinTrack 💕" });
+          posthog?.capture("memory_cards_shared", { theme });
           return;
         }
         const url = URL.createObjectURL(blob);
@@ -497,6 +804,7 @@ export default function Milestones() {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        posthog?.capture("memory_cards_downloaded", { theme });
         setShareToast(milestone.id);
         setTimeout(() => setShareToast(null), 2500);
         return;
@@ -612,7 +920,7 @@ export default function Milestones() {
             </div>
             {celebrationMilestone && (
               <button
-                onClick={() => handleShare(celebrationMilestone)}
+                onClick={() => startShare(celebrationMilestone)}
                 disabled={isSharing === celebrationMilestone.id}
                 className="w-full py-3 rounded-2xl bg-primary text-white font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-60"
                 data-testid="celebration-share-btn"
@@ -646,15 +954,110 @@ export default function Milestones() {
       </div>
 
       <div className="px-4 pt-4 pb-24 space-y-4">
-        {/* Add milestone button */}
-        <button
-          onClick={openModal}
-          className="w-full py-4 rounded-2xl border-2 border-dashed border-primary/30 text-primary font-semibold text-sm flex items-center justify-center gap-2 hover:border-primary/60 hover:bg-primary/5 active:scale-95 transition-all"
-          data-testid="button-add-milestone"
-        >
-          <Plus size={18} />
-          Log a New Milestone
-        </button>
+        {/* Add milestone + templates buttons */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => openModal()}
+            className="flex-1 py-4 rounded-2xl border-2 border-dashed border-primary/30 text-primary font-semibold text-sm flex items-center justify-center gap-2 hover:border-primary/60 hover:bg-primary/5 active:scale-95 transition-all"
+            data-testid="button-add-milestone"
+          >
+            <Plus size={18} />
+            Log a Memory
+          </button>
+          <button
+            onClick={() => setShowQuickCards((v) => !v)}
+            className={`py-4 px-4 rounded-2xl border-2 font-semibold text-sm flex items-center gap-1.5 transition-all ${
+              showQuickCards
+                ? "border-primary/60 bg-primary/8 text-primary"
+                : "border-dashed border-primary/30 text-primary hover:border-primary/60 hover:bg-primary/5"
+            }`}
+            data-testid="button-quick-cards"
+          >
+            <Sparkles size={16} />
+            Templates
+            {showQuickCards ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+        </div>
+
+        {/* Quick Card Templates */}
+        {showQuickCards && (
+          <div className="bg-white rounded-2xl border border-border overflow-hidden">
+            <div className="px-4 pt-4 pb-2">
+              <p className="text-xs font-bold text-primary uppercase tracking-wide mb-0.5">Quick Card Templates</p>
+              <p className="text-xs text-muted-foreground">Tap a template to log it in one tap</p>
+            </div>
+
+            {/* Age Milestones */}
+            <div className="px-4 pt-3 pb-2">
+              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                <span>🎂</span> Age Milestones
+              </p>
+              <div className="flex gap-2 overflow-x-auto pb-1 -mx-0" style={{ scrollbarWidth: "none" }}>
+                {QUICK_PRESETS.age.map((p) => (
+                  <button
+                    key={p.key}
+                    onClick={() => {
+                      posthog?.capture("template_used", { type: "age", key: p.key });
+                      openModal({ title: `${p.label}`, category: p.key, isCustom: true });
+                      setShowQuickCards(false);
+                    }}
+                    className="flex-shrink-0 flex items-center gap-1 px-3 py-2 rounded-xl bg-muted text-sm font-medium hover:bg-primary/8 hover:text-primary active:scale-95 transition-all"
+                  >
+                    <span className="text-base">{p.emoji}</span>
+                    <span>{p.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Twin Moments */}
+            <div className="px-4 pt-2 pb-2">
+              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                <span>💕</span> Twin Moments
+              </p>
+              <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+                {QUICK_PRESETS.twin.map((p) => (
+                  <button
+                    key={p.key}
+                    onClick={() => {
+                      posthog?.capture("template_used", { type: "twin", key: p.key });
+                      openModal({ title: `${p.label}`, category: p.key, isCustom: true });
+                      setShowQuickCards(false);
+                    }}
+                    className="flex-shrink-0 flex items-center gap-1 px-3 py-2 rounded-xl bg-muted text-sm font-medium hover:bg-primary/8 hover:text-primary active:scale-95 transition-all"
+                  >
+                    <span className="text-base">{p.emoji}</span>
+                    <span>{p.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Holiday Cards */}
+            <div className="px-4 pt-2 pb-4">
+              <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide mb-2 flex items-center gap-1.5">
+                <span>🎄</span> Holiday Cards
+              </p>
+              <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+                {QUICK_PRESETS.holiday.map((p) => (
+                  <button
+                    key={p.key}
+                    onClick={() => {
+                      posthog?.capture("template_used", { type: "holiday", key: p.key });
+                      posthog?.capture("holiday_card_used", { key: p.key, source: "template_picker" });
+                      openModal({ title: `${p.label}`, category: p.key, isCustom: true });
+                      setShowQuickCards(false);
+                    }}
+                    className="flex-shrink-0 flex items-center gap-1 px-3 py-2 rounded-xl bg-muted text-sm font-medium hover:bg-primary/8 hover:text-primary active:scale-95 transition-all"
+                  >
+                    <span className="text-base">{p.emoji}</span>
+                    <span>{p.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Twin comparison (only when viewing "all") */}
         {activeTab === "all" && twinA && twinB && commonCategories.length > 0 && (
@@ -742,7 +1145,7 @@ export default function Milestones() {
                 {/* Actions */}
                 <div className="border-t border-border px-4 py-2 flex items-center justify-between">
                   <button
-                    onClick={() => handleShare(milestone)}
+                    onClick={() => startShare(milestone)}
                     disabled={isSharing === milestone.id}
                     className="text-xs text-primary font-semibold flex items-center gap-1.5 py-1 px-2 rounded-lg hover:bg-primary/5 transition-colors disabled:opacity-60"
                     data-testid={`share-milestone-${milestone.id}`}
@@ -944,6 +1347,13 @@ export default function Milestones() {
             </div>
           </div>
         </div>
+      )}
+      {/* Theme Picker Modal */}
+      {pendingShare && (
+        <ThemePickerModal
+          onSelect={(theme) => executeShare(pendingShare, theme)}
+          onClose={() => setPendingShare(null)}
+        />
       )}
     </Layout>
   );
