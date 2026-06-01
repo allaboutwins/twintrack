@@ -16,7 +16,7 @@ const config: CapacitorConfig = {
     backgroundColor: "#fdf8fa",
     preferredContentMode: "mobile",
     scrollEnabled: false,
-    // limitsNavigationsToAppBoundDomains: true,
+    limitsNavigationsToAppBoundDomains: true,
   },
 
   android: {

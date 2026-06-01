@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Bell, X } from "lucide-react";
+import { isNativePlatform } from "@/lib/native";
 
 const STORAGE_KEY = "tt_push_asked";
 
@@ -11,12 +12,18 @@ export default function PushPermissionPrompt({ onGrant }: Props) {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    // Only show if: notifications API exists, not yet granted/denied, not already asked
-    if (!("Notification" in window)) return;
-    if (Notification.permission !== "default") return;
     if (localStorage.getItem(STORAGE_KEY)) return;
 
-    // Show after 30s so user has engaged with the app first
+    if (isNativePlatform()) {
+      // On native, show the prompt after 30s — permission is requested via Capacitor
+      const t = setTimeout(() => setVisible(true), 30000);
+      return () => clearTimeout(t);
+    }
+
+    // Web: only show if Notification API is available and not yet decided
+    if (!("Notification" in window)) return;
+    if (Notification.permission !== "default") return;
+
     const t = setTimeout(() => setVisible(true), 30000);
     return () => clearTimeout(t);
   }, []);
@@ -24,10 +31,20 @@ export default function PushPermissionPrompt({ onGrant }: Props) {
   async function handleAllow() {
     localStorage.setItem(STORAGE_KEY, "1");
     setVisible(false);
+
     try {
-      const result = await Notification.requestPermission();
-      if (result === "granted") {
-        onGrant?.();
+      if (isNativePlatform()) {
+        const { PushNotifications } = await import("@capacitor/push-notifications");
+        const { receive } = await PushNotifications.requestPermissions();
+        if (receive === "granted") {
+          await PushNotifications.register();
+          onGrant?.();
+        }
+      } else {
+        const result = await Notification.requestPermission();
+        if (result === "granted") {
+          onGrant?.();
+        }
       }
     } catch {
       // permission API not available

@@ -1,0 +1,19 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appIDs": ["TEAM_ID.com.allaboutwins.twintrack"],
+        "components": [
+          { "/": "/sign-in*", "comment": "Clerk auth redirect" },
+          { "/": "/sign-up*", "comment": "Clerk auth redirect" },
+          { "/": "/invite*", "comment": "Caregiver invite" },
+          { "/": "/dashboard*", "comment": "App home" }
+        ]
+      }
+    ]
+  },
+  "webcredentials": {
+    "apps": ["TEAM_ID.com.allaboutwins.twintrack"]
+  }
+}

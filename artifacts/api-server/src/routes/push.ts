@@ -213,6 +213,30 @@ export async function sendPushToUser(
   return { sent, failed };
 }
 
+// ── Native push token registration (Capacitor FCM/APNs) ──────────────────
+
+router.post("/push/native-subscribe", async (req, res): Promise<void> => {
+  const { userId } = getAuth(req);
+  if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
+
+  const { token, platform } = req.body as { token?: string; platform?: string };
+  if (!token) { res.status(400).json({ error: "token required" }); return; }
+
+  // Store the native push token using the endpoint field as a namespaced key
+  // so it coexists with Web Push subscriptions without a separate table.
+  const endpoint = `native:${platform ?? "unknown"}:${token}`;
+  await db
+    .insert(pushSubscriptionsTable)
+    .values({ userId, endpoint, p256dh: "native", auth: "native", userAgent: platform ?? "native" })
+    .onConflictDoUpdate({
+      target: pushSubscriptionsTable.endpoint,
+      set: { userId, updatedAt: new Date() },
+    });
+
+  req.log.info({ userId, platform }, "native push token registered");
+  res.status(201).json({ ok: true });
+});
+
 // ── Admin: send test notification ─────────────────────────────────────────
 
 router.post("/push/send-test", async (req, res): Promise<void> => {

@@ -56,7 +56,7 @@ export default defineConfig({
         // so the React app loads and handles routing — not the offline page.
         // offline.html is only shown by the OfflineBanner inside the React app.
         navigateFallback: "/index.html",
-        navigateFallbackDenylist: [/^\/api\//, /^\/__/, /\/offline\.html$/],
+        navigateFallbackDenylist: [/^\/api\//, /^\/__/, /\/offline\.html$/, /^capacitor:\/\//],
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         importScripts: ["sw-push.js"],
         runtimeCaching: [

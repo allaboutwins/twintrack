@@ -4,6 +4,7 @@ import { ClerkProvider, SignIn, SignUp, Show, useClerk, useUser } from "@clerk/r
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
+import { isNativePlatform } from "@/lib/native";
 import { QueryClient, QueryClientProvider, useQueryClient } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { useToast } from "@/hooks/use-toast";
@@ -161,6 +162,45 @@ function SwUpdateNotifier() {
       })
       .catch(() => {/* non-fatal */});
   }, [promptReload]);
+
+  return null;
+}
+
+/**
+ * Handles Capacitor Universal Links / App Links (deep links).
+ * When the user taps a link like https://yourdomain.com/invite?token=xxx,
+ * iOS/Android opens the app and fires `appUrlOpen` instead of opening Safari.
+ * We parse the path and navigate to the right route in-app.
+ */
+function DeepLinkHandler() {
+  const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    if (!isNativePlatform()) return;
+
+    let cleanup: (() => void) | null = null;
+
+    import("@capacitor/app").then(({ App: CapApp }) => {
+      CapApp.addListener("appUrlOpen", (event) => {
+        try {
+          const url = new URL(event.url);
+          // Strip the base path if present, then navigate to the path + search
+          const path = url.pathname + url.search;
+          const stripped = basePath && path.startsWith(basePath)
+            ? path.slice(basePath.length) || "/"
+            : path;
+          setLocation(stripped);
+          posthog?.capture("deep_link_opened", { path: stripped });
+        } catch {
+          // Malformed URL — ignore
+        }
+      }).then((listener) => {
+        cleanup = () => listener.remove();
+      }).catch(() => {});
+    }).catch(() => {});
+
+    return () => { cleanup?.(); };
+  }, [setLocation]);
 
   return null;
 }
@@ -425,6 +465,7 @@ function ClerkProviderWithRoutes() {
         <PostHogIdentifier />
         <TooltipProvider>
           <SwUpdateNotifier />
+          <DeepLinkHandler />
           <HeartbeatReporter />
           <PushPermissionPrompt />
           <AppExperienceLayer />
