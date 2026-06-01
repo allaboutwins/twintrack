@@ -9,7 +9,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { PageHeader } from "@/components/Layout";
-import { Save, LogOut, Video, ChevronRight, Trash2, AlertTriangle, Bell, BellOff, Smartphone, Sparkles } from "lucide-react";
+import { Save, LogOut, Video, ChevronRight, Trash2, AlertTriangle, Bell, BellOff, Smartphone, Sparkles, UserPlus, Users, X, Copy, Check } from "lucide-react";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNotificationPrefs } from "@/hooks/useNotificationPrefs";
 import { useAppPrefs } from "@/hooks/useAppPrefs";
@@ -62,6 +62,51 @@ export default function Settings() {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Caregiver invite state
+  type CaregiverRow = { id: number; caregiverEmail: string; role: string; displayName?: string | null; status: string; inviteToken: string };
+  const [caregivers, setCaregivers] = useState<CaregiverRow[]>([]);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<"Dad" | "Partner" | "Grandparent" | "Nanny" | "Other">("Dad");
+  const [inviteLoading, setInviteLoading] = useState(false);
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user?.id) return;
+    fetch(`/api/caregivers?userId=${user.id}`)
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setCaregivers(data); })
+      .catch(() => {});
+  }, [user?.id]);
+
+  async function sendInvite() {
+    if (!user?.id || !inviteEmail.trim()) return;
+    setInviteLoading(true);
+    try {
+      const res = await fetch("/api/caregivers/invite", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ownerId: user.id, caregiverEmail: inviteEmail.trim(), role: inviteRole }),
+      });
+      const row = await res.json() as CaregiverRow;
+      setCaregivers((prev) => [...prev, row]);
+      setInviteEmail("");
+    } finally {
+      setInviteLoading(false);
+    }
+  }
+
+  async function revokeCaregiver(id: number) {
+    await fetch(`/api/caregivers/${id}`, { method: "DELETE" });
+    setCaregivers((prev) => prev.map((c) => c.id === id ? { ...c, status: "revoked" } : c));
+  }
+
+  function copyInviteLink(token: string) {
+    const link = `${window.location.origin}/invite?token=${token}`;
+    navigator.clipboard.writeText(link).catch(() => {});
+    setCopiedToken(token);
+    setTimeout(() => setCopiedToken(null), 2000);
+  }
 
   const twinA = twins.find((t) => t.label === "Twin A");
   const twinB = twins.find((t) => t.label === "Twin B");
@@ -217,6 +262,105 @@ export default function Settings() {
               <LogOut size={15} />
               Sign Out
             </button>
+          </div>
+        </div>
+
+        {/* Caregiver Access */}
+        <div className="bg-white rounded-2xl border border-border overflow-hidden">
+          <div className="px-5 py-4 border-b border-border flex items-center gap-2">
+            <Users size={14} className="text-primary" />
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Family Caregivers</p>
+          </div>
+
+          <div className="px-5 py-4 space-y-4">
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Invite your partner, grandparent, or nanny to log feedings, sleep, diapers, and milestones — all synced to your family account.
+            </p>
+
+            {/* Invite form */}
+            <div className="space-y-2.5">
+              <div className="flex gap-2 flex-wrap">
+                {(["Dad", "Partner", "Grandparent", "Nanny", "Other"] as const).map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => setInviteRole(r)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all ${
+                      inviteRole === r ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {r}
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && sendInvite()}
+                  placeholder="caregiver@email.com"
+                  type="email"
+                  className="flex-1 px-4 py-3 rounded-xl bg-muted text-sm outline-none focus:ring-2 ring-primary/30 transition-all"
+                  data-testid="input-caregiver-email"
+                />
+                <button
+                  onClick={sendInvite}
+                  disabled={inviteLoading || !inviteEmail.trim()}
+                  className="px-4 py-3 rounded-xl bg-primary text-white text-sm font-bold active:scale-95 transition-all disabled:opacity-50 flex items-center gap-1.5"
+                  data-testid="button-invite-caregiver"
+                >
+                  <UserPlus size={15} />
+                  {inviteLoading ? "..." : "Invite"}
+                </button>
+              </div>
+            </div>
+
+            {/* Caregiver list */}
+            {caregivers.filter((c) => c.status !== "revoked").length > 0 && (
+              <div className="space-y-2">
+                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide">Your Caregivers</p>
+                {caregivers.filter((c) => c.status !== "revoked").map((c) => (
+                  <div key={c.id} className="flex items-center gap-3 bg-muted/40 rounded-xl px-3.5 py-3">
+                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 text-sm">
+                      {c.role === "Dad" ? "👨" : c.role === "Partner" ? "💑" : c.role === "Grandparent" ? "👴" : c.role === "Nanny" ? "👩‍🍼" : "👤"}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-foreground truncate">{c.caregiverEmail}</p>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] text-muted-foreground">{c.role}</span>
+                        <span className="text-[10px] text-muted-foreground">·</span>
+                        <span className={`text-[10px] font-semibold ${c.status === "active" ? "text-green-600" : "text-amber-500"}`}>
+                          {c.status === "active" ? "Active" : "Pending invite"}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      {c.status === "pending" && (
+                        <button
+                          onClick={() => copyInviteLink(c.inviteToken)}
+                          className="p-1.5 rounded-lg hover:bg-primary/10 transition-colors"
+                          title="Copy invite link"
+                        >
+                          {copiedToken === c.inviteToken ? <Check size={13} className="text-green-600" /> : <Copy size={13} className="text-muted-foreground" />}
+                        </button>
+                      )}
+                      <button
+                        onClick={() => revokeCaregiver(c.id)}
+                        className="p-1.5 rounded-lg hover:bg-red-50 transition-colors"
+                        title="Remove caregiver"
+                      >
+                        <X size={13} className="text-muted-foreground hover:text-red-500" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {caregivers.filter((c) => c.status === "pending").length > 0 && (
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                💡 Tap the copy icon to share the invite link with your caregiver. They'll use it to link their TwinTrack account to your family.
+              </p>
+            )}
           </div>
         </div>
 

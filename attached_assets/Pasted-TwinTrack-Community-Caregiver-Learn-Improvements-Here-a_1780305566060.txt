@@ -1,0 +1,205 @@
+TwinTrack — Community, Caregiver & Learn Improvements 💕🚀
+
+Here are the latest twin mom feedbacks and next improvements.
+
+---
+
+1. COMMUNITY QUESTIONS FEATURE (HIGH PRIORITY)
+
+Twin mom feedback:
+
+💡 feature - In the community tab, you can add a place where parents can drop question and other parents can answer and give some advice.
+
+My thoughts:
+
+Amazing idea.
+
+I already receive daily questions from twin moms.
+
+Please create a simple Community Questions section.
+
+Requirements:
+
+* Moms can submit questions
+* Questions require admin approval before publishing
+* Other moms can answer
+* Allow likes/upvotes on helpful answers
+* Admin can pin the best answer
+* Admin can manually add community questions received via social media
+
+Goal:
+
+Create community learning without building a full social network.
+
+---
+
+2. ROUTINE TEMPLATE FEEDBACK
+
+Twin mom feedback:
+
+💡 feature - Love the templates for routines. Maybe if you could just add a feature that you can change a template. For example the toddler one is great but the bag is not relevant because they are not in school.
+
+Please review the routine templates and determine what flexibility is needed.
+
+Potential direction:
+
+* Duplicate template
+* Edit template
+* Hide irrelevant blocks
+* Add custom routine items
+
+---
+
+3. POSITIVE FEEDBACK
+
+Twin mom feedback:
+
+💕 love - The idea is amazing!!! I wish you so much luck!
+
+Love this feedback 💕
+
+Please continue collecting positive feedback in Admin separately from bugs and feature requests.
+
+---
+
+4. DAD / CAREGIVER ACCESS (VERY IMPORTANT)
+
+Twin mom feedback:
+
+💡 feature - Is there any way to share this with my husband so that he can also keep the record the moments in which he cares for a baby?
+
+This is becoming important.
+
+Please begin building caregiver support.
+
+Requirements:
+
+Settings → Invite Caregiver
+
+Potential caregiver roles:
+
+* Dad
+* Partner
+* Grandparent
+* Nanny
+* Other
+
+Caregiver can:
+
+* log feedings
+* log sleep
+* log diapers
+* log milestones
+
+All data syncs to the same family account.
+
+Prepare architecture now even if phase 1 is simple.
+
+---
+
+5. HOME PAGE NOTIFICATIONS
+
+Current issue:
+
+The Home page notifications are becoming stale.
+
+Please always display:
+
+* latest 3 updates on Home
+
+Older updates:
+
+* available under the Cherry Notification Center
+
+Goal:
+
+Keep Home fresh and relevant.
+
+---
+
+6. FEEDBACK ACKNOWLEDGEMENT SYSTEM
+
+When a feature is built from community feedback:
+
+Instead of:
+
+"New feature available"
+
+Use:
+
+"Thank you for your feedback 💕
+Based on suggestions from TwinTrack families, we've added..." (or something shorter)
+
+This reinforces that parents are helping shape the product.
+
+---
+
+7. REMOVE PWA INSTALL PROMPT
+
+The "Add TwinTrack to Home Screen" prompt is creating login/update issues.
+
+Please remove or disable it for now.
+
+We are preparing for:
+
+* App Store
+* Google Play
+
+The native app experience should become the primary installation path.
+
+---
+
+8. LEARN → MAGAZINE UPDATE
+
+For Jul/Aug 2026 magazine:
+
+Please replace the current cover image with the attached image provided.
+
+---
+
+9. LEARN → ACADEMY UPDATE
+
+Keep:
+
+"Your expert learning hub"
+
+Update all course titles and links to the following:
+
+Helping Twins Sleep Tight – Giving Twin Parents Their Nights Back
+https://allaboutwins.com/courses/helping-twins-sleep-tight/lesson/my-journey
+
+A Guide to Breastfeeding Your Twins at Home
+https://allaboutwins.com/courses/a-guide-to-breastfeeding-twins-at-home/lesson/hospital-packing-list-for-breastfeeding-twins
+
+Sleep, Milestones & Real-Life Insights
+https://allaboutwins.com/courses/sleep-milestones-real-life-insights/lesson/3-tips-for-twins-sleep
+
+Mastering Twins Sleep & Balance
+https://allaboutwins.com/courses/twins-sleep-balance/lesson/when-is-the-best-time-to-sleep-train
+
+Postpartum Fitness for Twin Moms
+https://allaboutwins.com/courses/postpartum-fitness-for-twin-moms/lesson/13-months-postpartum
+
+Essential Tips for Breastfeeding Twins
+https://allaboutwins.com/courses/tips-for-breastfeeding-twins/lesson/who-am-i-2
+
+Essential Twins Parents Guide with Principal Lisa
+https://allaboutwins.com/courses/twins-parents-guide-with-principal-lisa/lesson/who-am-i
+
+The Ultimate Guide for Postpartum Nutrition & Breastfeeding Twins
+https://allaboutwins.com/courses/postpartum-nutrition-breastfeeding-twins/lesson/how-im-preparing-to-breastfeed-twins
+
+---
+
+PRIORITY ORDER
+
+1. Dad / Caregiver support
+2. Community Questions
+3. Remove Home Screen install prompt
+4. Home notification refresh
+5. Academy updates
+6. Routine template improvements
+
+TwinTrack is becoming more than a tracker.
+
+It is becoming a supportive twin parenting community built together with real families 💕

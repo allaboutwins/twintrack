@@ -14,7 +14,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { PageHeader } from "@/components/Layout";
-import { Moon, Utensils, Baby, ChevronRight, Star, Heart, BarChart2, Sparkles, X, Flame, Trophy } from "lucide-react";
+import { Moon, Utensils, Baby, ChevronRight, Star, Heart, BarChart2, Sparkles, X, Flame, Trophy, Bell } from "lucide-react";
 import { posthog } from "@/lib/posthog";
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -147,6 +147,31 @@ export default function Dashboard() {
   const totalSleepMins = summary?.twins.reduce((acc, t) => acc + t.todaySleepMinutes, 0) ?? 0;
   const hasGoodDay = totalFeedings >= 4 || totalDiapers >= 4 || totalSleepMins >= 180;
 
+  // Latest app updates for home notification refresh
+  type AppUpdate = { id: number; emoji: string; title: string; description: string; publishedAt: string };
+  const [latestUpdates, setLatestUpdates] = useState<AppUpdate[]>([]);
+  const [dismissedUpdates, setDismissedUpdates] = useState<Set<number>>(() => {
+    try { return new Set(JSON.parse(localStorage.getItem("tt_dismissed_updates") ?? "[]")); } catch { return new Set(); }
+  });
+
+  useEffect(() => {
+    fetch("/api/app-updates?limit=3")
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setLatestUpdates(data); })
+      .catch(() => {});
+  }, []);
+
+  function dismissUpdate(id: number) {
+    setDismissedUpdates((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      try { localStorage.setItem("tt_dismissed_updates", JSON.stringify([...next])); } catch { /* noop */ }
+      return next;
+    });
+  }
+
+  const visibleUpdates = latestUpdates.filter((u) => !dismissedUpdates.has(u.id));
+
   // Streak tracking via localStorage
   const [streak, setStreak] = useState(0);
   useEffect(() => {
@@ -180,6 +205,39 @@ export default function Dashboard() {
       />
 
       <div className="px-4 space-y-4 pb-4">
+        {/* Latest updates banner — always shows latest 3, individually dismissable */}
+        {visibleUpdates.length > 0 && (
+          <div className="space-y-2">
+            {visibleUpdates.map((update) => (
+              <div
+                key={update.id}
+                className="bg-gradient-to-r from-primary/8 to-violet-50 rounded-2xl border border-primary/15 px-4 py-3 flex items-start gap-3"
+              >
+                <div className="w-8 h-8 rounded-xl bg-white border border-primary/15 flex items-center justify-center flex-shrink-0 text-base shadow-sm">
+                  {update.emoji}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <Bell size={9} className="text-primary" />
+                    <p className="text-[9px] font-bold text-primary uppercase tracking-wide">
+                      Based on your feedback 💕
+                    </p>
+                  </div>
+                  <p className="font-semibold text-sm text-foreground leading-snug">{update.title}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{update.description}</p>
+                </div>
+                <button
+                  onClick={() => dismissUpdate(update.id)}
+                  className="p-1 flex-shrink-0 -mr-1 -mt-0.5"
+                  aria-label="Dismiss"
+                >
+                  <X size={13} className="text-muted-foreground/60" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         {isLoading && (
           <div className="space-y-3">
             <Skeleton className="h-32 rounded-2xl" />

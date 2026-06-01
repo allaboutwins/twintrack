@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser } from "@clerk/react";
 import { posthog } from "@/lib/posthog";
 import { FaInstagram, FaYoutube, FaFacebook, FaTiktok, FaPinterest } from "react-icons/fa";
@@ -12,7 +12,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout from "@/components/Layout";
-import { ExternalLink, Check, X, BookOpen, Sparkles, ChevronRight, BarChart3 } from "lucide-react";
+import { ExternalLink, Check, X, BookOpen, Sparkles, ChevronRight, BarChart3, MessageCircle, ThumbsUp, Send, ChevronDown, ChevronUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // Magazine cover images
@@ -26,6 +26,7 @@ import coverJul25 from "@assets/Twins_Magazine_Jul._2025_1778767835833.jpg";
 import coverNov25 from "@assets/Twins_Magazine_Nov._25__1778767835833.png";
 import coverJan26 from "@assets/Twins_Magazine_Jan._26__1778767835834.png";
 import coverApr26 from "@assets/Twins_Magazine_Apr._26_1778767835833.png";
+import coverComingSoon from "@assets/Twins_Magazine_Coming_Soon_1780305570036.png";
 
 // Magazine inside/index images
 import insideJan24 from "@assets/Twins_Magazine_Jan._24_Inside_Issue_1778767835834.png";
@@ -73,7 +74,7 @@ const MAGAZINES = [
   { id: 8,  issue: "Nov / Dec 2025", season: "Fall 2025",    url: "https://tinyurl.com/j4wz9taa",   cover: coverNov25,  inside: insideNov25 },
   { id: 9,  issue: "Jan / Feb 2026", season: "Winter 2026",  url: "https://tinyurl.com/3962vvbn",   cover: coverJan26,  inside: insideJan26 },
   { id: 10, issue: "Apr / May 2026", season: "Spring 2026",  url: "https://tinyurl.com/3ujxz5vy",   cover: coverApr26,  inside: insideApr26 },
-  { id: 11, issue: "Jul / Aug 2026", season: "Summer 2026",  url: "https://tinyurl.com/2yd3r8vz",   cover: null,        inside: null, gradient: "from-lime-400 to-green-500" },
+  { id: 11, issue: "Jul / Aug 2026", season: "Summer 2026",  url: "https://tinyurl.com/2yd3r8vz",   cover: coverComingSoon, inside: null },
 ] as const;
 
 
@@ -212,51 +213,59 @@ function MagazineLibrary() {
 const ACADEMY_COURSES = [
   {
     emoji: "😴",
-    title: "Helping Twins Sleep Tight",
-    subtitle: "Giving twin parents their nights back — practical sleep strategies that really work",
+    title: "Helping Twins Sleep Tight – Giving Twin Parents Their Nights Back",
+    subtitle: "Practical, proven strategies to help both twins sleep — so you can too",
     badge: "Sleep",
-    lessons: 12,
-    url: "https://allaboutwins.com/courses/helping-twins-sleep-tight/",
+    url: "https://allaboutwins.com/courses/helping-twins-sleep-tight/lesson/my-journey",
   },
   {
     emoji: "🤱",
-    title: "Breastfeeding Twins at Home",
-    subtitle: "A complete guide from hospital to home — tandem feeding, supply, and more",
+    title: "A Guide to Breastfeeding Your Twins at Home",
+    subtitle: "Everything from hospital packing to tandem feeding and building supply at home",
     badge: "Feeding",
-    lessons: 15,
-    url: "https://allaboutwins.com/courses/a-guide-to-breastfeeding-twins-at-home/",
+    url: "https://allaboutwins.com/courses/a-guide-to-breastfeeding-twins-at-home/lesson/hospital-packing-list-for-breastfeeding-twins",
   },
   {
-    emoji: "🏥",
-    title: "Navigating the NICU Journey",
-    subtitle: "What to expect, how to bond, and how to bring your twins home with confidence",
-    badge: "NICU",
-    lessons: 8,
-    url: "https://allaboutwins.com/courses",
+    emoji: "🌙",
+    title: "Sleep, Milestones & Real-Life Insights",
+    subtitle: "3 evidence-based tips for twin sleep, plus real milestones to look forward to",
+    badge: "Sleep",
+    url: "https://allaboutwins.com/courses/sleep-milestones-real-life-insights/lesson/3-tips-for-twins-sleep",
   },
   {
-    emoji: "📅",
-    title: "Building Your Twin Routine",
-    subtitle: "Flexible schedules and rhythms that sync both babies and save your sanity",
-    badge: "Routines",
-    lessons: 10,
-    url: "https://allaboutwins.com/courses",
+    emoji: "⚖️",
+    title: "Mastering Twins Sleep & Balance",
+    subtitle: "When to sleep train, how to balance two schedules, and reclaim your evenings",
+    badge: "Sleep",
+    url: "https://allaboutwins.com/courses/twins-sleep-balance/lesson/when-is-the-best-time-to-sleep-train",
   },
   {
-    emoji: "🤰",
-    title: "Twin Pregnancy Prep",
-    subtitle: "Hospital bag, birth plan, NICU prep, and home setup for two",
-    badge: "Pregnancy",
-    lessons: 9,
-    url: "https://allaboutwins.com/courses",
+    emoji: "💪",
+    title: "Postpartum Fitness for Twin Moms",
+    subtitle: "Safe, realistic fitness for twin moms — from 13 months postpartum and beyond",
+    badge: "Fitness",
+    url: "https://allaboutwins.com/courses/postpartum-fitness-for-twin-moms/lesson/13-months-postpartum",
   },
   {
-    emoji: "🧠",
-    title: "Twin Parent Mental Wellness",
-    subtitle: "Real strategies for burnout, overwhelm, and building resilience as a twin parent",
-    badge: "Mindset",
-    lessons: 7,
-    url: "https://allaboutwins.com/courses",
+    emoji: "🍼",
+    title: "Essential Tips for Breastfeeding Twins",
+    subtitle: "Key breastfeeding strategies specifically for twin families",
+    badge: "Feeding",
+    url: "https://allaboutwins.com/courses/tips-for-breastfeeding-twins/lesson/who-am-i-2",
+  },
+  {
+    emoji: "🎓",
+    title: "Essential Twins Parents Guide with Principal Lisa",
+    subtitle: "Expert parenting guidance from an educator who truly understands twin families",
+    badge: "Parenting",
+    url: "https://allaboutwins.com/courses/twins-parents-guide-with-principal-lisa/lesson/who-am-i",
+  },
+  {
+    emoji: "🥗",
+    title: "The Ultimate Guide for Postpartum Nutrition & Breastfeeding Twins",
+    subtitle: "How to nourish yourself while breastfeeding two — nutrition that actually works",
+    badge: "Nutrition",
+    url: "https://allaboutwins.com/courses/postpartum-nutrition-breastfeeding-twins/lesson/how-im-preparing-to-breastfeed-twins",
   },
 ];
 
@@ -267,6 +276,9 @@ const BADGE_COLORS: Record<string, string> = {
   Routines: "bg-amber-100 text-amber-700",
   Pregnancy: "bg-green-100 text-green-700",
   NICU: "bg-yellow-100 text-yellow-700",
+  Fitness: "bg-orange-100 text-orange-700",
+  Parenting: "bg-violet-100 text-violet-700",
+  Nutrition: "bg-green-100 text-green-700",
 };
 
 function AcademySection({ userId }: { userId: string }) {
@@ -335,7 +347,7 @@ function AcademySection({ userId }: { userId: string }) {
                   <span className={`inline-block px-2 py-0.5 text-[10px] font-bold rounded-full ${BADGE_COLORS[course.badge] ?? "bg-muted text-muted-foreground"}`}>
                     {course.badge}
                   </span>
-                  <span className="text-[10px] text-muted-foreground font-medium">{course.lessons} lessons</span>
+                  <ExternalLink size={10} className="text-muted-foreground/50" />
                 </div>
                 <p className="font-bold text-sm text-foreground leading-snug">{course.title}</p>
                 <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{course.subtitle}</p>
@@ -403,6 +415,252 @@ function AcademySection({ userId }: { userId: string }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+// ── Community Questions ──────────────────────────────────────────────────
+
+type CommunityAnswer = {
+  id: number;
+  answerText: string;
+  authorName: string | null;
+  likes: number;
+  isPinned: boolean;
+  createdAt: string;
+  likedByMe?: boolean;
+};
+
+type CommunityQuestion = {
+  id: number;
+  question: string;
+  authorName: string | null;
+  isAdminAdded: boolean;
+  createdAt: string;
+  answers: CommunityAnswer[];
+};
+
+function CommunityQuestionsSection({ userId }: { userId: string }) {
+  const [questions, setQuestions] = useState<CommunityQuestion[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [answerTexts, setAnswerTexts] = useState<Record<number, string>>({});
+  const [submittingAnswer, setSubmittingAnswer] = useState<number | null>(null);
+  const [showAskForm, setShowAskForm] = useState(false);
+  const [myQuestion, setMyQuestion] = useState("");
+  const [submittingQuestion, setSubmittingQuestion] = useState(false);
+  const [questionSubmitted, setQuestionSubmitted] = useState(false);
+  const [likedAnswers, setLikedAnswers] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    fetch("/api/community/questions")
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setQuestions(data); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function submitQuestion() {
+    if (!myQuestion.trim()) return;
+    setSubmittingQuestion(true);
+    try {
+      await fetch("/api/community/questions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, question: myQuestion.trim(), authorName: "Twin Parent" }),
+      });
+      setQuestionSubmitted(true);
+      setMyQuestion("");
+      posthog?.capture("community_question_submitted");
+    } finally {
+      setSubmittingQuestion(false);
+    }
+  }
+
+  async function submitAnswer(questionId: number) {
+    const text = answerTexts[questionId]?.trim();
+    if (!text) return;
+    setSubmittingAnswer(questionId);
+    try {
+      const res = await fetch(`/api/community/questions/${questionId}/answers`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, answerText: text, authorName: "Twin Parent" }),
+      });
+      const newAnswer = await res.json() as CommunityAnswer;
+      setQuestions((prev) => prev.map((q) =>
+        q.id === questionId ? { ...q, answers: [...q.answers, newAnswer] } : q
+      ));
+      setAnswerTexts((prev) => ({ ...prev, [questionId]: "" }));
+      posthog?.capture("community_answer_submitted");
+    } finally {
+      setSubmittingAnswer(null);
+    }
+  }
+
+  async function likeAnswer(answerId: number) {
+    if (!userId) return;
+    const alreadyLiked = likedAnswers.has(answerId);
+    setLikedAnswers((prev) => {
+      const next = new Set(prev);
+      alreadyLiked ? next.delete(answerId) : next.add(answerId);
+      return next;
+    });
+    setQuestions((prev) => prev.map((q) => ({
+      ...q,
+      answers: q.answers.map((a) =>
+        a.id === answerId ? { ...a, likes: a.likes + (alreadyLiked ? -1 : 1) } : a
+      ),
+    })));
+    await fetch(`/api/community/answers/${answerId}/like`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId }),
+    });
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <MessageCircle size={16} className="text-primary" />
+          <p className="text-xs font-bold text-primary uppercase tracking-wide">Community Questions</p>
+        </div>
+        <button
+          onClick={() => { setShowAskForm((v) => !v); setQuestionSubmitted(false); }}
+          className="flex items-center gap-1 text-xs font-semibold text-primary bg-primary/8 px-3 py-1.5 rounded-xl active:scale-95 transition-all"
+        >
+          {showAskForm ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+          Ask a question
+        </button>
+      </div>
+
+      {/* Ask form */}
+      {showAskForm && (
+        <div className="bg-white rounded-2xl border border-primary/20 p-4 space-y-3">
+          {!questionSubmitted ? (
+            <>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Share a question with the TwinTrack community. Questions are reviewed before publishing.
+              </p>
+              <textarea
+                value={myQuestion}
+                onChange={(e) => setMyQuestion(e.target.value)}
+                placeholder="e.g. How do I sync my twins' nap schedules?"
+                rows={3}
+                className="w-full px-4 py-3 rounded-xl bg-muted text-sm outline-none focus:ring-2 ring-primary/30 resize-none"
+              />
+              <button
+                onClick={submitQuestion}
+                disabled={submittingQuestion || !myQuestion.trim()}
+                className="w-full py-2.5 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+              >
+                <Send size={13} />
+                {submittingQuestion ? "Sending..." : "Submit Question"}
+              </button>
+            </>
+          ) : (
+            <div className="text-center py-2 space-y-1">
+              <p className="text-2xl">💕</p>
+              <p className="font-bold text-foreground text-sm">Thank you for your question!</p>
+              <p className="text-xs text-muted-foreground">
+                Based on feedback from TwinTrack families, we'll review and publish it soon.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Questions list */}
+      {loading ? (
+        <div className="space-y-3">
+          <Skeleton className="h-20 rounded-2xl" />
+          <Skeleton className="h-20 rounded-2xl" />
+        </div>
+      ) : questions.length === 0 ? (
+        <div className="bg-white rounded-2xl border border-border p-5 text-center space-y-1.5">
+          <p className="text-2xl">💬</p>
+          <p className="text-sm font-semibold text-foreground">No questions yet</p>
+          <p className="text-xs text-muted-foreground">Be the first to ask the community something!</p>
+        </div>
+      ) : (
+        questions.map((q) => (
+          <div key={q.id} className="bg-white rounded-2xl border border-border overflow-hidden">
+            <button
+              className="w-full px-4 py-4 text-left flex items-start gap-3"
+              onClick={() => setExpandedId(expandedId === q.id ? null : q.id)}
+            >
+              <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <MessageCircle size={13} className="text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 mb-0.5">
+                  {q.isAdminAdded && (
+                    <span className="text-[9px] font-bold bg-primary/10 text-primary px-1.5 py-0.5 rounded-full uppercase tracking-wide">Community Pick</span>
+                  )}
+                  <span className="text-[10px] text-muted-foreground">
+                    {q.answers.length} {q.answers.length === 1 ? "answer" : "answers"}
+                  </span>
+                </div>
+                <p className="font-semibold text-sm text-foreground leading-snug">{q.question}</p>
+              </div>
+              {expandedId === q.id ? <ChevronUp size={15} className="text-muted-foreground flex-shrink-0 mt-1" /> : <ChevronDown size={15} className="text-muted-foreground flex-shrink-0 mt-1" />}
+            </button>
+
+            {expandedId === q.id && (
+              <div className="border-t border-border">
+                {/* Answers */}
+                {q.answers.length > 0 && (
+                  <div className="divide-y divide-border/50">
+                    {q.answers
+                      .slice()
+                      .sort((a, b) => (b.isPinned ? 1 : 0) - (a.isPinned ? 1 : 0) || b.likes - a.likes)
+                      .map((ans) => (
+                        <div key={ans.id} className={`px-4 py-3 ${ans.isPinned ? "bg-primary/4" : ""}`}>
+                          {ans.isPinned && (
+                            <p className="text-[9px] font-bold text-primary uppercase tracking-wide mb-1.5">📌 Best Answer</p>
+                          )}
+                          <p className="text-sm text-foreground leading-relaxed">{ans.answerText}</p>
+                          <div className="flex items-center gap-3 mt-2">
+                            <span className="text-[10px] text-muted-foreground">{ans.authorName || "Twin Parent"}</span>
+                            <button
+                              onClick={() => likeAnswer(ans.id)}
+                              className={`flex items-center gap-1 text-[10px] font-semibold transition-colors ${
+                                likedAnswers.has(ans.id) ? "text-primary" : "text-muted-foreground"
+                              }`}
+                            >
+                              <ThumbsUp size={11} />
+                              {ans.likes > 0 ? ans.likes : "Helpful"}
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                )}
+
+                {/* Answer input */}
+                <div className="px-4 py-3 bg-muted/20 flex gap-2">
+                  <input
+                    value={answerTexts[q.id] ?? ""}
+                    onChange={(e) => setAnswerTexts((prev) => ({ ...prev, [q.id]: e.target.value }))}
+                    onKeyDown={(e) => e.key === "Enter" && submitAnswer(q.id)}
+                    placeholder="Share your experience..."
+                    className="flex-1 px-3 py-2 rounded-xl bg-white border border-border text-sm outline-none focus:ring-2 ring-primary/30"
+                  />
+                  <button
+                    onClick={() => submitAnswer(q.id)}
+                    disabled={submittingAnswer === q.id || !answerTexts[q.id]?.trim()}
+                    className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-bold disabled:opacity-50 active:scale-95 transition-all"
+                  >
+                    <Send size={13} />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))
+      )}
     </div>
   );
 }
@@ -617,6 +875,12 @@ export default function Learn() {
       {/* Community Tab */}
       {activeTab === "community" && (
         <div className="px-4 pt-4 space-y-4 pb-4">
+          {/* Community Questions */}
+          <CommunityQuestionsSection userId={user?.id ?? ""} />
+
+          {/* Divider */}
+          <div className="border-t border-border pt-4" />
+
           {/* Polls section */}
           <CommunityPollsSection userId={user?.id ?? ""} />
 
