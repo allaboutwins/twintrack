@@ -1,0 +1,14 @@
+uploads = []
+outputs = []
+
+[[generated]]
+id = "KXR1k4YaZuuZLVgpyNawT"
+uri = "file://artifacts/twintrack/src/assets/app-icon-1024.png"
+type = "image"
+title = "TwinTrack app icon twin circles pink violet"
+
+[[generated]]
+id = "Z0odGIRknHBSzj7bGt0hE"
+uri = "file://artifacts/twintrack/src/assets/splash-2732.png"
+type = "image"
+title = "TwinTrack splash screen minimal pink teal"

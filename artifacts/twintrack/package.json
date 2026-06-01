@@ -13,10 +13,12 @@
     "cap:ios": "npx cap open ios",
     "cap:android": "npx cap open android",
     "cap:add:ios": "npx cap add ios",
-    "cap:add:android": "npx cap add android"
+    "cap:add:android": "npx cap add android",
+    "cap:assets": "npx @capacitor/assets generate"
   },
   "devDependencies": {
     "@capacitor/android": "^8.3.4",
+    "@capacitor/assets": "^3.0.5",
     "@capacitor/camera": "^8.2.0",
     "@capacitor/cli": "^8.3.4",
     "@capacitor/core": "^8.3.4",
