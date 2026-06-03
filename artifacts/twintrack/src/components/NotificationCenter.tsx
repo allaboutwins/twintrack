@@ -16,11 +16,15 @@ interface NotificationItem {
 
 const BASE_URL = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
 
-const WHATS_NEW_KEY = "tt_whats_new_v3";
+const WHATS_NEW_KEY = "tt_whats_new_v4";
 const WHATS_NEW_UPDATES = [
+  { icon: "🌅", text: "Wake windows — awake time calculated automatically between naps on the Home screen" },
+  { icon: "🐛", text: "Twin B quick-action fix — tapping a twin's stats now opens their tracker directly" },
+  { icon: "🎂", text: "Precise age — exact months & days so milestones are always accurate (no more early birthdays!)" },
+  { icon: "🌙", text: "Night sleep — overnight sessions across midnight are now tracked and totalled correctly" },
+  { icon: "🍽️", text: "First Solids milestone — added to the Memories template gallery" },
   { icon: "📊", text: "Stats tab — daily & weekly charts for sleep, feeds, and diapers" },
-  { icon: "🛡️", text: "Blank-screen recovery — automatic fix screen if the app fails to load" },
-  { icon: "🔔", text: "Smart notification scheduler — quiet hours and context-aware reminders" },
+  { icon: "🔔", text: "Smart notifications — quiet hours and context-aware reminders" },
 ];
 
 function WhatsNewCard() {

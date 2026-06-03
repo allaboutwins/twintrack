@@ -989,7 +989,12 @@ export default function Feeding() {
   const qc = useQueryClient();
   const today = new Date().toLocaleDateString("en-CA");
 
-  const [activeTwinId, setActiveTwinId] = useState<number | null>(null);
+  const [activeTwinId, setActiveTwinId] = useState<number | null>(() => {
+    try {
+      const id = new URLSearchParams(window.location.search).get("twinId");
+      return id ? parseInt(id, 10) : null;
+    } catch { return null; }
+  });
   const [logSheetType, setLogSheetType] = useState<FeedingType | null>(null);
   const [editingEntry, setEditingEntry] = useState<EditEntry | null>(null);
   const [showAddFood, setShowAddFood] = useState(false);

@@ -114,7 +114,7 @@ function EditDiaperSheet({
 export default function Diapers() {
   const { user } = useUser();
   const qc = useQueryClient();
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toLocaleDateString("en-CA");
   const [justLogged, setJustLogged] = useState<DiaperType | null>(null);
   const [editingEntry, setEditingEntry] = useState<DiaperEntry | null>(null);
 
@@ -123,7 +123,12 @@ export default function Diapers() {
     { query: { enabled: !!user?.id, queryKey: getListTwinsQueryKey({ userId: user?.id ?? "" }) } },
   );
 
-  const [activeTwinId, setActiveTwinId] = useState<number | null>(null);
+  const [activeTwinId, setActiveTwinId] = useState<number | null>(() => {
+    try {
+      const id = new URLSearchParams(window.location.search).get("twinId");
+      return id ? parseInt(id, 10) : null;
+    } catch { return null; }
+  });
   const twinId = activeTwinId ?? twins[0]?.id ?? null;
 
   useEffect(() => {

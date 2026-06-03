@@ -1,0 +1,205 @@
+TwinTrack — Critical User Feedback & Bug Fixes Before App Store Testing 🚀💕
+
+These are coming directly from active twin moms and should take priority over new feature development.
+
+---
+
+1. WAKE WINDOWS (HIGH PRIORITY)
+
+Feedback:
+
+💡 "I'd love to track wake windows."
+
+Please add:
+
+* automatic wake window calculation
+* display wake window duration between sleep sessions
+* show wake window in Sleep History
+* show average wake window in Stats
+
+Goal:
+
+Parents should not need to calculate this manually.
+
+---
+
+2. CAREGIVER INVITES NOT WORKING (CRITICAL BUG)
+
+Feedback:
+
+🐛 Caregiver invite only copies the email address.
+No email is being sent.
+Caregiver cannot access the account.
+
+Please fully test:
+
+* invite creation
+* email delivery
+* invite acceptance
+* caregiver activation
+
+This is currently broken.
+
+---
+
+3. TWIN B DIAPER BUTTON BUG (CRITICAL)
+
+Feedback:
+
+🐛 Clicking Twin B diaper shortcut sometimes logs on Twin A.
+
+Please investigate all Home screen quick-action buttons.
+
+Verify:
+
+* Twin A actions always open Twin A
+* Twin B actions always open Twin B
+
+This can create incorrect tracking data.
+
+---
+
+4. FEEDBACK BUTTON NOT WORKING
+
+Feedback:
+
+🐛 Send Feedback button not submitting reports.
+
+Please verify:
+
+* submission
+* database storage
+* admin visibility
+
+---
+
+5. NIGHT SLEEP / MANUAL SLEEP BUG
+
+Feedback:
+
+😕 Overnight sleep is not being calculated correctly.
+
+Example:
+
+Start:
+7:30 PM
+
+End:
+5:00 AM
+
+Please verify:
+
+* cross-midnight sleep calculations
+* previous-day assignment
+* stats calculations
+* dashboard summaries
+
+This is likely causing incorrect sleep data.
+
+---
+
+6. MANUAL SLEEP ENTRY IMPROVEMENTS
+
+Feedback:
+
+💡 Add start and finish times manually.
+
+Please support:
+
+* manual start
+* manual end
+* manual overnight sleep
+
+without requiring timer usage.
+
+---
+
+7. TIME ZONE BUG
+
+Feedback:
+
+🐛 Entire day resets around 8 PM.
+
+Please investigate:
+
+* timezone handling
+* local user timezone
+* server timezone
+* daily rollover logic
+
+The app should use the user's local timezone.
+
+---
+
+8. FEEDING HISTORY DETAILS
+
+Feedback:
+
+💡 Stats show totals but not feeding times.
+
+Please allow users to:
+
+* view exact feeding times
+* review previous days
+* see detailed daily history
+
+This is especially useful for pediatrician visits.
+
+---
+
+9. AGE CALCULATION BUG
+
+Feedback:
+
+😕 Twins born 12/12 are shown as 6 months before their actual 6-month birthday.
+
+Please calculate age using exact dates rather than month boundaries.
+
+Examples:
+
+5 months 29 days
+6 months exactly
+6 months 1 day
+
+Goal:
+
+Age milestones should be accurate.
+
+---
+
+10. FIRST SOLIDS MEMORY
+
+Feedback:
+
+💡 Add "First Solids" as a milestone/memory option.
+
+Please add to milestone templates.
+
+---
+
+11. APP STORE / GOOGLE PLAY AVAILABILITY
+
+Feedback:
+
+💡 Make available in Brazil.
+
+Please ensure:
+
+* Brazil is included in launch countries
+* localization support remains possible later
+
+---
+
+PRIORITY ORDER
+
+1. Caregiver invite bug
+2. Twin B logging bug
+3. Feedback button bug
+4. Night sleep calculation bug
+5. Timezone bug
+6. Age calculation bug
+7. Wake windows
+8. Feeding history details
+9. First solids milestone
+
+These are all coming from real TwinTrack families and should significantly improve trust and retention before wider App Store testing.

@@ -28,6 +28,7 @@ const MILESTONE_EMOJIS: Record<string, string> = {
   "first-tooth": "🦷",
   "first-word": "💬",
   "first-steps": "👣",
+  "first-solids": "🥣",
   "slept-through-night": "🌙",
   "first-daycare": "🎒",
   "first-birthday": "🎂",
@@ -59,18 +60,32 @@ function getTimeOfDay() {
   return "evening";
 }
 
+/** Precise age in whole months, accounting for day-of-month. */
 function getAgeMonths(birthdate: string) {
-  const bd = new Date(birthdate);
+  const bd = new Date(birthdate + "T00:00:00");
   const now = new Date();
-  return (now.getFullYear() - bd.getFullYear()) * 12 + now.getMonth() - bd.getMonth();
+  let months = (now.getFullYear() - bd.getFullYear()) * 12 + (now.getMonth() - bd.getMonth());
+  if (now.getDate() < bd.getDate()) months--;
+  return Math.max(0, months);
 }
 
-function getAgeLabel(months: number) {
-  if (months < 1) return "newborn";
-  if (months < 6) return `${months} month${months === 1 ? "" : "s"} old`;
-  if (months < 24) return `${months} months old`;
+/** Human-readable age label with exact months + days precision. */
+function getAgeLabel(birthdate: string) {
+  const bd = new Date(birthdate + "T00:00:00");
+  const now = new Date();
+  let months = (now.getFullYear() - bd.getFullYear()) * 12 + (now.getMonth() - bd.getMonth());
+  let days = now.getDate() - bd.getDate();
+  if (days < 0) {
+    months--;
+    days += new Date(now.getFullYear(), now.getMonth(), 0).getDate();
+  }
+  months = Math.max(0, months);
+  days = Math.max(0, days);
+  if (months < 1) return days === 0 ? "newborn" : `${days} day${days === 1 ? "" : "s"} old`;
+  if (months < 24) return days === 0 ? `${months}m old` : `${months}m ${days}d old`;
   const years = Math.floor(months / 12);
-  return `${years} year${years === 1 ? "" : "s"} old`;
+  const rem = months % 12;
+  return rem === 0 ? `${years}y old` : `${years}y ${rem}m old`;
 }
 
 function getRoutineSuggestion() {
@@ -100,7 +115,7 @@ function getDayTip() {
 export default function Dashboard() {
   const { user } = useUser();
   const [, setLocation] = useLocation();
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toLocaleDateString("en-CA");
 
   const { data: summary, isLoading } = useGetDashboardSummary(
     { userId: user?.id ?? "", date: today },
@@ -176,7 +191,7 @@ export default function Dashboard() {
   const [streak, setStreak] = useState(0);
   useEffect(() => {
     if (isLoading || noTwins) return;
-    const today = new Date().toISOString().split("T")[0];
+    const today = new Date().toLocaleDateString("en-CA");
     const stored = (() => { try { return JSON.parse(localStorage.getItem("tt_streak") ?? "{}"); } catch { return {}; } })();
     const { lastDate, count } = stored as { lastDate?: string; count?: number };
     const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
@@ -284,7 +299,7 @@ export default function Dashboard() {
                 <div>
                   <p className="font-semibold text-foreground">{ts.twin.name || ts.twin.label}</p>
                   {ts.twin.birthdate && (
-                    <p className="text-xs text-muted-foreground">{getAgeLabel(getAgeMonths(ts.twin.birthdate))}</p>
+                    <p className="text-xs text-muted-foreground">{getAgeLabel(ts.twin.birthdate)}</p>
                   )}
                   {!ts.twin.birthdate && (
                     <p className="text-xs text-muted-foreground">{ts.twin.label}</p>
@@ -299,21 +314,21 @@ export default function Dashboard() {
                 label="Sleep"
                 value={formatMinutes(ts.todaySleepMinutes)}
                 color={ts.twin.colorTheme}
-                onClick={() => setLocation("/sleep")}
+                onClick={() => setLocation(`/sleep?twinId=${ts.twin.id}`)}
               />
               <StatCell
                 icon={<Utensils size={16} />}
                 label="Feedings"
                 value={String(ts.todayFeedingCount)}
                 color={ts.twin.colorTheme}
-                onClick={() => setLocation("/feeding")}
+                onClick={() => setLocation(`/feeding?twinId=${ts.twin.id}`)}
               />
               <StatCell
                 icon={<Baby size={16} />}
                 label="Diapers"
                 value={String(ts.todayDiaperCount)}
                 color={ts.twin.colorTheme}
-                onClick={() => setLocation("/diapers")}
+                onClick={() => setLocation(`/diapers?twinId=${ts.twin.id}`)}
               />
             </div>
 
@@ -326,7 +341,7 @@ export default function Dashboard() {
                   </span>
                 </div>
                 <button
-                  onClick={() => setLocation("/sleep")}
+                  onClick={() => setLocation(`/sleep?twinId=${ts.twin.id}`)}
                   className="text-xs text-primary font-semibold flex items-center gap-0.5"
                   data-testid={`button-active-sleep-${ts.twin.id}`}
                 >
@@ -342,6 +357,22 @@ export default function Dashboard() {
                 </span>
               </div>
             )}
+
+            {/* Wake window — shown when no active sleep and we know when they last woke */}
+            {!ts.activeSleepEntry && ts.lastSleep != null && ts.lastSleep.endTime != null && (() => {
+              const wakeMins = Math.floor((Date.now() - new Date(ts.lastSleep.endTime!).getTime()) / 60000);
+              if (wakeMins < 0 || wakeMins > 720) return null;
+              const h = Math.floor(wakeMins / 60);
+              const m = wakeMins % 60;
+              const wakeStr = h > 0 ? `${h}h ${m}m` : `${m}m`;
+              return (
+                <div className="px-5 py-2.5 border-t border-border bg-amber-50/40">
+                  <span className="text-xs text-amber-700 font-medium">
+                    ☀️ Awake for {wakeStr} — woke at {formatTime(ts.lastSleep.endTime!)}
+                  </span>
+                </div>
+              );
+            })()}
           </div>
         ))}
 

@@ -24,6 +24,7 @@ const MILESTONE_PRESETS = [
   { key: "first-tooth", label: "First Tooth", emoji: "🦷" },
   { key: "first-word", label: "First Word", emoji: "💬" },
   { key: "first-steps", label: "First Steps", emoji: "👣" },
+  { key: "first-solids", label: "First Solids", emoji: "🥣" },
   { key: "slept-through-night", label: "Slept Through the Night", emoji: "🌙" },
   { key: "first-daycare", label: "First Daycare Day", emoji: "🎒" },
   { key: "first-birthday", label: "First Birthday", emoji: "🎂" },

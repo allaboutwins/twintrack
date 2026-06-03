@@ -158,7 +158,7 @@ function EditSleepSheet({
 export default function Sleep() {
   const { user } = useUser();
   const qc = useQueryClient();
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toLocaleDateString("en-CA");
   const [tick, setTick] = useState(0);
   const [showAdd, setShowAdd] = useState(false);
   const [addType, setAddType] = useState<"nap" | "night">("nap");
@@ -174,7 +174,12 @@ export default function Sleep() {
     { query: { enabled: !!user?.id, queryKey: getListTwinsQueryKey({ userId: user?.id ?? "" }) } },
   );
 
-  const [activeTwinId, setActiveTwinId] = useState<number | null>(null);
+  const [activeTwinId, setActiveTwinId] = useState<number | null>(() => {
+    try {
+      const id = new URLSearchParams(window.location.search).get("twinId");
+      return id ? parseInt(id, 10) : null;
+    } catch { return null; }
+  });
   const twinId = activeTwinId ?? twins[0]?.id ?? null;
 
   useEffect(() => {
