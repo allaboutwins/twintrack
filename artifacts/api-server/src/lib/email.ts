@@ -1,5 +1,7 @@
 import { Resend } from "resend";
 
+export const SENDER = "TwinTrack <twintrack@allaboutwins.com>";
+
 export interface CaregiverInviteParams {
   to: string;
   parentName: string;
@@ -21,7 +23,7 @@ async function sendWithResend(params: CaregiverInviteParams): Promise<EmailResul
   }
   const resend = new Resend(apiKey);
   const { data, error } = await resend.emails.send({
-    from: "TwinTrack <twintrack@allaboutwins.com>",
+    from: SENDER,
     to: params.to,
     subject: `${params.parentName} invited you to help with the twins 💕`,
     html: buildCaregiverInviteHtml(params),

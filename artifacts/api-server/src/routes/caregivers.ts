@@ -93,7 +93,7 @@ router.post("/caregivers/invite", async (req, res): Promise<void> => {
   });
 });
 
-// POST /caregivers/accept?token=xxx — caregiver accepts invite (links their userId)
+// POST /caregivers/accept — caregiver accepts invite (links their userId)
 router.post("/caregivers/accept", async (req, res): Promise<void> => {
   const { token, userId } = z.object({ token: z.string(), userId: z.string() }).safeParse(req.body).data ?? {};
   if (!token || !userId) {
@@ -118,6 +118,13 @@ router.post("/caregivers/accept", async (req, res): Promise<void> => {
     .set({ caregiverId: userId, status: "active", updatedAt: new Date() })
     .where(eq(caregivers.inviteToken, token))
     .returning();
+
+  // Analytics: invite accepted
+  req.log.info(
+    { event: "invite_accepted", ownerId: found.ownerId, caregiverId: userId, caregiverEmail: found.caregiverEmail, role: found.role },
+    "caregiver invite accepted",
+  );
+
   res.json(updated);
 });
 
