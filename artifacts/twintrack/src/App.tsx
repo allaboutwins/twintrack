@@ -31,6 +31,7 @@ import TwinAI from "@/pages/TwinAI";
 import VideoAdmin from "@/pages/VideoAdmin";
 import Admin from "@/pages/Admin";
 import Stats from "@/pages/Stats";
+import InviteAccept from "@/pages/InviteAccept";
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -537,6 +538,7 @@ function ClerkProviderWithRoutes() {
                   <ProtectedRoute component={Settings} />
                 </RouteErrorBoundary>
               </Route>
+              <Route path="/invite" component={InviteAccept} />
               <Route component={NotFound} />
             </Switch>
           </PageTransition>

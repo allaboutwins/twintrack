@@ -21,7 +21,7 @@ async function sendWithResend(params: CaregiverInviteParams): Promise<EmailResul
   }
   const resend = new Resend(apiKey);
   const { data, error } = await resend.emails.send({
-    from: "TwinTrack <hello@allaboutwins.com>",
+    from: "TwinTrack <twintrack@allaboutwins.com>",
     to: params.to,
     subject: `${params.parentName} invited you to help with the twins 💕`,
     html: buildCaregiverInviteHtml(params),
