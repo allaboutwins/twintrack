@@ -1,8 +1,9 @@
 import { Router, type IRouter } from "express";
-import { eq, or, and } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db, caregivers } from "@workspace/db";
 import { randomUUID } from "crypto";
 import { z } from "zod/v4";
+import { sendCaregiverInvite } from "../lib/email";
 
 const router: IRouter = Router();
 
@@ -11,6 +12,9 @@ const InviteCaregiverBody = z.object({
   caregiverEmail: z.string().email(),
   role: z.enum(["Dad", "Partner", "Grandparent", "Nanny", "Other"]).default("Other"),
   displayName: z.string().optional(),
+  parentName: z.string().optional(),
+  twinNames: z.array(z.string()).optional(),
+  appBaseUrl: z.string().optional(),
 });
 
 // GET /caregivers?userId=xxx — list caregivers for an owner
@@ -54,13 +58,39 @@ router.post("/caregivers/invite", async (req, res): Promise<void> => {
     res.status(400).json({ error: parsed.error.message });
     return;
   }
-  const { ownerId, caregiverEmail, role, displayName } = parsed.data;
+  const { ownerId, caregiverEmail, role, displayName, parentName, twinNames, appBaseUrl } = parsed.data;
+
   const inviteToken = randomUUID();
   const [row] = await db
     .insert(caregivers)
     .values({ ownerId, caregiverEmail, role, displayName, inviteToken, status: "pending" })
     .returning();
-  res.status(201).json({ ...row, inviteToken });
+
+  // Build the invite link — use provided base URL or fall back to the request origin
+  const base = appBaseUrl ?? `${req.protocol}://${req.get("host")}`;
+  const inviteLink = `${base}/invite?token=${inviteToken}`;
+
+  // Send branded invitation email (non-blocking — failure never blocks the invite creation)
+  const emailResult = await sendCaregiverInvite({
+    to: caregiverEmail,
+    parentName: parentName ?? "A TwinTrack parent",
+    twinNames: twinNames ?? [],
+    role,
+    inviteLink,
+  });
+
+  if (emailResult.ok) {
+    req.log.info({ caregiverEmail, emailId: emailResult.id }, "caregiver invite email sent");
+  } else {
+    req.log.warn({ caregiverEmail, error: emailResult.error }, "caregiver invite email failed — invite still created");
+  }
+
+  res.status(201).json({
+    ...row,
+    inviteToken,
+    emailSent: emailResult.ok,
+    emailError: emailResult.ok ? undefined : emailResult.error,
+  });
 });
 
 // POST /caregivers/accept?token=xxx — caregiver accepts invite (links their userId)

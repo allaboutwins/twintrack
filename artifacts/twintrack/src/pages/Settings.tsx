@@ -64,12 +64,13 @@ export default function Settings() {
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Caregiver invite state
-  type CaregiverRow = { id: number; caregiverEmail: string; role: string; displayName?: string | null; status: string; inviteToken: string };
+  type CaregiverRow = { id: number; caregiverEmail: string; role: string; displayName?: string | null; status: string; inviteToken: string; emailSent?: boolean };
   const [caregivers, setCaregivers] = useState<CaregiverRow[]>([]);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<"Dad" | "Partner" | "Grandparent" | "Nanny" | "Other">("Dad");
   const [inviteLoading, setInviteLoading] = useState(false);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const [inviteResult, setInviteResult] = useState<{ emailSent: boolean; token: string } | null>(null);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -82,15 +83,33 @@ export default function Settings() {
   async function sendInvite() {
     if (!user?.id || !inviteEmail.trim()) return;
     setInviteLoading(true);
+    setInviteResult(null);
     try {
+      const parentName =
+        [user.firstName, user.lastName].filter(Boolean).join(" ") ||
+        user.emailAddresses?.[0]?.emailAddress ||
+        "A TwinTrack parent";
+      const twinNames = twins
+        .map((t) => t.name || t.label)
+        .filter(Boolean) as string[];
+
       const res = await fetch("/api/caregivers/invite", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ownerId: user.id, caregiverEmail: inviteEmail.trim(), role: inviteRole }),
+        body: JSON.stringify({
+          ownerId: user.id,
+          caregiverEmail: inviteEmail.trim(),
+          role: inviteRole,
+          parentName,
+          twinNames,
+          appBaseUrl: window.location.origin,
+        }),
       });
-      const row = await res.json() as CaregiverRow;
+      const row = await res.json() as CaregiverRow & { emailSent?: boolean };
       setCaregivers((prev) => [...prev, row]);
       setInviteEmail("");
+      setInviteResult({ emailSent: row.emailSent ?? false, token: row.inviteToken });
+      setTimeout(() => setInviteResult(null), 6000);
     } finally {
       setInviteLoading(false);
     }
@@ -356,7 +375,30 @@ export default function Settings() {
               </div>
             )}
 
-            {caregivers.filter((c) => c.status === "pending").length > 0 && (
+            {/* Email send result feedback */}
+            {inviteResult && (
+              <div className={`rounded-xl px-4 py-3 text-sm flex items-start gap-2 ${
+                inviteResult.emailSent
+                  ? "bg-green-50 border border-green-200 text-green-800"
+                  : "bg-amber-50 border border-amber-200 text-amber-800"
+              }`}>
+                <span className="flex-shrink-0 mt-0.5">{inviteResult.emailSent ? "✅" : "⚠️"}</span>
+                <div>
+                  {inviteResult.emailSent ? (
+                    <p className="font-semibold">Invitation email sent!</p>
+                  ) : (
+                    <p className="font-semibold">Email couldn't be delivered</p>
+                  )}
+                  <p className="text-xs mt-0.5 opacity-80">
+                    {inviteResult.emailSent
+                      ? "Your caregiver will receive a branded invite with the acceptance link."
+                      : "No worries — tap the copy icon below to share the invite link manually."}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {caregivers.filter((c) => c.status === "pending").length > 0 && !inviteResult?.emailSent && (
               <p className="text-[11px] text-muted-foreground leading-relaxed">
                 💡 Tap the copy icon to share the invite link with your caregiver. They'll use it to link their TwinTrack account to your family.
               </p>
