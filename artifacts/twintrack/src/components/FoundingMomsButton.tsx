@@ -10,7 +10,7 @@ export default function FoundingMomsButton() {
 
   if (isLoading) return <div className="w-9 h-9" />;
 
-  const showUrgent = isInTrial && trialDaysLeft <= 3;
+  const showUrgent = isInTrial && trialDaysLeft > 0 && trialDaysLeft <= 3;
   const badgeLabel = isInTrial ? `${trialDaysLeft}d` : null;
 
   function openDrawer() {
@@ -30,7 +30,7 @@ export default function FoundingMomsButton() {
         {badgeLabel && (
           <span
             className={`absolute top-1 right-0.5 min-w-[18px] h-[18px] rounded-full text-[8px] font-bold text-white flex items-center justify-center px-1 border-2 border-white ${
-              showUrgent ? "bg-red-500" : "bg-primary"
+              showUrgent ? "bg-amber-400" : "bg-primary"
             }`}
           >
             {badgeLabel}

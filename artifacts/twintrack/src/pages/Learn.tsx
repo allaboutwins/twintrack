@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useUser } from "@clerk/react";
 import { posthog } from "@/lib/posthog";
+import { trackPlanEvent } from "@/hooks/usePlan";
 import { FaInstagram, FaYoutube, FaFacebook, FaTiktok, FaPinterest } from "react-icons/fa";
 import {
   useGetActivePoll,
@@ -123,6 +124,7 @@ function MagazinePreviewModal({ mag, onClose }: { mag: Magazine; onClose: () => 
             href={mag.url}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackPlanEvent("magazine_read", { issueId: mag.id, issue: mag.issue, season: mag.season })}
             className="flex items-center justify-center gap-2 w-full py-3.5 rounded-xl bg-primary text-white font-semibold text-sm active:scale-[0.98] transition-all shadow-sm"
             data-testid={`read-magazine-${mag.id}`}
           >
@@ -155,7 +157,11 @@ function MagazineLibrary() {
         {MAGAZINES.map((mag) => (
           <button
             key={mag.id}
-            onClick={() => { posthog?.capture("magazine_opened", { issue: mag.id }); setSelected(mag); }}
+            onClick={() => {
+              posthog?.capture("magazine_opened", { issue: mag.id });
+              trackPlanEvent("magazine_opened", { issueId: mag.id, issue: mag.issue, season: mag.season });
+              setSelected(mag);
+            }}
             className="block rounded-2xl overflow-hidden shadow-sm active:scale-[0.97] transition-all text-left w-full"
             data-testid={`magazine-${mag.id}`}
           >
@@ -317,6 +323,7 @@ function AcademySection({ userId }: { userId: string }) {
           href="https://allaboutwins.com/courses"
           target="_blank"
           rel="noopener noreferrer"
+          onClick={() => trackPlanEvent("academy_browse_clicked")}
           className="flex items-center justify-center gap-2 w-full py-3 rounded-xl bg-primary text-white text-sm font-bold active:scale-[0.98] transition-all shadow-sm"
           data-testid="academy-browse-courses"
         >
@@ -332,6 +339,7 @@ function AcademySection({ userId }: { userId: string }) {
             href={course.url}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackPlanEvent("academy_course_clicked", { courseTitle: course.title, courseBadge: course.badge, idx })}
             className="block bg-white rounded-2xl border border-border overflow-hidden hover:border-primary/30 active:scale-[0.99] transition-all shadow-sm"
             data-testid={`academy-course-${course.badge.toLowerCase()}`}
           >

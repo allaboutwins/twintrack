@@ -331,4 +331,27 @@ router.get("/push/cron-trigger", async (req, res): Promise<void> => {
   });
 });
 
+// ── POST /api/admin/test-trial-email ─────────────────────────────────────
+router.post("/admin/test-trial-email", async (req, res): Promise<void> => {
+  const userId = req.query.userId as string | undefined;
+  const adminPassword = req.query.adminPassword as string | undefined;
+  const adminIds = (process.env.ADMIN_USER_IDS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const envPw = process.env.ADMIN_PASSWORD;
+  const ok =
+    (userId && adminIds.includes(userId)) ||
+    (envPw && adminPassword && adminPassword === envPw);
+
+  if (!ok) { res.status(403).json({ error: "Forbidden" }); return; }
+
+  const { days, to } = req.body as { days?: number; to?: string };
+  if (!to || !to.includes("@")) { res.status(400).json({ error: "to (email address) is required" }); return; }
+  if (![1, 3, 7].includes(days ?? 0)) { res.status(400).json({ error: "days must be 1, 3, or 7" }); return; }
+
+  const appUrl = process.env.APP_URL ?? "https://twintrack.allaboutwins.com";
+  const result = await sendTrialReminderEmail({ to, daysLeft: days!, appUrl });
+
+  req.log.info({ event: "test_trial_email", to, days, ok: result.ok }, "Test trial email sent");
+  res.json({ ok: result.ok, id: result.id, error: result.error ?? null });
+});
+
 export default router;

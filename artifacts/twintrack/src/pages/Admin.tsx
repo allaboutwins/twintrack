@@ -91,6 +91,28 @@ interface TwinAiAnalytics {
   dailyUsage: { date: string; count: number }[];
 }
 
+interface PremiumAnalytics {
+  trials: { active: number; startsToday: number; startsThisWeek: number; startsThisMonth: number };
+  conversions: { expired: number; premium: number; trialConversionRate: number; viewToClickRate: number; clickToCheckoutRate: number };
+  foundingMoms: number;
+  funnel: { premiumPageViews: number; upgradeClicks: number; checkoutStarts: number; aiUpgradePrompts: number; caregiverUpgradePrompts: number };
+  topFeatures: { key: string; count: number }[];
+  topSources: { key: string; count: number }[];
+  topTiers: { key: string; count: number }[];
+  dailyTrials: { date: string; count: number }[];
+}
+
+interface ContentAnalytics {
+  magazine: {
+    totalOpens: number; uniqueUsers: number; reads: number; premiumClicks: number;
+    topIssues: { key: string; count: number }[];
+  };
+  academy: {
+    totalClicks: number; uniqueUsers: number; browseClicks: number; upgradePrompts: number;
+    topCourses: { key: string; count: number }[];
+  };
+}
+
 interface PollOption { key: string; label: string; }
 
 interface LiveUserEntry {
@@ -226,6 +248,11 @@ export default function Admin() {
   const [twinAiAnalytics, setTwinAiAnalytics] = useState<TwinAiAnalytics | null>(null);
   const [retentionData, setRetentionData] = useState<RetentionData | null>(null);
   const [liveUsers, setLiveUsers] = useState<LiveUsersData | null>(null);
+  const [premiumAnalytics, setPremiumAnalytics] = useState<PremiumAnalytics | null>(null);
+  const [contentAnalytics, setContentAnalytics] = useState<ContentAnalytics | null>(null);
+  const [testEmailTo, setTestEmailTo] = useState("");
+  const [testEmailDays, setTestEmailDays] = useState<1 | 3 | 7>(7);
+  const [testEmailStatus, setTestEmailStatus] = useState<"idle" | "sending" | "ok" | "error">("idle");
   const [appUpdatesList, setAppUpdatesList] = useState<AppUpdateItem[]>([]);
   const [showUpdateForm, setShowUpdateForm] = useState(false);
   const [updateTitle, setUpdateTitle] = useState("");
@@ -252,12 +279,14 @@ export default function Admin() {
     // browser to bypass its own cache and never store the response.
     const t = Date.now();
     try {
-      const [statsRes, aiRes, updatesRes, notifRes, retentionRes] = await Promise.all([
+      const [statsRes, aiRes, updatesRes, notifRes, retentionRes, premiumRes, contentRes] = await Promise.all([
         fetch(`${baseUrl}/api/admin/stats?${authQuery}&_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/admin/twin-ai-analytics?${authQuery}&_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/app-updates?limit=50&_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/admin/notifications/stats?_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/admin/retention?${authQuery}&days=30&_t=${t}`, { cache: "no-store" }),
+        fetch(`${baseUrl}/api/admin/premium-analytics?${authQuery}&_t=${t}`, { cache: "no-store" }),
+        fetch(`${baseUrl}/api/admin/content-analytics?${authQuery}&_t=${t}`, { cache: "no-store" }),
       ]);
       if (!statsRes.ok) throw new Error(`${statsRes.status}`);
       const data: AdminStats = await statsRes.json();
@@ -267,6 +296,8 @@ export default function Admin() {
       if (updatesRes.ok) setAppUpdatesList(await updatesRes.json());
       if (notifRes.ok) setNotificationStats(await notifRes.json());
       if (retentionRes.ok) setRetentionData(await retentionRes.json());
+      if (premiumRes.ok) setPremiumAnalytics(await premiumRes.json());
+      if (contentRes.ok) setContentAnalytics(await contentRes.json());
       setLastUpdated(new Date());
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -797,6 +828,190 @@ export default function Admin() {
                     </div>
                   )
                 }
+              </div>
+            </section>
+          )}
+
+          {/* ── PREMIUM ANALYTICS ── */}
+          {premiumAnalytics && (
+            <section>
+              <SectionHeader icon={<span className="text-sm">💕</span>} title="Premium & Subscriptions (30d)" />
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-4">
+                <StatCard label="Active trials" value={premiumAnalytics.trials.active} sub="right now" accent />
+                <StatCard label="Founding Moms 💕" value={premiumAnalytics.foundingMoms} sub="total subscribers" accent />
+                <StatCard label="Trial starts today" value={premiumAnalytics.trials.startsToday} sub="new today" />
+                <StatCard label="Trials this week" value={premiumAnalytics.trials.startsThisWeek} />
+                <StatCard label="Trials this month" value={premiumAnalytics.trials.startsThisMonth} />
+                <StatCard label="Expired trials" value={premiumAnalytics.conversions.expired} sub="never converted" />
+                <StatCard label="Paid premium" value={premiumAnalytics.conversions.premium} sub="active subs" accent />
+                <StatCard label="Trial → paid" value={`${premiumAnalytics.conversions.trialConversionRate}%`} sub="conversion" accent />
+              </div>
+
+              {/* Upgrade funnel */}
+              <div className="bg-white rounded-2xl p-4 border border-border mb-4">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Upgrade Funnel (30d)</p>
+                <div className="space-y-3">
+                  {[
+                    { label: "Premium page views", value: premiumAnalytics.funnel.premiumPageViews, color: "bg-violet-300" },
+                    { label: "Upgrade button clicks", value: premiumAnalytics.funnel.upgradeClicks, color: "bg-primary/70" },
+                    { label: "Checkout started", value: premiumAnalytics.funnel.checkoutStarts, color: "bg-primary" },
+                  ].map(({ label, value, color }) => {
+                    const max = Math.max(premiumAnalytics.funnel.premiumPageViews, 1);
+                    return (
+                      <div key={label}>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-foreground font-medium">{label}</span>
+                          <span className="text-muted-foreground font-semibold">{value}</span>
+                        </div>
+                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${Math.round((value / max) * 100)}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div className="flex gap-4 pt-1 text-xs text-muted-foreground">
+                    <span>View→Click: <strong className="text-foreground">{premiumAnalytics.conversions.viewToClickRate}%</strong></span>
+                    <span>Click→Checkout: <strong className="text-foreground">{premiumAnalytics.conversions.clickToCheckoutRate}%</strong></span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Upgrade prompts + top sources */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div className="bg-white rounded-2xl p-4 border border-border">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Upgrade Prompts Shown (30d)</p>
+                  <div className="space-y-2">
+                    {[
+                      { label: "✨ AI limit hit", value: premiumAnalytics.funnel.aiUpgradePrompts },
+                      { label: "👨‍👩‍👧‍👦 Caregiver gate", value: premiumAnalytics.funnel.caregiverUpgradePrompts },
+                    ].map(({ label, value }) => (
+                      <div key={label} className="flex items-center justify-between">
+                        <span className="text-sm text-foreground">{label}</span>
+                        <span className="text-sm font-bold text-primary">{value}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="bg-white rounded-2xl p-4 border border-border">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Top Upgrade Sources</p>
+                  {premiumAnalytics.topSources.length === 0
+                    ? <p className="text-xs text-muted-foreground italic">No data yet 🍒</p>
+                    : <BreakdownBars items={premiumAnalytics.topSources.map((s) => ({ key: s.key, value: s.count }))} color="bg-primary/70" />
+                  }
+                </div>
+              </div>
+
+              {/* Daily trial starts */}
+              {premiumAnalytics.dailyTrials.length > 0 && (
+                <div className="bg-white rounded-2xl p-4 border border-border mb-4">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Trial Starts per Day (14d)</p>
+                  <ResponsiveContainer width="100%" height={90}>
+                    <ReBarChart data={premiumAnalytics.dailyTrials} margin={{ top: 2, right: 4, left: -24, bottom: 0 }}>
+                      <XAxis dataKey="date" tick={{ fontSize: 9, fill: "#6b9ea5" }} tickFormatter={(v: string) => new Date(v + "T12:00:00").toLocaleDateString("en-US", { month: "numeric", day: "numeric" })} interval="preserveStartEnd" />
+                      <YAxis tick={{ fontSize: 9, fill: "#6b9ea5" }} allowDecimals={false} />
+                      <Tooltip contentStyle={{ borderRadius: 12, border: "1px solid #e8d5e4", fontSize: 11 }} formatter={(v: number) => [v, "Trial starts"]} />
+                      <Bar dataKey="count" fill="#da5a9f" radius={[3, 3, 0, 0]} />
+                    </ReBarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
+              {/* Test trial reminder email */}
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
+                <p className="text-xs font-bold text-amber-800 uppercase tracking-wide mb-3">🧪 Test Trial Reminder Email</p>
+                <div className="flex gap-2 mb-3">
+                  {([7, 3, 1] as const).map((d) => (
+                    <button key={d} onClick={() => setTestEmailDays(d)}
+                      className={`flex-1 py-1.5 rounded-xl text-xs font-bold border transition-all ${testEmailDays === d ? "bg-amber-600 text-white border-amber-600" : "bg-white text-amber-700 border-amber-300"}`}>
+                      {d}d left
+                    </button>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    value={testEmailTo}
+                    onChange={(e) => setTestEmailTo(e.target.value)}
+                    placeholder="your@email.com"
+                    className="flex-1 px-3 py-2 text-sm rounded-xl border border-amber-300 bg-white outline-none focus:border-amber-500"
+                  />
+                  <button
+                    disabled={!testEmailTo.includes("@") || testEmailStatus === "sending"}
+                    onClick={async () => {
+                      setTestEmailStatus("sending");
+                      try {
+                        const r = await fetch(`${baseUrl}/api/admin/test-trial-email?${authQuery}`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ days: testEmailDays, to: testEmailTo }),
+                        });
+                        setTestEmailStatus(r.ok ? "ok" : "error");
+                        setTimeout(() => setTestEmailStatus("idle"), 3000);
+                      } catch { setTestEmailStatus("error"); setTimeout(() => setTestEmailStatus("idle"), 3000); }
+                    }}
+                    className="px-4 py-2 rounded-xl bg-amber-600 text-white text-xs font-bold disabled:opacity-40 transition-all active:scale-[0.97]"
+                  >
+                    {testEmailStatus === "sending" ? "…" : testEmailStatus === "ok" ? "✓ Sent!" : testEmailStatus === "error" ? "✗ Error" : "Send"}
+                  </button>
+                </div>
+              </div>
+            </section>
+          )}
+
+          {/* ── CONTENT ANALYTICS ── */}
+          {contentAnalytics && (
+            <section>
+              <SectionHeader icon={<span className="text-sm">📖</span>} title="Magazine & Academy (30d)" />
+
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-4">
+                <StatCard label="Magazine opens" value={contentAnalytics.magazine.totalOpens} sub="cover taps" accent />
+                <StatCard label="Read Full Issue" value={contentAnalytics.magazine.reads} sub="external opens" />
+                <StatCard label="Magazine readers" value={contentAnalytics.magazine.uniqueUsers} sub="unique users" />
+                <StatCard label="Academy clicks" value={contentAnalytics.academy.totalClicks} sub="course taps" accent />
+                <StatCard label="Browse library" value={contentAnalytics.academy.browseClicks} sub="full library taps" />
+                <StatCard label="Academy users" value={contentAnalytics.academy.uniqueUsers} sub="unique users" />
+                <StatCard label="Magazine read rate" value={contentAnalytics.magazine.totalOpens > 0 ? `${Math.round((contentAnalytics.magazine.reads / contentAnalytics.magazine.totalOpens) * 100)}%` : "—"} sub="opens → reads" />
+                <StatCard label="Upgrade prompts" value={contentAnalytics.academy.upgradePrompts} sub="premium clicks" />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-white rounded-2xl p-4 border border-border">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">📚 Most Opened Magazine Issues</p>
+                  {contentAnalytics.magazine.topIssues.length === 0
+                    ? <p className="text-xs text-muted-foreground italic">No opens tracked yet 🍒</p>
+                    : (
+                      <div className="space-y-2">
+                        {contentAnalytics.magazine.topIssues.slice(0, 5).map((issue, i) => (
+                          <div key={issue.key} className="flex items-center gap-3">
+                            <span className="text-xs font-bold text-primary/40 w-4">{i + 1}</span>
+                            <span className="text-xs text-foreground flex-1 truncate">{issue.key}</span>
+                            <span className="text-xs font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">{issue.count}×</span>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  }
+                </div>
+
+                <div className="bg-white rounded-2xl p-4 border border-border">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">🎓 Most Clicked Courses</p>
+                  {contentAnalytics.academy.topCourses.length === 0
+                    ? <p className="text-xs text-muted-foreground italic">No clicks tracked yet 🍒</p>
+                    : (
+                      <div className="space-y-2">
+                        {contentAnalytics.academy.topCourses.slice(0, 5).map((course, i) => (
+                          <div key={course.key} className="flex items-center gap-3">
+                            <span className="text-xs font-bold text-primary/40 w-4">{i + 1}</span>
+                            <span className="text-xs text-foreground flex-1 truncate">{course.key}</span>
+                            <span className="text-xs font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">{course.count}×</span>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  }
+                </div>
               </div>
             </section>
           )}
