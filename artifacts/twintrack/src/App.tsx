@@ -32,6 +32,8 @@ import VideoAdmin from "@/pages/VideoAdmin";
 import Admin from "@/pages/Admin";
 import Stats from "@/pages/Stats";
 import AppScreenshots from "@/pages/AppScreenshots";
+import Privacy from "@/pages/Privacy";
+import Terms from "@/pages/Terms";
 import InviteAccept from "@/pages/InviteAccept";
 
 const clerkPubKey = publishableKeyFromHost(
@@ -476,6 +478,8 @@ function ClerkProviderWithRoutes() {
               <Route path="/" component={HomeRedirect} />
               <Route path="/sign-in/*?" component={SignInPage} />
               <Route path="/sign-up/*?" component={SignUpPage} />
+              <Route path="/privacy" component={Privacy} />
+              <Route path="/terms" component={Terms} />
               <Route path="/dashboard">
                 <RouteErrorBoundary route="dashboard">
                   <ProtectedRoute component={Dashboard} />
