@@ -1,0 +1,251 @@
+TwinTrack — Founding Moms Premium Launch 💕🚀
+
+I would like to proceed with the Premium subscription architecture.
+
+IMPORTANT:
+
+The goal is NOT to aggressively push subscriptions.
+
+The goal is:
+
+👉 let moms fall in love with TwinTrack first
+
+👉 create daily habits
+
+👉 build trust
+
+👉 then offer Premium naturally
+
+---
+
+PRICING
+
+Regular Premium:
+
+* $5.99/month
+* $49/year
+
+Founding Moms Offer:
+
+* $39/year
+
+IMPORTANT:
+
+The $39/year offer is ONLY available during the user's first 14-day free trial.
+
+Once the trial expires:
+
+* the offer disappears
+* annual pricing becomes $49/year
+
+Users who subscribe during the trial:
+
+* keep $39/year forever
+* receive a Founding Mom badge 💕
+
+---
+
+14 DAY FREE TRIAL
+
+Every new user receives:
+
+* full Premium access
+* no restrictions
+* no paywall
+
+This allows moms to experience the complete TwinTrack ecosystem.
+
+---
+
+AFTER THE TRIAL
+
+FREE PLAN
+
+Keep FREE forever:
+
+* Sleep tracking
+* Feeding tracking
+* Diaper tracking
+* Solids tracking
+* Medicine tracking
+* Daily stats
+* Weekly summaries
+* Community polls
+* Community questions
+* Basic milestones
+* First Twins Magazine issue (the oldest)
+
+Ask Twin AI:
+
+* 1 free question per week
+
+---
+
+PREMIUM FEATURES
+
+Unlock:
+
+✨ Unlimited Twin AI
+
+✨ Caregiver Access
+
+✨ All Twins Magazines
+
+✨ Twins Academy
+
+✨ Premium memory cards
+
+✨ Holiday memory templates
+
+✨ Future advanced reports
+
+✨ Future exports
+
+✨ Future premium features
+
+---
+
+FOUNDING MOMS BUTTON
+
+Please add a small:
+
+💕 Founding Moms
+
+button/icon next to the 🍒 notifications button.
+
+This section should show:
+
+* trial days remaining
+* Premium benefits
+* Founding Moms price
+* regular price
+* upgrade button
+
+Once subscribed:
+
+💕 Founding Mom
+
+badge remains visible.
+
+---
+
+TRIAL REMINDERS
+
+Please create soft reminders.
+
+7 days remaining:
+
+"You're officially one of our Founding Twin Moms 💕
+Unlock Premium now and keep the special $39/year price forever."
+
+3 days remaining:
+
+"Only 3 days left to secure your Founding Moms rate 💕"
+
+1 day remaining:
+
+"Last chance 💕
+Your Founding Moms offer expires tomorrow."
+
+After expiration:
+
+"Your free trial has ended 💕
+You can continue using TwinTrack Free or unlock Premium for $49/year."
+
+Please keep all messaging:
+
+* warm
+* supportive
+* non-pushy
+
+---
+
+EMAIL AUTOMATIONS
+
+Send matching email reminders:
+
+* 7 days remaining
+* 3 days remaining
+* 1 day remaining
+
+Include:
+
+* Founding Moms offer
+* Premium benefits
+* upgrade link
+
+---
+
+ANALYTICS (IMPORTANT)
+
+Please begin tracking on the Admin Panel:
+
+Subscription funnel:
+
+* premium_page_viewed
+* upgrade_button_clicked
+* checkout_started
+* subscription_completed
+* trial_started
+* trial_expired
+* trial_day_of_conversion
+* monthly_selected
+* annual_selected
+
+Twin AI:
+
+* ai_question_used
+* ai_upgrade_prompt_shown
+
+Caregiver:
+
+* caregiver_upgrade_prompt_shown
+
+Magazines:
+
+* magazine_opened
+* magazine_downloaded
+* magazine_shared
+* premium_magazine_click
+* premium_magazine_upgrade_prompt
+
+Twins Academy:
+
+* academy_card_clicked
+* academy_course_opened
+* academy_link_clicked
+* academy_upgrade_prompt
+
+Memories:
+
+* memory_created
+* memory_shared
+* holiday_template_used
+
+Community:
+
+* poll_voted
+* community_question_submitted
+* community_answer_posted
+
+Admin Dashboard:
+
+Please add visibility for:
+
+* Premium conversions
+* Trial users
+* Conversion %
+* Most viewed Premium feature
+* Most clicked upgrade source
+* Magazine engagement
+* Academy engagement
+
+Goal:
+
+I want to understand exactly:
+
+* what moms love most
+* what converts best
+* what should become future Premium features
+
+💕🚀

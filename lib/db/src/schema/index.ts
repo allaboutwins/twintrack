@@ -15,3 +15,5 @@ export * from "./push-subscriptions";
 export * from "./heartbeats";
 export * from "./caregivers";
 export * from "./community-questions";
+export * from "./user-plans";
+export * from "./analytics-events";

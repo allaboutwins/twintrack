@@ -7,6 +7,7 @@ import { useSubmitFeedback } from "@workspace/api-client-react";
 import NotificationCenter from "@/components/NotificationCenter";
 import InstallPrompt from "@/components/InstallPrompt";
 import OfflineBanner from "@/components/OfflineBanner";
+import FoundingMomsButton from "@/components/FoundingMomsButton";
 import { useAppPrefs } from "@/hooks/useAppPrefs";
 import { posthog } from "@/lib/posthog";
 
@@ -191,6 +192,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className="flex items-center justify-between px-4 h-16">
           <img src={logoAat} alt="All About Twins" className="h-16 w-auto" />
           <div className="flex items-center">
+            <FoundingMomsButton />
             <button
               onClick={openNotifications}
               className="relative p-2 rounded-full hover:bg-muted/60 transition-colors"

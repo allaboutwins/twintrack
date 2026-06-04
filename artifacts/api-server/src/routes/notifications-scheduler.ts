@@ -11,8 +11,11 @@ import {
   diaperEntriesTable,
   pollsTable,
   pollResponsesTable,
+  userPlansTable,
+  analyticsEventsTable,
 } from "@workspace/db";
 import { sendPushToUser } from "./push";
+import { sendTrialReminderEmail } from "../lib/email";
 
 const router: IRouter = Router();
 
@@ -220,6 +223,59 @@ async function processUser(userId: string): Promise<{ userId: string; sent: stri
   return { userId, sent };
 }
 
+// ── Trial reminder email sender ────────────────────────────────────────────
+
+async function processTrialReminders(): Promise<string[]> {
+  const sent: string[] = [];
+  const now = new Date();
+  const appUrl = process.env.APP_URL ?? "https://twintrack.allaboutwins.com";
+
+  const trialUsers = await db
+    .select()
+    .from(userPlansTable)
+    .where(eq(userPlansTable.status, "trial"));
+
+  for (const user of trialUsers) {
+    if (!user.userEmail) continue;
+
+    const msLeft = user.trialEndsAt.getTime() - now.getTime();
+    const daysLeft = Math.ceil(msLeft / (24 * 60 * 60 * 1000));
+
+    if (![7, 3, 1].includes(daysLeft)) continue;
+
+    const alreadySent = (user.trialRemindersSent ?? "").split(",").includes(String(daysLeft));
+    if (alreadySent) continue;
+
+    const result = await sendTrialReminderEmail({
+      to: user.userEmail,
+      daysLeft,
+      appUrl,
+    });
+
+    if (result.ok) {
+      const existing = (user.trialRemindersSent ?? "").split(",").filter(Boolean);
+      existing.push(String(daysLeft));
+      await db
+        .update(userPlansTable)
+        .set({ trialRemindersSent: existing.join(","), updatedAt: new Date() })
+        .where(eq(userPlansTable.userId, user.userId));
+
+      await db
+        .insert(analyticsEventsTable)
+        .values({
+          event: `trial_reminder_${daysLeft}d`,
+          userId: user.userId,
+          properties: { emailId: result.id, daysLeft },
+        })
+        .catch(() => {});
+
+      sent.push(`${user.userId}:${daysLeft}d`);
+    }
+  }
+
+  return sent;
+}
+
 // ── Admin endpoint to manually trigger smart notifications ────────────────
 
 router.post("/push/run-smart-notifications", async (req, res): Promise<void> => {
@@ -263,9 +319,16 @@ router.get("/push/cron-trigger", async (req, res): Promise<void> => {
 
   const subs = await db.select({ userId: pushSubscriptionsTable.userId }).from(pushSubscriptionsTable);
   const uniqueUsers = [...new Set(subs.map((s) => s.userId))];
-  const results = await Promise.all(uniqueUsers.map((uid) => processUser(uid).catch(() => ({ userId: uid, sent: [] }))));
+  const [results, trialRemindersSent] = await Promise.all([
+    Promise.all(uniqueUsers.map((uid) => processUser(uid).catch(() => ({ userId: uid, sent: [] })))),
+    processTrialReminders().catch(() => [] as string[]),
+  ]);
 
-  res.json({ processed: uniqueUsers.length, sent: results.flatMap((r) => r.sent).length });
+  res.json({
+    processed: uniqueUsers.length,
+    sent: results.flatMap((r) => r.sent).length,
+    trialRemindersSent: trialRemindersSent.length,
+  });
 });
 
 export default router;

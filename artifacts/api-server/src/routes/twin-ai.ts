@@ -4,9 +4,10 @@ import { and, count, desc, eq, gte, sql } from "drizzle-orm";
 import type { Request } from "express";
 import { getAuth } from "@clerk/express";
 import { openai } from "@workspace/integrations-openai-ai-server";
-import { db, twinAiMessages } from "@workspace/db";
+import { db, twinAiMessages, userPlansTable, analyticsEventsTable } from "@workspace/db";
 
-const DAILY_LIMIT = 10;
+const DAILY_LIMIT_PREMIUM = 10;
+const WEEKLY_LIMIT_FREE = 1;
 
 const router = Router();
 
@@ -95,16 +96,49 @@ router.post("/twin-ai/chat", async (req, res) => {
 
   const { messages, category } = parsed.data;
 
-  const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
-  const [limitRow] = await db
-    .select({ c: count() })
-    .from(twinAiMessages)
-    .where(and(eq(twinAiMessages.userId, userId), gte(twinAiMessages.createdAt, todayStart)));
+  // Check plan: trial/premium = generous daily limit; free = 1/week
+  const [planRow] = await db
+    .select({ status: userPlansTable.status, plan: userPlansTable.plan })
+    .from(userPlansTable)
+    .where(eq(userPlansTable.userId, userId));
 
-  if ((limitRow?.c ?? 0) >= DAILY_LIMIT) {
-    res.status(429).json({ error: "limit_reached" });
-    return;
+  const isPremium =
+    planRow?.plan === "premium" ||
+    planRow?.status === "trial" ||
+    planRow === undefined; // no plan row yet = just started, treat as trial
+
+  if (isPremium) {
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+    const [limitRow] = await db
+      .select({ c: count() })
+      .from(twinAiMessages)
+      .where(and(eq(twinAiMessages.userId, userId), gte(twinAiMessages.createdAt, todayStart)));
+
+    if ((limitRow?.c ?? 0) >= DAILY_LIMIT_PREMIUM) {
+      res.status(429).json({ error: "limit_reached" });
+      return;
+    }
+  } else {
+    // Free user: 1 question per week (Sunday → Saturday UTC)
+    const now = new Date();
+    const weekStart = new Date(now);
+    weekStart.setUTCHours(0, 0, 0, 0);
+    weekStart.setUTCDate(weekStart.getUTCDate() - weekStart.getUTCDay());
+
+    const [limitRow] = await db
+      .select({ c: count() })
+      .from(twinAiMessages)
+      .where(and(eq(twinAiMessages.userId, userId), gte(twinAiMessages.createdAt, weekStart)));
+
+    if ((limitRow?.c ?? 0) >= WEEKLY_LIMIT_FREE) {
+      // Track upgrade prompt shown
+      db.insert(analyticsEventsTable)
+        .values({ event: "ai_upgrade_prompt_shown", userId })
+        .catch(() => {});
+      res.status(429).json({ error: "weekly_limit_reached" });
+      return;
+    }
   }
 
   const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
@@ -137,6 +171,11 @@ router.post("/twin-ai/chat", async (req, res) => {
       .insert(twinAiMessages)
       .values({ userId, question: questionText, category: category ?? null })
       .returning({ id: twinAiMessages.id });
+
+    // Track ai_question_used
+    db.insert(analyticsEventsTable)
+      .values({ event: "ai_question_used", userId, properties: { category: category ?? null } })
+      .catch(() => {});
 
     res.write(`data: ${JSON.stringify({ done: true, messageId: saved?.id ?? null })}\n\n`);
     res.end();

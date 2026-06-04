@@ -1,0 +1,173 @@
+TwinTrack — Founding Moms Premium & App Store Transition 💕🚀
+
+We are now preparing TwinTrack to transition from Early Access into a real App Store / Google Play product.
+
+IMPORTANT:
+
+Please DO NOT lock core tracking features.
+
+Our goal is:
+
+* build trust
+* create daily habits
+* increase retention
+* allow moms to fall in love with TwinTrack first
+
+We want moms to feel:
+
+👉 "I use TwinTrack every day and can't imagine parenting twins without it."
+
+Only then do we introduce Premium.
+
+---
+
+FOUNDING MOMS PREMIUM
+
+Pricing:
+
+* Monthly: $5.99/month
+* Annual: $49/year
+
+Include a special badge:
+
+💕 Founding Mom
+
+for early supporters.
+
+---
+
+FREE TRIAL
+
+All new users receive:
+
+* 14 days FREE access to everything
+
+No credit card required.
+
+After the trial ends:
+
+Core tracking remains FREE.
+
+---
+
+FREE PLAN (AFTER 14 DAYS)
+
+Keep FREE forever:
+
+* Sleep tracking
+* Feeding tracking
+* Diaper tracking
+* Solids tracking
+* Medicine tracking
+* Daily stats
+* Weekly summaries
+* Basic milestones/memories
+* Community polls
+* First Twins Magazine issue
+
+The app must remain genuinely useful for free users.
+
+---
+
+FOUNDING MOMS PREMIUM FEATURES
+
+Unlock:
+
+✨ Ask Twin AI
+
+* Unlimited Twin AI questions
+* Free users receive 1 AI question per week
+
+✨ Caregiver Access
+
+* Dad
+* Partner
+* Grandparent
+* Nanny
+
+✨ Full Memories Experience
+
+* Premium share cards
+* Seasonal templates
+* Holiday cards
+* Advanced memory collections
+
+✨ Twins Magazines Library
+
+* Full magazine archive
+* New magazine releases
+
+✨ Twins Academy
+
+* Premium learning content
+* Expert education
+
+✨ Future Premium Features
+
+* Doctor reports
+* Advanced trends
+* Exports
+* Growth insights
+* Pregnancy mode
+* Multiple-family support
+* Future AI coaching
+
+---
+
+PAYWALL STRATEGY
+
+Please avoid aggressive paywalls.
+
+Instead:
+
+When users tap a Premium feature:
+
+Show a beautiful upgrade screen explaining:
+
+* what they unlock
+* why it helps
+* annual savings
+
+Tone should feel:
+
+* supportive
+* warm
+* exciting
+
+NOT pushy.
+
+---
+
+APP STORE / GOOGLE PLAY PREPARATION
+
+Please begin architecture support for:
+
+* Apple In-App Subscriptions
+* Google Play Subscriptions
+
+IMPORTANT:
+
+Do NOT use PayPal as the primary mobile payment system.
+
+Subscriptions should be ready for:
+
+* App Store billing
+* Google Play billing
+
+This will become the official production payment system.
+
+---
+
+FOUNDER GOAL
+
+TwinTrack should become:
+
+👉 the daily companion for twin families
+
+The subscription should feel like:
+
+"I happily pay because this app helps me every single day."
+
+That feeling is more important than maximizing short-term conversion.
+
+💕

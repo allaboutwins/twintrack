@@ -9,10 +9,12 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { PageHeader } from "@/components/Layout";
-import { Save, LogOut, Video, ChevronRight, Trash2, AlertTriangle, Bell, BellOff, Smartphone, Sparkles, UserPlus, Users, X, Copy, Check } from "lucide-react";
+import { Save, LogOut, Video, ChevronRight, Trash2, AlertTriangle, Bell, BellOff, Smartphone, Sparkles, UserPlus, Users, X, Copy, Check, Lock } from "lucide-react";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNotificationPrefs } from "@/hooks/useNotificationPrefs";
 import { useAppPrefs } from "@/hooks/useAppPrefs";
+import { usePlan, trackPlanEvent } from "@/hooks/usePlan";
+import UpgradeScreen from "@/components/UpgradeScreen";
 
 const COLOR_OPTIONS = [
   "#da5a9f",
@@ -42,6 +44,8 @@ export default function Settings() {
   const { permission, subscription, loading: pushLoading, subscribe, unsubscribe, sendTest } = usePushNotifications();
   const { prefs, toggle } = useNotificationPrefs();
   const { prefs: appPrefs, toggle: toggleApp } = useAppPrefs();
+  const { isPremium } = usePlan();
+  const [showCaregiverUpgrade, setShowCaregiverUpgrade] = useState(false);
   const [testSent, setTestSent] = useState(false);
 
   const { data: twins = [], isLoading } = useListTwins(
@@ -289,8 +293,37 @@ export default function Settings() {
           <div className="px-5 py-4 border-b border-border flex items-center gap-2">
             <Users size={14} className="text-primary" />
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Family Caregivers</p>
+            {!isPremium && (
+              <span className="ml-auto text-[10px] font-bold bg-primary/10 text-primary rounded-full px-2 py-0.5">
+                Premium
+              </span>
+            )}
           </div>
 
+          {!isPremium ? (
+            <div className="px-5 py-6 space-y-4 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-primary/8 flex items-center justify-center mx-auto">
+                <Lock size={22} className="text-primary" />
+              </div>
+              <div>
+                <p className="font-semibold text-foreground">Caregiver Access is Premium</p>
+                <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed">
+                  Invite Dad, Grandma, or your nanny to log feedings, sleep, and diapers — everyone stays in sync.
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  trackPlanEvent("caregiver_upgrade_prompt_shown");
+                  setShowCaregiverUpgrade(true);
+                }}
+                className="w-full py-3.5 rounded-2xl font-bold text-white text-sm active:scale-[0.98] transition-all"
+                style={{ background: "linear-gradient(135deg, #e91e8c 0%, #9c27b0 100%)" }}
+              >
+                💕 Unlock Caregiver Access
+              </button>
+              <p className="text-xs text-muted-foreground">Free for 14 days, then $5.99/month or $39/year</p>
+            </div>
+          ) : (
           <div className="px-5 py-4 space-y-4">
             <p className="text-xs text-muted-foreground leading-relaxed">
               Invite your partner, grandparent, or nanny to log feedings, sleep, diapers, and milestones — all synced to your family account.
@@ -404,7 +437,15 @@ export default function Settings() {
               </p>
             )}
           </div>
+          )}
         </div>
+
+        <UpgradeScreen
+          open={showCaregiverUpgrade}
+          onClose={() => setShowCaregiverUpgrade(false)}
+          feature="caregivers"
+          source="settings_caregivers"
+        />
 
         {/* Content Management */}
         <div className="bg-white rounded-2xl border border-border overflow-hidden">
