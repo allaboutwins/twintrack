@@ -1,4 +1,16 @@
+import { useEffect } from "react";
+
 export default function Privacy() {
+  useEffect(() => {
+    document.title = "Privacy Policy — TwinTrack";
+    let meta = document.querySelector('meta[name="description"]');
+    if (!meta) { meta = document.createElement("meta"); meta.setAttribute("name", "description"); document.head.appendChild(meta); }
+    meta.setAttribute("content", "TwinTrack Privacy Policy — how we collect, use, and protect your data.");
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (canonical) canonical.setAttribute("href", "https://app.allaboutwins.com/privacy");
+    return () => { document.title = "TwinTrack — The Twin Parenting App"; if (canonical) canonical.setAttribute("href", "https://app.allaboutwins.com/"); };
+  }, []);
+
   return (
     <div style={{ fontFamily: "'Quicksand', sans-serif", background: "#fafafa", minHeight: "100dvh" }}>
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "40px 24px 80px" }}>

@@ -204,8 +204,8 @@ export default function InviteAccept() {
 
         <p className="text-[11px] text-center text-muted-foreground leading-relaxed">
           TwinTrack is free for caregivers. By joining you agree to our{" "}
-          <a href="https://allaboutwins.com/terms" className="underline">Terms</a> and{" "}
-          <a href="https://allaboutwins.com/privacy" className="underline">Privacy Policy</a>.
+          <a href="https://app.allaboutwins.com/terms" className="underline">Terms</a> and{" "}
+          <a href="https://app.allaboutwins.com/privacy" className="underline">Privacy Policy</a>.
         </p>
       </div>
     </Shell>

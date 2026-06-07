@@ -1,4 +1,16 @@
+import { useEffect } from "react";
+
 export default function Terms() {
+  useEffect(() => {
+    document.title = "Terms of Service — TwinTrack";
+    let meta = document.querySelector('meta[name="description"]');
+    if (!meta) { meta = document.createElement("meta"); meta.setAttribute("name", "description"); document.head.appendChild(meta); }
+    meta.setAttribute("content", "TwinTrack Terms of Service — your rights and responsibilities when using TwinTrack.");
+    let canonical = document.querySelector('link[rel="canonical"]');
+    if (canonical) canonical.setAttribute("href", "https://app.allaboutwins.com/terms");
+    return () => { document.title = "TwinTrack — The Twin Parenting App"; if (canonical) canonical.setAttribute("href", "https://app.allaboutwins.com/"); };
+  }, []);
+
   return (
     <div style={{ fontFamily: "'Quicksand', sans-serif", background: "#fafafa", minHeight: "100dvh" }}>
       <div style={{ maxWidth: 720, margin: "0 auto", padding: "40px 24px 80px" }}>
@@ -81,16 +93,26 @@ export default function Terms() {
             </ul>
           </Section>
 
-          <Section title="7. Disclaimers">
-            <div style={{ background: "#fff8fb", border: "2px solid #ffd0e8", borderRadius: 12, padding: "14px 18px", marginBottom: 16 }}>
-              <strong style={{ color: "#e91e8c" }}>TwinTrack is not a medical device.</strong> The App is a convenience tool for personal tracking. It is not intended to diagnose, treat, cure, or prevent any medical condition. Do not rely on TwinTrack as a substitute for professional medical advice.
+          <Section title="7. Medical Disclaimer">
+            <div style={{ background: "#fff8fb", border: "2px solid #ffd0e8", borderRadius: 12, padding: "16px 20px", marginBottom: 16 }}>
+              <p style={{ margin: "0 0 10px", fontWeight: 800, color: "#e91e8c", fontSize: 15 }}>TwinTrack is a parenting support tool — not medical advice.</p>
+              <ul style={{ margin: 0, paddingLeft: 20, color: "#555", lineHeight: 1.8 }}>
+                <li>TwinTrack is <strong>not a medical device</strong> and has not been evaluated or cleared by the FDA or any health authority.</li>
+                <li>TwinTrack is <strong>not intended to diagnose, treat, cure, or prevent any medical condition</strong>.</li>
+                <li>Information and data displayed in TwinTrack are provided for <strong>personal convenience only</strong> and do not constitute medical advice.</li>
+                <li>Always consult a qualified healthcare provider (pediatrician, doctor, nurse) for medical decisions about your babies.</li>
+                <li>Do not delay seeking professional medical advice because of information seen in TwinTrack.</li>
+              </ul>
             </div>
+          </Section>
+
+          <Section title="8. General Disclaimers">
             <p style={{ textTransform: "uppercase", fontSize: 13, color: "#666", lineHeight: 1.6 }}>
               THE APP IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, OR NON-INFRINGEMENT. WE DO NOT WARRANT THAT THE APP WILL BE UNINTERRUPTED, ERROR-FREE, OR FREE OF HARMFUL COMPONENTS.
             </p>
           </Section>
 
-          <Section title="8. Limitation of Liability">
+          <Section title="9. Limitation of Liability">
             <p style={{ textTransform: "uppercase", fontSize: 13, color: "#666", lineHeight: 1.6 }}>
               TO THE MAXIMUM EXTENT PERMITTED BY LAW, ALL ABOUT TWINS LLC SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING FROM YOUR USE OF OR INABILITY TO USE THE APP, EVEN IF WE HAVE BEEN ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
             </p>
@@ -99,11 +121,11 @@ export default function Terms() {
             </p>
           </Section>
 
-          <Section title="9. Indemnification">
+          <Section title="10. Indemnification">
             <p>You agree to indemnify and hold harmless All About Twins LLC and its officers, directors, employees, and agents from any claims, damages, losses, or expenses (including attorneys' fees) arising from your use of the App or violation of these Terms.</p>
           </Section>
 
-          <Section title="10. Termination">
+          <Section title="11. Termination">
             <ul>
               <li>You may delete your account at any time via Settings → Delete Account.</li>
               <li>We may suspend or terminate your account if you violate these Terms, with or without notice.</li>
@@ -111,16 +133,17 @@ export default function Terms() {
             </ul>
           </Section>
 
-          <Section title="11. Changes to Terms">
+          <Section title="12. Changes to Terms">
             <p>We may update these Terms from time to time. We will notify you of material changes via in-app notice or email. Continued use after the effective date of changes constitutes acceptance.</p>
           </Section>
 
-          <Section title="12. Governing Law & Disputes">
-            <p>These Terms are governed by the laws of the United States, without regard to conflict-of-law provisions.</p>
+          <Section title="13. Governing Law & Disputes">
+            <p>These Terms are governed by the laws of the <strong>State of Delaware, United States</strong>, without regard to conflict-of-law provisions.</p>
             <p>Any disputes shall be resolved through binding arbitration under the rules of the American Arbitration Association, except that either party may seek injunctive relief in court for intellectual property disputes. <strong>You waive the right to participate in class action lawsuits.</strong></p>
+            <p style={{ fontSize: 13, color: "#666" }}>Notwithstanding the above, if you are a California resident, you retain the right to bring individual claims in small claims court and are not required to arbitrate disputes under $10,000 USD.</p>
           </Section>
 
-          <Section title="13. Contact">
+          <Section title="14. Contact">
             <p>
               <strong>All About Twins LLC</strong><br />
               Email: <a href="mailto:contact@allaboutwins.com" style={{ color: "#e91e8c" }}>contact@allaboutwins.com</a><br />
