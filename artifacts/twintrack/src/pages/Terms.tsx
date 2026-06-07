@@ -10,7 +10,7 @@ export default function Terms() {
           </div>
           <h1 style={{ fontSize: 30, fontWeight: 900, color: "#1a1a2e", margin: "0 0 8px" }}>Terms of Service</h1>
           <p style={{ margin: 0, color: "#888", fontSize: 14 }}>
-            Effective Date: January 1, 2025 &nbsp;·&nbsp; Last Updated: January 1, 2025
+            Effective Date: June 4, 2026 &nbsp;·&nbsp; Last Updated: June 4, 2026
           </p>
         </div>
 
@@ -50,6 +50,27 @@ export default function Terms() {
               <li>You retain ownership of all tracking data you enter (sleep logs, feeds, diapers, milestones).</li>
               <li>You grant us a limited license to store, process, and display your data solely to provide the service.</li>
               <li>You may export or delete your data at any time. See our <a href="/privacy" style={{ color: "#e91e8c" }}>Privacy Policy</a>.</li>
+            </ul>
+          </Section>
+
+          <Section title="5a. Community Content">
+            <p>TwinTrack includes community features (polls, Q&amp;A, feedback). By submitting Community Content you agree that:</p>
+            <ul>
+              <li>Your Community Content may be visible to other TwinTrack users within the app.</li>
+              <li>You are solely responsible for content you submit. Do not post sensitive personal information, identifying details about your children, or content that violates others' rights.</li>
+              <li>You grant All About Twins LLC a non-exclusive, royalty-free license to display your Community Content to other users within the service.</li>
+              <li>We may remove Community Content at our sole discretion without notice.</li>
+            </ul>
+          </Section>
+
+          <Section title="5b. Subscriptions & In-App Purchases">
+            <ul>
+              <li>TwinTrack offers optional premium subscriptions that unlock additional features.</li>
+              <li>All purchases are processed through Apple App Store or Google Play. By making a purchase you also agree to Apple's or Google's terms of service.</li>
+              <li>Subscriptions automatically renew unless cancelled at least 24 hours before the end of the current period.</li>
+              <li>You may manage or cancel subscriptions in your device's App Store or Google Play account settings.</li>
+              <li>We do not store payment card information. Billing is handled entirely by Apple or Google.</li>
+              <li>Refunds are subject to Apple's or Google's refund policies. Contact Apple Support or Google Play Support for billing issues.</li>
             </ul>
           </Section>
 
@@ -102,7 +123,7 @@ export default function Terms() {
           <Section title="13. Contact">
             <p>
               <strong>All About Twins LLC</strong><br />
-              Email: <a href="mailto:hello@allaboutwins.com" style={{ color: "#e91e8c" }}>hello@allaboutwins.com</a><br />
+              Email: <a href="mailto:contact@allaboutwins.com" style={{ color: "#e91e8c" }}>contact@allaboutwins.com</a><br />
               Website: <a href="https://allaboutwins.com" style={{ color: "#e91e8c" }}>allaboutwins.com</a>
             </p>
           </Section>
@@ -111,7 +132,7 @@ export default function Terms() {
         <div style={{ marginTop: 40, paddingTop: 24, borderTop: "1px solid #f0f0f0", textAlign: "center" }}>
           <a href="/privacy" style={{ color: "#e91e8c", fontWeight: 700, fontSize: 14, textDecoration: "none" }}>Privacy Policy</a>
           <span style={{ color: "#ccc", margin: "0 12px" }}>·</span>
-          <a href="mailto:hello@allaboutwins.com" style={{ color: "#888", fontSize: 14, textDecoration: "none" }}>Contact Us</a>
+          <a href="mailto:contact@allaboutwins.com" style={{ color: "#888", fontSize: 14, textDecoration: "none" }}>Contact Us</a>
         </div>
       </div>
     </div>
