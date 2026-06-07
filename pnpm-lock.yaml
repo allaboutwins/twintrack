@@ -156,6 +156,10 @@ overrides:
 importers:
 
   .:
+    dependencies:
+      '@replit/revenuecat-sdk':
+        specifier: ^4.2.0
+        version: 4.2.0(typescript@5.9.3)
     devDependencies:
       prettier:
         specifier: ^3.8.1
@@ -440,6 +444,9 @@ importers:
       '@clerk/themes':
         specifier: ^2.4.57
         version: 2.4.57(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+      '@revenuecat/purchases-capacitor':
+        specifier: ^13.1.5
+        version: 13.1.5(@capacitor/core@8.3.4)
     devDependencies:
       '@capacitor/android':
         specifier: ^8.3.4
@@ -2386,6 +2393,11 @@ packages:
   '@replit/connectors-sdk@0.4.0':
     resolution: {integrity: sha512-wRuktfdoBsM19NJUi24xzCkQ+idglmU4Cq2ZWvTAnNUVGdcMmn3rLN1F1/MNZCc2HdG+awcGa81XMLpZXZujUg==}
 
+  '@replit/revenuecat-sdk@4.2.0':
+    resolution: {integrity: sha512-6y1qm4Wn9vJHKy9h6XAUHj8fPbblN6vu+poHD8fPpoTiSk8fv4RevH/EfXLQLusBmWrRDQ4fkYCUoT5Pfe3Cyg==}
+    peerDependencies:
+      typescript: ^5
+
   '@replit/vite-plugin-cartographer@0.5.1':
     resolution: {integrity: sha512-KiaQMx4ssTM8hSjMFscyIV1PN1bRVCWCFqN3fXOfXa39uFFCKUaeL3VvH/sxuy7S7ET+MCFOt+J7lLtL56bRrA==}
 
@@ -2394,6 +2406,14 @@ packages:
 
   '@replit/vite-plugin-runtime-error-modal@0.0.6':
     resolution: {integrity: sha512-53iuzLsrvcUnWxAo0fvNrUhOf7LYJ+3at61dZeTIrkaZD4vGNjTbvE0j50TFcjjTC9UM74uprlnQ4+L2A//Cjg==}
+
+  '@revenuecat/purchases-capacitor@13.1.5':
+    resolution: {integrity: sha512-klI2VL31woeY0spbZpOYh/b8L2Azv+pbP+ueU3E3NaG8D7Rv1hWM7X+t18rSynY6/L5U1XoA6El27i5UG6jrAw==}
+    peerDependencies:
+      '@capacitor/core': '>=8.0.0'
+
+  '@revenuecat/purchases-typescript-internal-esm@18.10.0':
+    resolution: {integrity: sha512-vW9adMqUuudMKt7pYhbRrihcA/xbhooHW616n3weVGzJKfaXRUiSzTwmtISS8KyYBpzQsf2i2oGkk9swLI3Tpw==}
 
   '@rolldown/pluginutils@1.0.0-rc.3':
     resolution: {integrity: sha512-eybk3TjzzzV97Dlj5c+XrBFW57eTNhzod66y9HrBlzJ6NsCrWCp/2kaPS3K9wJmurBC0Tdw4yPjXKZqlznim3Q==}
@@ -4814,7 +4834,7 @@ packages:
     engines: {node: '>=10'}
 
   npm-run-path@6.0.0:
-    resolution: {integrity: sha512-9qny7Z9DsQU8Ou39ERsPU4OZQlSTP47ShQzuKZ6PRXpYLtIFgl/DEBYEXKlvcEa+9tHVcK8CF81Y2V72qaZhWA==}
+    resolution: {integrity: sha512-9qny7Z9DsQU8Ou39ERsPU4OZQlSTP47ShQzuKZ6PRXpYLtIFgl/DEBYEXKlvcEa+9tHVcK8CF81Y2V72qaZhWA==, tarball: https://registry.npmjs.org/npm-run-path/-/npm-run-path-6.0.0.tgz}
     engines: {node: '>=18'}
 
   nth-check@2.1.1:
@@ -8399,6 +8419,10 @@ snapshots:
 
   '@replit/connectors-sdk@0.4.0': {}
 
+  '@replit/revenuecat-sdk@4.2.0(typescript@5.9.3)':
+    dependencies:
+      typescript: 5.9.3
+
   '@replit/vite-plugin-cartographer@0.5.1':
     dependencies:
       '@babel/parser': 7.29.0
@@ -8414,6 +8438,13 @@ snapshots:
   '@replit/vite-plugin-runtime-error-modal@0.0.6':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.31
+
+  '@revenuecat/purchases-capacitor@13.1.5(@capacitor/core@8.3.4)':
+    dependencies:
+      '@capacitor/core': 8.3.4
+      '@revenuecat/purchases-typescript-internal-esm': 18.10.0
+
+  '@revenuecat/purchases-typescript-internal-esm@18.10.0': {}
 
   '@rolldown/pluginutils@1.0.0-rc.3': {}
 

@@ -1,6 +1,7 @@
 import { X } from "lucide-react";
 import { usePlan, trackPlanEvent } from "@/hooks/usePlan";
 import { useState } from "react";
+import { useSubscription, PREMIUM_ENABLED, type TierKey } from "@/lib/revenuecat";
 
 export type PremiumFeature = "twin_ai" | "caregivers" | "magazine" | "academy" | "memories" | "general";
 
@@ -67,6 +68,7 @@ interface Props {
 
 export default function UpgradeScreen({ open, onClose, feature = "general", source }: Props) {
   const { isInTrial, trialDaysLeft, pricing } = usePlan();
+  const { purchaseByTier, isPurchasing } = useSubscription();
   const [selectedTier, setSelectedTier] = useState<"monthly" | "annual" | "founding">(
     isInTrial ? "founding" : "annual",
   );
@@ -87,20 +89,33 @@ export default function UpgradeScreen({ open, onClose, feature = "general", sour
     onClose();
   }
 
-  function handleUpgrade() {
+  async function handleUpgrade() {
     trackPlanEvent("upgrade_button_clicked", { feature, tier: selectedTier, source });
     setLoading(true);
-    fetch("/api/plan/subscribe-intent", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tier: selectedTier }),
-    })
-      .then(() => {
-        setSubscribed(true);
+
+    if (PREMIUM_ENABLED) {
+      try {
+        await purchaseByTier(selectedTier as TierKey);
         trackPlanEvent("checkout_started", { feature, tier: selectedTier, source });
+        onClose();
+      } catch (err) {
+        console.warn("[RevenueCat] Purchase error:", err);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      fetch("/api/plan/subscribe-intent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tier: selectedTier }),
       })
-      .catch(() => setSubscribed(true))
-      .finally(() => setLoading(false));
+        .then(() => {
+          setSubscribed(true);
+          trackPlanEvent("checkout_started", { feature, tier: selectedTier, source });
+        })
+        .catch(() => setSubscribed(true))
+        .finally(() => setLoading(false));
+    }
   }
 
   return (
@@ -250,12 +265,12 @@ export default function UpgradeScreen({ open, onClose, feature = "general", sour
               </div>
 
               <button
-                onClick={handleUpgrade}
-                disabled={loading}
+                onClick={() => { void handleUpgrade(); }}
+                disabled={loading || isPurchasing}
                 className="w-full py-4 rounded-2xl font-bold text-white text-base active:scale-[0.98] transition-all disabled:opacity-60"
                 style={{ background: "linear-gradient(135deg, #e91e8c 0%, #9c27b0 100%)" }}
               >
-                {loading ? "One moment…" : isInTrial ? "💕 Unlock Founding Moms" : "💕 Unlock Premium"}
+                {loading || isPurchasing ? "One moment…" : isInTrial ? "💕 Unlock Founding Moms" : "💕 Unlock Premium"}
               </button>
 
               <p className="text-center text-xs text-muted-foreground leading-relaxed">

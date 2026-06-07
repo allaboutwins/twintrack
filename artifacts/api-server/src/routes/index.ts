@@ -25,6 +25,7 @@ import clientErrorsRouter from "./client-errors";
 import caregiversRouter from "./caregivers";
 import communityRouter from "./community";
 import planRouter from "./plan";
+import revenuecatWebhookRouter from "./revenuecat-webhook";
 
 const router: IRouter = Router();
 
@@ -54,5 +55,6 @@ router.use(clientErrorsRouter);
 router.use(caregiversRouter);
 router.use(communityRouter);
 router.use(planRouter);
+router.use(revenuecatWebhookRouter);
 
 export default router;

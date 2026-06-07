@@ -35,6 +35,7 @@ import AppScreenshots from "@/pages/AppScreenshots";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
 import InviteAccept from "@/pages/InviteAccept";
+import { SubscriptionProvider, initializeRevenueCat } from "@/lib/revenuecat";
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -121,6 +122,14 @@ function SignUpPage() {
  * This replaces the old clientsClaim approach, which forced all open tabs
  * onto the new SW mid-session and wiped their loaded JS chunks → blank screen.
  */
+function RevenueCatInitializer() {
+  const { user } = useUser();
+  useEffect(() => {
+    if (user?.id) initializeRevenueCat(user.id);
+  }, [user?.id]);
+  return null;
+}
+
 function SwUpdateNotifier() {
   const { toast } = useToast();
   const toastShown = useRef(false);
@@ -465,8 +474,10 @@ function ClerkProviderWithRoutes() {
       routerReplace={(to) => setLocation(stripBase(to), { replace: true })}
     >
       <QueryClientProvider client={queryClient}>
+        <SubscriptionProvider>
         <ClerkQueryClientCacheInvalidator />
         <PostHogIdentifier />
+        <RevenueCatInitializer />
         <TooltipProvider>
           <SwUpdateNotifier />
           <DeepLinkHandler />
@@ -550,6 +561,7 @@ function ClerkProviderWithRoutes() {
           </PageTransition>
           <Toaster />
         </TooltipProvider>
+        </SubscriptionProvider>
       </QueryClientProvider>
     </ClerkProvider>
   );

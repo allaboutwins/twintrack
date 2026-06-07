@@ -1,0 +1,116 @@
+NEXT PRIORITY — REVENUECAT + PREMIUM PAYMENTS 💕
+
+We are ready to begin the subscription/payment phase.
+
+Please proceed with RevenueCat integration and prepare TwinTrack for Apple App Store and Google Play subscriptions.
+
+SUBSCRIPTIONS
+
+Create support for:
+
+1. Founding Moms Premium Monthly
+   $5.99/month
+
+2. Founding Moms Premium Annual
+   $49/year
+
+3. Founding Moms Early Bird Annual
+   $39/year
+
+IMPORTANT:
+
+The $39/year Founding Moms offer should only be available during the user's initial 14-day trial period.
+
+Once the trial expires:
+
+* remove the $39 option
+* show only:
+
+  * $5.99/month
+  * $49/year
+
+TRIAL FLOW
+
+Current direction remains:
+
+* every new user gets 14 days of Premium access
+* trial starts automatically
+* show days remaining inside the 💕 Founding Moms area
+* send reminder emails:
+
+  * 7 days remaining
+  * 3 days remaining
+  * 1 day remaining
+
+EMAIL MESSAGING
+
+The reminder emails should explain:
+
+* trial ending soon
+* Founding Moms pricing expires when trial ends
+* lock in $39/year forever before the offer disappears
+
+Tone:
+
+* warm
+* supportive
+* appreciative
+
+Never aggressive.
+
+REVENUECAT
+
+Please begin wiring:
+
+* RevenueCat SDK
+* Apple App Store subscriptions
+* Google Play subscriptions
+* entitlement: premium
+
+Ensure the architecture supports:
+
+* trial
+* active subscription
+* cancellation
+* renewal
+* restore purchases
+
+FEATURE FLAG (VERY IMPORTANT)
+
+Please keep the entire Premium system disabled behind a feature flag until RevenueCat and App Store / Google Play subscriptions are fully connected and tested.
+
+Until we explicitly enable the feature flag:
+
+* no production paywalls
+* no upgrade prompts
+* no subscription blocks
+* existing twin moms continue using the app normally
+
+The goal is:
+
+1. Build everything safely
+2. Test everything internally
+3. Enable Premium only when payment flow is fully working
+
+ANALYTICS
+
+Please track:
+
+* trial starts
+* reminder email opens
+* pricing page views
+* monthly plan clicks
+* annual plan clicks
+* Founding Moms $39 clicks
+* checkout starts
+* successful purchases
+* subscription renewals
+* subscription cancellations
+
+We want a clear view of conversion performance from day one.
+
+PRIORITY
+
+RevenueCat + subscriptions are now higher priority than new features.
+
+The goal is to prepare TwinTrack for sustainable growth while keeping the experience warm and parent-focused 💕
