@@ -9,3 +9,4 @@
 - [Caregiver system](caregiver-system.md) — caregivers table (owner_id, caregiver_email, caregiver_id, role, invite_token, status); invite flow via Settings; /api/caregivers + /api/caregivers/me + /api/caregivers/invite + /api/caregivers/accept.
 - [Community Questions](community-questions.md) — community_questions + community_answers + community_answer_likes tables; admin can publish/pin/add; CommunityQuestionsSection in Learn.tsx Community tab; thank-you feedback message pattern.
 - [PWA install prompt disabled](pwa-disabled.md) — InstallPrompt.tsx returns null; native App Store/Play is primary path; do NOT re-enable without checking App Store submission status.
+- [RevenueCat setup](revenuecat-setup.md) — v2 key required (not legacy v1); project proj09a461ed; seed script skips test_store (not valid in v2 API); VITE_PREMIUM_ENABLED=false until launch.
