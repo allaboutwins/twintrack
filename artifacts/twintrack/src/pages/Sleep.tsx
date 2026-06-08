@@ -159,6 +159,9 @@ export default function Sleep() {
   const { user } = useUser();
   const qc = useQueryClient();
   const today = new Date().toLocaleDateString("en-CA");
+  const yesterdayDate = new Date();
+  yesterdayDate.setDate(yesterdayDate.getDate() - 1);
+  const yesterday = yesterdayDate.toLocaleDateString("en-CA");
   const [tick, setTick] = useState(0);
   const [showAdd, setShowAdd] = useState(false);
   const [addType, setAddType] = useState<"nap" | "night">("nap");
@@ -191,6 +194,11 @@ export default function Sleep() {
     { query: { enabled: !!twinId, queryKey: getListSleepEntriesQueryKey({ twinId: twinId ?? 0, date: today }) } },
   );
 
+  const { data: yesterdayEntries = [] } = useListSleepEntries(
+    { twinId: twinId ?? 0, date: yesterday },
+    { query: { enabled: !!twinId, queryKey: getListSleepEntriesQueryKey({ twinId: twinId ?? 0, date: yesterday }) } },
+  );
+
   const { data: summary } = useGetSleepSummary(
     { twinId: twinId ?? 0, date: today },
     { query: { enabled: !!twinId, queryKey: getGetSleepSummaryQueryKey({ twinId: twinId ?? 0, date: today }) } },
@@ -200,10 +208,11 @@ export default function Sleep() {
   const updateEntry = useUpdateSleepEntry();
   const deleteEntry = useDeleteSleepEntry();
 
-  const activeEntry = entries.find((e) => !e.endTime);
+  const activeEntry = entries.find((e) => !e.endTime) ?? yesterdayEntries.find((e) => !e.endTime);
 
   function invalidate() {
     qc.invalidateQueries({ queryKey: getListSleepEntriesQueryKey({ twinId: twinId ?? 0, date: today }) });
+    qc.invalidateQueries({ queryKey: getListSleepEntriesQueryKey({ twinId: twinId ?? 0, date: yesterday }) });
     qc.invalidateQueries({ queryKey: getGetSleepSummaryQueryKey({ twinId: twinId ?? 0, date: today }) });
   }
 

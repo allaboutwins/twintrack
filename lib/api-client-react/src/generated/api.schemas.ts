@@ -236,6 +236,26 @@ export interface DeleteFoodIntroducedParams {
   id: number;
 }
 
+export interface BathEntry {
+  id: number;
+  twinId: number;
+  notedAt: string;
+  /** @nullable */
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface CreateBathEntryBody {
+  twinId: number;
+  notedAt: string;
+  /** @nullable */
+  notes?: string | null;
+}
+
+export interface DeleteBathEntryParams {
+  id: number;
+}
+
 export interface DiaperEntry {
   id: number;
   twinId: number;
@@ -720,6 +740,14 @@ export type ListFoodsIntroducedParams = {
 };
 
 export type ListDiaperEntriesParams = {
+  twinId: number;
+  /**
+   * @nullable
+   */
+  date?: string | null;
+};
+
+export type ListBathEntriesParams = {
   twinId: number;
   /**
    * @nullable

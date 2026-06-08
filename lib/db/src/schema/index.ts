@@ -17,3 +17,4 @@ export * from "./caregivers";
 export * from "./community-questions";
 export * from "./user-plans";
 export * from "./analytics-events";
+export * from "./bath";

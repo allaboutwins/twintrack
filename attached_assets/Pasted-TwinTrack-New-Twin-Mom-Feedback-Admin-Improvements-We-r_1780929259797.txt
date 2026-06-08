@@ -1,0 +1,188 @@
+TwinTrack — New Twin Mom Feedback + Admin Improvements 💕🚀
+
+We received new feedback from real twin moms. Please prioritize the following fixes and improvements.
+
+---
+
+## 1. ONBOARDING FEEDBACK IMPROVEMENT
+
+Current issue:
+
+The onboarding questions:
+
+* "What are you most excited about?"
+* "What do you need help with most right now?"
+
+only allow a single selection.
+
+Please change both questions to:
+
+✅ Multi-select
+
+Users should be able to select multiple answers because most twin parents have several goals and challenges at the same time.
+
+Example:
+
+Most excited about:
+
+* Sleep tracking
+* Feeding tracking
+* Twin AI
+* Milestones
+* Community polls
+
+Need help with:
+
+* Sleep
+* Feeding
+* Routines
+* Pumping
+* Mental load
+* NICU
+* Premature twins
+
+Store all selected values properly in the database and analytics.
+
+---
+
+## 2. NIGHT SLEEP BUG FIX 🌙
+
+Real user bug report:
+
+* Night Sleep cannot be logged correctly
+* Save Changes sometimes does not save
+* Night Sleep button cannot be selected
+* Only Manual entry works
+
+Please investigate:
+
+* night sleep creation flow
+* editing flow
+* save/update action
+* database writes
+* validation rules
+
+This is a HIGH PRIORITY tracking bug.
+
+---
+
+## 3. BATH TRACKING FEATURE 🛁
+
+New feature request from twin moms.
+
+Please add lightweight Bath Tracking.
+
+Fields:
+
+* Twin
+* Date
+* Time
+* Notes (optional)
+
+Keep implementation simple and lightweight.
+
+Goal:
+
+Allow parents to quickly track baths without adding unnecessary complexity.
+
+---
+
+# ADMIN DASHBOARD IMPROVEMENTS
+
+## 4. TOP QUESTIONS SECTION
+
+The "Top Questions 💡" area is becoming too long.
+
+Please:
+
+* Show only the latest 2 questions initially
+* Add:
+
+👉 Show All
+
+button below
+
+When tapped:
+
+* expand full list
+* allow collapse again
+
+---
+
+## 5. UPDATE CENTER SECTION
+
+Same improvement needed.
+
+Please:
+
+* show only the latest 2 updates
+* hide older entries behind:
+
+👉 Show All
+
+This keeps the dashboard cleaner.
+
+---
+
+## 6. MOVE IMPORTANT ANALYTICS HIGHER
+
+Please move the following sections directly below:
+
+👉 App Activity
+
+New order:
+
+1. App Activity
+2. Premium Launch Readiness
+3. Premium & Subscriptions (30d)
+4. Magazine & Academy (30d)
+5. Remaining dashboard sections
+
+These are currently the most important founder metrics.
+
+---
+
+## 7. COMMUNITY QUESTIONS MODERATION SYSTEM 💬
+
+I still cannot see Community Questions from the Learn tab inside Admin.
+
+Please build a proper Community Questions management section.
+
+Admin should be able to:
+
+### View Questions
+
+* pending questions
+* approved questions
+* rejected questions
+
+### Moderate Questions
+
+* approve
+* reject
+* delete
+
+### Create Questions Manually
+
+Allow admin to submit external questions directly.
+
+Similar to how Polls are currently managed.
+
+Fields:
+
+* question title
+* category
+* optional description
+* publish date
+
+Goal:
+
+Build a valuable community knowledge base where twin parents can ask questions and learn from one another.
+
+This feature should be fully manageable from the Admin Dashboard.
+
+---
+
+Please keep all implementations lightweight, mobile-friendly, and focused on real twin-parent usability rather than feature complexity.
+
+💕

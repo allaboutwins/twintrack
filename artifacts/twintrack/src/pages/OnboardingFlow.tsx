@@ -13,8 +13,8 @@ interface FormState {
   gestationalAgeWeeks: number | null;
   hadNicu: boolean | null;
   wantsAdjustedAge: boolean | null;
-  biggestChallenge: string;
-  featureInterest: string;
+  biggestChallenge: string[];
+  featureInterest: string[];
   discoverySource: string;
   instagramHandle: string;
   isAmbassador: boolean | null;
@@ -23,22 +23,22 @@ interface FormState {
 }
 
 const CHALLENGES = [
-  { key: "sleep", label: "😴 Sleep deprivation" },
-  { key: "feeding", label: "🍼 Feeding two at once" },
-  { key: "time", label: "⏰ Finding time for myself" },
-  { key: "schedules", label: "📅 Managing schedules" },
-  { key: "mental-health", label: "🧠 Mental health & burnout" },
-  { key: "support", label: "🤝 Feeling supported" },
-  { key: "other", label: "💬 Something else" },
+  { key: "sleep", label: "😴 Sleep" },
+  { key: "feeding", label: "🍼 Feeding" },
+  { key: "routines", label: "📅 Routines" },
+  { key: "pumping", label: "🤱 Pumping" },
+  { key: "mental-load", label: "🧠 Mental load" },
+  { key: "nicu", label: "🏥 NICU" },
+  { key: "premature", label: "💛 Premature twins" },
+  { key: "other", label: "💬 Other" },
 ];
 
 const FEATURES = [
-  { key: "sleep-tracker", label: "😴 Sleep Tracker" },
-  { key: "feeding-log", label: "🍼 Feeding Log" },
-  { key: "milestones", label: "💕 Milestones & Memories" },
-  { key: "learn", label: "🎓 Twin Parenting Videos" },
-  { key: "routines", label: "📋 Daily Routines" },
-  { key: "all", label: "✨ All of it!" },
+  { key: "sleep-tracker", label: "😴 Sleep tracking" },
+  { key: "feeding-log", label: "🍼 Feeding tracking" },
+  { key: "twin-ai", label: "✨ Twin AI" },
+  { key: "milestones", label: "💕 Milestones" },
+  { key: "community", label: "👯 Community polls" },
 ];
 
 const DISCOVERY_SOURCES = [
@@ -84,8 +84,8 @@ export default function OnboardingFlow({
     gestationalAgeWeeks: null,
     hadNicu: null,
     wantsAdjustedAge: null,
-    biggestChallenge: "",
-    featureInterest: "",
+    biggestChallenge: [],
+    featureInterest: [],
     discoverySource: "",
     instagramHandle: "",
     isAmbassador: null,
@@ -121,8 +121,8 @@ export default function OnboardingFlow({
           gestationalAgeWeeks: form.gestationalAgeWeeks,
           hadNicu: form.hadNicu,
           wantsAdjustedAge: form.wantsAdjustedAge,
-          biggestChallenge: form.biggestChallenge || null,
-          featureInterest: form.featureInterest || null,
+          biggestChallenge: form.biggestChallenge.length > 0 ? form.biggestChallenge.join(",") : null,
+          featureInterest: form.featureInterest.length > 0 ? form.featureInterest.join(",") : null,
           discoverySource: form.discoverySource || null,
           instagramHandle: form.instagramHandle || null,
           isAmbassador: form.isAmbassador,
@@ -388,14 +388,19 @@ export default function OnboardingFlow({
             </div>
 
             <div>
-              <p className="font-semibold text-sm mb-3">What's your biggest challenge right now?</p>
+              <p className="font-semibold text-sm mb-3">What are your biggest challenges right now? <span className="text-muted-foreground font-normal">(pick all that apply)</span></p>
               <div className="flex flex-wrap gap-2">
                 {CHALLENGES.map((c) => (
                   <button
                     key={c.key}
-                    onClick={() => setForm((f) => ({ ...f, biggestChallenge: c.key }))}
+                    onClick={() => setForm((f) => {
+                      const arr = f.biggestChallenge.includes(c.key)
+                        ? f.biggestChallenge.filter((k) => k !== c.key)
+                        : [...f.biggestChallenge, c.key];
+                      return { ...f, biggestChallenge: arr };
+                    })}
                     className={`px-3 py-2 rounded-full text-xs font-semibold border-2 transition-all ${
-                      form.biggestChallenge === c.key
+                      form.biggestChallenge.includes(c.key)
                         ? "border-primary bg-primary/10 text-primary"
                         : "border-border bg-white text-foreground"
                     }`}
@@ -408,14 +413,19 @@ export default function OnboardingFlow({
             </div>
 
             <div>
-              <p className="font-semibold text-sm mb-3">Which feature excites you most?</p>
+              <p className="font-semibold text-sm mb-3">Which features interest you? <span className="text-muted-foreground font-normal">(pick all that apply)</span></p>
               <div className="flex flex-wrap gap-2">
                 {FEATURES.map((feat) => (
                   <button
                     key={feat.key}
-                    onClick={() => setForm((f) => ({ ...f, featureInterest: feat.key }))}
+                    onClick={() => setForm((f) => {
+                      const arr = f.featureInterest.includes(feat.key)
+                        ? f.featureInterest.filter((k) => k !== feat.key)
+                        : [...f.featureInterest, feat.key];
+                      return { ...f, featureInterest: arr };
+                    })}
                     className={`px-3 py-2 rounded-full text-xs font-semibold border-2 transition-all ${
-                      form.featureInterest === feat.key
+                      form.featureInterest.includes(feat.key)
                         ? "border-primary bg-primary/10 text-primary"
                         : "border-border bg-white text-foreground"
                     }`}

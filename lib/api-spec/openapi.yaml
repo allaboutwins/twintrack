@@ -20,6 +20,8 @@ tags:
     description: Feeding tracking operations
   - name: diapers
     description: Diaper tracking operations
+  - name: bath
+    description: Bath tracking operations
   - name: routines
     description: Routine template operations
   - name: videos
@@ -519,6 +521,64 @@ paths:
           description: Deleted
 
   # --- ROUTINES ---
+  /bath:
+    get:
+      operationId: listBathEntries
+      tags: [bath]
+      summary: List bath entries for a twin
+      parameters:
+        - in: query
+          name: twinId
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: date
+          required: false
+          schema:
+            type: ["string", "null"]
+      responses:
+        "200":
+          description: List of bath entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/BathEntry"
+    post:
+      operationId: createBathEntry
+      tags: [bath]
+      summary: Log a bath
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateBathEntryBody"
+      responses:
+        "201":
+          description: Created bath entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BathEntry"
+
+  /bath/{id}:
+    delete:
+      operationId: deleteBathEntry
+      tags: [bath]
+      summary: Delete a bath entry
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
   /routines:
     get:
       operationId: listRoutines
@@ -1637,6 +1697,46 @@ components:
         - firstIntroduced
 
     DeleteFoodIntroducedParams:
+      type: object
+      properties:
+        id:
+          type: integer
+      required:
+        - id
+
+    BathEntry:
+      type: object
+      properties:
+        id:
+          type: integer
+        twinId:
+          type: integer
+        notedAt:
+          type: string
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - twinId
+        - notedAt
+        - createdAt
+
+    CreateBathEntryBody:
+      type: object
+      properties:
+        twinId:
+          type: integer
+        notedAt:
+          type: string
+        notes:
+          type: ["string", "null"]
+      required:
+        - twinId
+        - notedAt
+
+    DeleteBathEntryParams:
       type: object
       properties:
         id:

@@ -21,9 +21,11 @@ import type {
   AppUpdateCreateRequest,
   BackfillResult,
   BackfillSheetsOnboardingParams,
+  BathEntry,
   BookmarkResult,
   BookmarkVideoBody,
   CreateAppUpdateParams,
+  CreateBathEntryBody,
   CreateDiaperEntryBody,
   CreateFeedingEntryBody,
   CreateFoodIntroducedBody,
@@ -48,6 +50,7 @@ import type {
   GetSleepSummaryParams,
   GetTwinAiAnalyticsParams,
   HealthStatus,
+  ListBathEntriesParams,
   ListBookmarkedVideosParams,
   ListDiaperEntriesParams,
   ListFeedingEntriesParams,
@@ -2120,6 +2123,270 @@ export const useDeleteDiaperEntry = <
   TContext
 > => {
   return useMutation(getDeleteDiaperEntryMutationOptions(options));
+};
+
+/**
+ * @summary List bath entries for a twin
+ */
+export const getListBathEntriesUrl = (params: ListBathEntriesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/bath?${stringifiedParams}`
+    : `/api/bath`;
+};
+
+export const listBathEntries = async (
+  params: ListBathEntriesParams,
+  options?: RequestInit,
+): Promise<BathEntry[]> => {
+  return customFetch<BathEntry[]>(getListBathEntriesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListBathEntriesQueryKey = (params?: ListBathEntriesParams) => {
+  return [`/api/bath`, ...(params ? [params] : [])] as const;
+};
+
+export const getListBathEntriesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listBathEntries>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListBathEntriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listBathEntries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListBathEntriesQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listBathEntries>>> = ({
+    signal,
+  }) => listBathEntries(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listBathEntries>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListBathEntriesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listBathEntries>>
+>;
+export type ListBathEntriesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List bath entries for a twin
+ */
+
+export function useListBathEntries<
+  TData = Awaited<ReturnType<typeof listBathEntries>>,
+  TError = ErrorType<unknown>,
+>(
+  params: ListBathEntriesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listBathEntries>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListBathEntriesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Log a bath
+ */
+export const getCreateBathEntryUrl = () => {
+  return `/api/bath`;
+};
+
+export const createBathEntry = async (
+  createBathEntryBody: CreateBathEntryBody,
+  options?: RequestInit,
+): Promise<BathEntry> => {
+  return customFetch<BathEntry>(getCreateBathEntryUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createBathEntryBody),
+  });
+};
+
+export const getCreateBathEntryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBathEntry>>,
+    TError,
+    { data: BodyType<CreateBathEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createBathEntry>>,
+  TError,
+  { data: BodyType<CreateBathEntryBody> },
+  TContext
+> => {
+  const mutationKey = ["createBathEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createBathEntry>>,
+    { data: BodyType<CreateBathEntryBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createBathEntry(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateBathEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createBathEntry>>
+>;
+export type CreateBathEntryMutationBody = BodyType<CreateBathEntryBody>;
+export type CreateBathEntryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Log a bath
+ */
+export const useCreateBathEntry = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createBathEntry>>,
+    TError,
+    { data: BodyType<CreateBathEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createBathEntry>>,
+  TError,
+  { data: BodyType<CreateBathEntryBody> },
+  TContext
+> => {
+  return useMutation(getCreateBathEntryMutationOptions(options));
+};
+
+/**
+ * @summary Delete a bath entry
+ */
+export const getDeleteBathEntryUrl = (id: number) => {
+  return `/api/bath/${id}`;
+};
+
+export const deleteBathEntry = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteBathEntryUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteBathEntryMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteBathEntry>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteBathEntry>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteBathEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteBathEntry>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteBathEntry(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteBathEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteBathEntry>>
+>;
+
+export type DeleteBathEntryMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a bath entry
+ */
+export const useDeleteBathEntry = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteBathEntry>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteBathEntry>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteBathEntryMutationOptions(options));
 };
 
 /**

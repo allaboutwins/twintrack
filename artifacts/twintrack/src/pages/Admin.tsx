@@ -178,6 +178,15 @@ interface LiveUserEntry {
   currentPage: string;
   minutesAgo: number;
 }
+interface CommunityQuestion {
+  id: number;
+  question: string;
+  authorName: string | null;
+  status: string;
+  isAdminAdded: boolean | null;
+  createdAt: string;
+}
+
 interface LiveUsersData {
   online: LiveUserEntry[];
   recent: LiveUserEntry[];
@@ -190,8 +199,8 @@ interface LiveUsersData {
 }
 
 const LABELS: Record<string, Record<string, string>> = {
-  challenge: { sleep:"😴 Sleep deprivation", feeding:"🍼 Feeding two at once", time:"⏰ Finding time", schedules:"📅 Schedules", "mental-health":"🧠 Mental health", support:"🤝 Support", other:"💬 Other", unknown:"❓ N/A" },
-  feature: { "sleep-tracker":"😴 Sleep Tracker", "feeding-log":"🍼 Feeding Log", milestones:"💕 Milestones", learn:"🎓 Learn Videos", routines:"📋 Routines", all:"✨ All of it!", unknown:"❓ N/A" },
+  challenge: { sleep:"😴 Sleep", feeding:"🍼 Feeding", routines:"📅 Routines", pumping:"🤱 Pumping", "mental-load":"🧠 Mental load", nicu:"🏥 NICU", premature:"💛 Premature twins", other:"💬 Other", "sleep-deprivation":"😴 Sleep deprivation", time:"⏰ Finding time", schedules:"📅 Schedules", "mental-health":"🧠 Mental health", support:"🤝 Support", unknown:"❓ N/A" },
+  feature: { "sleep-tracker":"😴 Sleep tracking", "feeding-log":"🍼 Feeding tracking", "twin-ai":"✨ Twin AI", milestones:"💕 Milestones", community:"👯 Community polls", learn:"🎓 Learn Videos", routines:"📋 Routines", all:"✨ All of it!", unknown:"❓ N/A" },
   parent: { expecting:"🤰 Expecting", parenting:"👶 Parenting", unknown:"❓ Unknown" },
   age: { newborn:"🐣 Newborn (0–3m)", infant:"🍼 Infant (3–12m)", toddler:"🧒 Toddler (1–3y)", older:"🌟 Older (3+)", unknown:"❓ Unknown" },
   multiples: { twins:"👯 Twins", triplets:"🌟 Triplets", quads:"🍀 Quads", other:"💫 Other", unknown:"❓ Unknown" },
@@ -300,7 +309,10 @@ export default function Admin() {
   const [showAllEmails, setShowAllEmails] = useState(false);
   const [showAllPolls, setShowAllPolls] = useState(false);
   const [showAllFeedback, setShowAllFeedback] = useState(false);
+  const [showAllTopQuestions, setShowAllTopQuestions] = useState(false);
+  const [showAllUpdates, setShowAllUpdates] = useState(false);
 
+  const [communityQuestions, setCommunityQuestions] = useState<CommunityQuestion[]>([]);
   const [notificationStats, setNotificationStats] = useState<NotificationStats | null>(null);
   const [twinAiAnalytics, setTwinAiAnalytics] = useState<TwinAiAnalytics | null>(null);
   const [retentionData, setRetentionData] = useState<RetentionData | null>(null);
@@ -351,7 +363,7 @@ export default function Admin() {
     // browser to bypass its own cache and never store the response.
     const t = Date.now();
     try {
-      const [statsRes, aiRes, updatesRes, notifRes, retentionRes, premiumRes, contentRes, readinessRes] = await Promise.all([
+      const [statsRes, aiRes, updatesRes, notifRes, retentionRes, premiumRes, contentRes, readinessRes, communityQRes] = await Promise.all([
         fetch(`${baseUrl}/api/admin/stats?${authQuery}&_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/admin/twin-ai-analytics?${authQuery}&_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/app-updates?limit=50&_t=${t}`, { cache: "no-store" }),
@@ -360,6 +372,7 @@ export default function Admin() {
         fetch(`${baseUrl}/api/admin/premium-analytics?${authQuery}&_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/admin/content-analytics?${authQuery}&_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/admin/premium-readiness?${authQuery}&_t=${t}`, { cache: "no-store" }),
+        fetch(`${baseUrl}/api/admin/community/questions?${authQuery}&_t=${t}`, { cache: "no-store" }),
       ]);
       if (!statsRes.ok) throw new Error(`${statsRes.status}`);
       const data: AdminStats = await statsRes.json();
@@ -372,6 +385,7 @@ export default function Admin() {
       if (premiumRes.ok) setPremiumAnalytics(await premiumRes.json());
       if (contentRes.ok) setContentAnalytics(await contentRes.json());
       if (readinessRes.ok) setPremiumReadiness(await readinessRes.json());
+      if (communityQRes.ok) setCommunityQuestions(await communityQRes.json());
       setLastUpdated(new Date());
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -810,102 +824,6 @@ export default function Admin() {
             </section>
           )}
 
-          {/* ── TWIN AI ANALYTICS ── */}
-          {twinAiAnalytics && (
-            <section>
-              <SectionHeader icon={<Sparkles size={16} />} title="✨ Twin AI Usage" />
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-4">
-                <StatCard label="Total questions" value={twinAiAnalytics.totalMessages} sub="all time" accent />
-                <StatCard label="Today" value={twinAiAnalytics.todayMessages} sub="questions asked" />
-                <StatCard label="Avg per user" value={twinAiAnalytics.avgPerUser} sub="questions" />
-                <StatCard label="Unique users" value={twinAiAnalytics.uniqueUsers} sub="asked AI" />
-              </div>
-
-              <div className="bg-white rounded-2xl p-4 border border-border mb-4">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Response Feedback</p>
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">👍</span>
-                    <div>
-                      <p className="text-lg font-bold text-foreground">{twinAiAnalytics.helpfulCount}</p>
-                      <p className="text-xs text-muted-foreground">Helpful</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xl">👎</span>
-                    <div>
-                      <p className="text-lg font-bold text-foreground">{twinAiAnalytics.notHelpfulCount}</p>
-                      <p className="text-xs text-muted-foreground">Not helpful</p>
-                    </div>
-                  </div>
-                  {twinAiAnalytics.helpfulCount + twinAiAnalytics.notHelpfulCount > 0 && (
-                    <div className="ml-auto">
-                      <p className="text-base font-bold text-green-600">
-                        {Math.round((twinAiAnalytics.helpfulCount / (twinAiAnalytics.helpfulCount + twinAiAnalytics.notHelpfulCount)) * 100)}%
-                      </p>
-                      <p className="text-xs text-muted-foreground">satisfaction</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div className="bg-white rounded-2xl p-4 border border-border">
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Questions by Topic</p>
-                  {twinAiAnalytics.categoryBreakdown.length === 0
-                    ? <p className="text-xs text-muted-foreground italic">No data yet 🍒</p>
-                    : <BreakdownBars items={twinAiAnalytics.categoryBreakdown} color="bg-violet-400" />
-                  }
-                </div>
-
-                <div className="bg-white rounded-2xl p-4 border border-border">
-                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Daily Usage (7 days)</p>
-                  {twinAiAnalytics.dailyUsage.length === 0
-                    ? <p className="text-xs text-muted-foreground italic">No data yet 🍒</p>
-                    : (
-                      <div className="space-y-2">
-                        {twinAiAnalytics.dailyUsage.map((d) => {
-                          const max = Math.max(...twinAiAnalytics.dailyUsage.map((x) => x.count), 1);
-                          return (
-                            <div key={d.date}>
-                              <div className="flex justify-between text-xs mb-1">
-                                <span className="text-foreground font-medium">
-                                  {new Date(d.date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
-                                </span>
-                                <span className="text-muted-foreground">{d.count}</span>
-                              </div>
-                              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                                <div className="h-full bg-violet-400 rounded-full transition-all" style={{ width: `${Math.round((d.count / max) * 100)}%` }} />
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    )
-                  }
-                </div>
-              </div>
-
-              <div className="bg-white rounded-2xl p-4 border border-border">
-                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Top Questions 💡</p>
-                {twinAiAnalytics.topQuestions.length === 0
-                  ? <p className="text-xs text-muted-foreground italic">No questions asked yet — come back soon!</p>
-                  : (
-                    <div className="space-y-0">
-                      {twinAiAnalytics.topQuestions.map((q, i) => (
-                        <div key={i} className="flex items-start gap-3 py-2.5 border-b border-border/60 last:border-0">
-                          <span className="text-xs font-bold text-primary/50 w-5 flex-shrink-0 pt-0.5">{i + 1}</span>
-                          <p className="text-sm text-foreground leading-snug flex-1">{q.question}</p>
-                          <span className="text-xs font-semibold text-muted-foreground flex-shrink-0 bg-muted px-1.5 py-0.5 rounded-full">{q.count}×</span>
-                        </div>
-                      ))}
-                    </div>
-                  )
-                }
-              </div>
-            </section>
-          )}
-
           {/* ── FOUNDER LAUNCH CHECKLIST ── */}
           {premiumReadiness && (() => {
             const manualDoneCount = MANUAL_CHECK_ITEMS.filter((m) => manualChecks[m.key]).length;
@@ -1249,6 +1167,112 @@ export default function Admin() {
             </section>
           )}
 
+          {/* ── TWIN AI ANALYTICS ── */}
+          {twinAiAnalytics && (
+            <section>
+              <SectionHeader icon={<Sparkles size={16} />} title="✨ Twin AI Usage" />
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-4">
+                <StatCard label="Total questions" value={twinAiAnalytics.totalMessages} sub="all time" accent />
+                <StatCard label="Today" value={twinAiAnalytics.todayMessages} sub="questions asked" />
+                <StatCard label="Avg per user" value={twinAiAnalytics.avgPerUser} sub="questions" />
+                <StatCard label="Unique users" value={twinAiAnalytics.uniqueUsers} sub="asked AI" />
+              </div>
+
+              <div className="bg-white rounded-2xl p-4 border border-border mb-4">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Response Feedback</p>
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">👍</span>
+                    <div>
+                      <p className="text-lg font-bold text-foreground">{twinAiAnalytics.helpfulCount}</p>
+                      <p className="text-xs text-muted-foreground">Helpful</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">👎</span>
+                    <div>
+                      <p className="text-lg font-bold text-foreground">{twinAiAnalytics.notHelpfulCount}</p>
+                      <p className="text-xs text-muted-foreground">Not helpful</p>
+                    </div>
+                  </div>
+                  {twinAiAnalytics.helpfulCount + twinAiAnalytics.notHelpfulCount > 0 && (
+                    <div className="ml-auto">
+                      <p className="text-base font-bold text-green-600">
+                        {Math.round((twinAiAnalytics.helpfulCount / (twinAiAnalytics.helpfulCount + twinAiAnalytics.notHelpfulCount)) * 100)}%
+                      </p>
+                      <p className="text-xs text-muted-foreground">satisfaction</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div className="bg-white rounded-2xl p-4 border border-border">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Questions by Topic</p>
+                  {twinAiAnalytics.categoryBreakdown.length === 0
+                    ? <p className="text-xs text-muted-foreground italic">No data yet 🍒</p>
+                    : <BreakdownBars items={twinAiAnalytics.categoryBreakdown} color="bg-violet-400" />
+                  }
+                </div>
+
+                <div className="bg-white rounded-2xl p-4 border border-border">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Daily Usage (7 days)</p>
+                  {twinAiAnalytics.dailyUsage.length === 0
+                    ? <p className="text-xs text-muted-foreground italic">No data yet 🍒</p>
+                    : (
+                      <div className="space-y-2">
+                        {twinAiAnalytics.dailyUsage.map((d) => {
+                          const max = Math.max(...twinAiAnalytics.dailyUsage.map((x) => x.count), 1);
+                          return (
+                            <div key={d.date}>
+                              <div className="flex justify-between text-xs mb-1">
+                                <span className="text-foreground font-medium">
+                                  {new Date(d.date + "T12:00:00").toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}
+                                </span>
+                                <span className="text-muted-foreground">{d.count}</span>
+                              </div>
+                              <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                                <div className="h-full bg-violet-400 rounded-full transition-all" style={{ width: `${Math.round((d.count / max) * 100)}%` }} />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )
+                  }
+                </div>
+              </div>
+
+              <div className="bg-white rounded-2xl p-4 border border-border">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">Top Questions 💡</p>
+                {twinAiAnalytics.topQuestions.length === 0
+                  ? <p className="text-xs text-muted-foreground italic">No questions asked yet — come back soon!</p>
+                  : (
+                    <>
+                      <div className="space-y-0">
+                        {(showAllTopQuestions ? twinAiAnalytics.topQuestions : twinAiAnalytics.topQuestions.slice(0, 2)).map((q, i) => (
+                          <div key={i} className="flex items-start gap-3 py-2.5 border-b border-border/60 last:border-0">
+                            <span className="text-xs font-bold text-primary/50 w-5 flex-shrink-0 pt-0.5">{i + 1}</span>
+                            <p className="text-sm text-foreground leading-snug flex-1">{q.question}</p>
+                            <span className="text-xs font-semibold text-muted-foreground flex-shrink-0 bg-muted px-1.5 py-0.5 rounded-full">{q.count}×</span>
+                          </div>
+                        ))}
+                      </div>
+                      {twinAiAnalytics.topQuestions.length > 2 && (
+                        <button
+                          onClick={() => setShowAllTopQuestions((v) => !v)}
+                          className="mt-2 text-xs font-semibold text-primary"
+                        >
+                          {showAllTopQuestions ? "Show less" : `Show all ${twinAiAnalytics.topQuestions.length} questions`}
+                        </button>
+                      )}
+                    </>
+                  )
+                }
+              </div>
+            </section>
+          )}
+
           {/* ── GOOGLE SHEETS SYNC ── */}
           <section>
             <SectionHeader icon={<Sheet size={16} />} title="Google Sheets Sync" />
@@ -1413,6 +1437,84 @@ export default function Admin() {
             )}
           </section>
 
+          {/* ── COMMUNITY QUESTIONS ── */}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                  <span className="text-base leading-none">💬</span>
+                </div>
+                <h2 className="font-bold text-foreground text-base">Community Questions</h2>
+              </div>
+              <span className="text-xs text-muted-foreground">{communityQuestions.length} total</span>
+            </div>
+
+            {communityQuestions.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-border p-5 text-center text-sm text-muted-foreground">
+                No community questions yet.
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {communityQuestions.map((q) => (
+                  <div key={q.id} className="bg-white rounded-2xl border border-border px-4 py-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-foreground leading-snug">{q.question}</p>
+                        <div className="flex items-center gap-2 mt-1.5 flex-wrap">
+                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                            q.status === "published" ? "bg-green-50 text-green-700"
+                            : q.status === "rejected" ? "bg-red-50 text-red-700"
+                            : "bg-amber-50 text-amber-700"
+                          }`}>
+                            {q.status}
+                          </span>
+                          {q.isAdminAdded && (
+                            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-violet-50 text-violet-700">admin</span>
+                          )}
+                          {q.authorName && (
+                            <span className="text-[10px] text-muted-foreground">{q.authorName}</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {q.status !== "published" && (
+                          <button
+                            onClick={async () => {
+                              await fetch(`${baseUrl}/api/admin/community/questions/${q.id}?${authQuery}`, {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ status: "published" }),
+                              });
+                              void fetchStats();
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-green-50 text-green-700 text-[10px] font-bold hover:bg-green-100 transition-colors"
+                          >
+                            Approve
+                          </button>
+                        )}
+                        {q.status !== "rejected" && (
+                          <button
+                            onClick={async () => {
+                              await fetch(`${baseUrl}/api/admin/community/questions/${q.id}?${authQuery}`, {
+                                method: "PATCH",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ status: "rejected" }),
+                              });
+                              void fetchStats();
+                            }}
+                            className="px-2.5 py-1 rounded-lg bg-red-50 text-red-700 text-[10px] font-bold hover:bg-red-100 transition-colors"
+                          >
+                            Reject
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+
           {/* ── UPDATE CENTER ── */}
           <section>
             <div className="flex items-center justify-between mb-4">
@@ -1488,27 +1590,37 @@ export default function Admin() {
                 No updates posted yet — click "Post Update" to add the first one!
               </div>
             ) : (
-              <div className="space-y-2">
-                {appUpdatesList.slice(0, 15).map((u) => (
-                  <div key={u.id} className="bg-white rounded-2xl border border-border px-4 py-3 flex items-start gap-3">
-                    <span className="text-xl flex-shrink-0 mt-0.5">{u.emoji}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-semibold text-foreground leading-snug">{u.title}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{u.description}</p>
-                      <p className="text-[10px] text-muted-foreground/60 mt-1">
-                        {new Date(u.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                      </p>
+              <>
+                <div className="space-y-2">
+                  {(showAllUpdates ? appUpdatesList : appUpdatesList.slice(0, 2)).map((u) => (
+                    <div key={u.id} className="bg-white rounded-2xl border border-border px-4 py-3 flex items-start gap-3">
+                      <span className="text-xl flex-shrink-0 mt-0.5">{u.emoji}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-foreground leading-snug">{u.title}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{u.description}</p>
+                        <p className="text-[10px] text-muted-foreground/60 mt-1">
+                          {new Date(u.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => deleteUpdate(u.id)}
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-50 transition-colors flex-shrink-0"
+                        title="Delete update"
+                      >
+                        <Trash2 size={13} />
+                      </button>
                     </div>
-                    <button
-                      onClick={() => deleteUpdate(u.id)}
-                      className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-50 transition-colors flex-shrink-0"
-                      title="Delete update"
-                    >
-                      <Trash2 size={13} />
-                    </button>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+                {appUpdatesList.length > 2 && (
+                  <button
+                    onClick={() => setShowAllUpdates((v) => !v)}
+                    className="w-full mt-2 py-2.5 text-xs font-semibold text-primary bg-white border border-border rounded-2xl hover:bg-muted/30 transition-colors"
+                  >
+                    {showAllUpdates ? "Show less" : `Show All Updates (${appUpdatesList.length})`}
+                  </button>
+                )}
+              </>
             )}
           </section>
 

@@ -2,6 +2,7 @@ import { Router, type IRouter } from "express";
 import { eq, desc, and } from "drizzle-orm";
 import { db, communityQuestions, communityAnswers, communityAnswerLikes } from "@workspace/db";
 import { z } from "zod/v4";
+import { isAdminAuth } from "./admin-auth";
 
 const router: IRouter = Router();
 
@@ -103,7 +104,8 @@ router.post("/community/answers/:id/like", async (req, res): Promise<void> => {
 // ── Admin endpoints ───────────────────────────────────────────────────────
 
 // GET /admin/community/questions — all questions (all statuses)
-router.get("/admin/community/questions", async (_req, res): Promise<void> => {
+router.get("/admin/community/questions", async (req, res): Promise<void> => {
+  if (!isAdminAuth(req)) { res.status(403).json({ error: "Forbidden" }); return; }
   const questions = await db
     .select()
     .from(communityQuestions)
@@ -114,6 +116,7 @@ router.get("/admin/community/questions", async (_req, res): Promise<void> => {
 
 // PATCH /admin/community/questions/:id — update status / pin answer
 router.patch("/admin/community/questions/:id", async (req, res): Promise<void> => {
+  if (!isAdminAuth(req)) { res.status(403).json({ error: "Forbidden" }); return; }
   const id = Number(req.params.id);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
   const parsed = z
@@ -134,6 +137,7 @@ router.patch("/admin/community/questions/:id", async (req, res): Promise<void> =
 
 // POST /admin/community/questions — admin adds a question directly (published)
 router.post("/admin/community/questions", async (req, res): Promise<void> => {
+  if (!isAdminAuth(req)) { res.status(403).json({ error: "Forbidden" }); return; }
   const parsed = z
     .object({
       question: z.string().min(5).max(500),
@@ -150,6 +154,7 @@ router.post("/admin/community/questions", async (req, res): Promise<void> => {
 
 // PATCH /admin/community/answers/:id/pin — pin/unpin an answer
 router.patch("/admin/community/answers/:id/pin", async (req, res): Promise<void> => {
+  if (!isAdminAuth(req)) { res.status(403).json({ error: "Forbidden" }); return; }
   const id = Number(req.params.id);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
   const { isPinned } = z.object({ isPinned: z.boolean() }).safeParse(req.body).data ?? { isPinned: false };

@@ -417,6 +417,39 @@ export const DeleteDiaperEntryParams = zod.object({
 });
 
 /**
+ * @summary List bath entries for a twin
+ */
+export const ListBathEntriesQueryParams = zod.object({
+  twinId: zod.coerce.number(),
+  date: zod.coerce.string().nullish(),
+});
+
+export const ListBathEntriesResponseItem = zod.object({
+  id: zod.number(),
+  twinId: zod.number(),
+  notedAt: zod.string(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string(),
+});
+export const ListBathEntriesResponse = zod.array(ListBathEntriesResponseItem);
+
+/**
+ * @summary Log a bath
+ */
+export const CreateBathEntryBody = zod.object({
+  twinId: zod.number(),
+  notedAt: zod.string(),
+  notes: zod.string().nullish(),
+});
+
+/**
+ * @summary Delete a bath entry
+ */
+export const DeleteBathEntryParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+/**
  * @summary List routines for a user
  */
 export const ListRoutinesQueryParams = zod.object({
