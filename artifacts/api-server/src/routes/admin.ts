@@ -396,31 +396,81 @@ router.get("/admin/content-analytics", async (req, res): Promise<void> => {
 router.get("/admin/premium-readiness", async (req, res): Promise<void> => {
   if (!isAdminAuth(req)) { res.status(403).json({ error: "Forbidden" }); return; }
 
-  const revenueCatConnected = !!process.env.REVENUECAT_SECRET_KEY;
-  const appleProductsConfigured = !!(
-    process.env.REVENUECAT_APPLE_APP_STORE_APP_ID &&
-    process.env.VITE_REVENUECAT_IOS_API_KEY
-  );
-  const googleProductsConfigured = !!(
-    process.env.REVENUECAT_GOOGLE_PLAY_STORE_APP_ID &&
-    process.env.VITE_REVENUECAT_ANDROID_API_KEY
-  );
+  const rcWebhookKey  = !!process.env.REVENUECAT_SECRET_KEY;
+  const iosApiKey     = !!process.env.VITE_REVENUECAT_IOS_API_KEY;
+  const androidApiKey = !!process.env.VITE_REVENUECAT_ANDROID_API_KEY;
+  const projectId     = process.env.REVENUECAT_PROJECT_ID ?? null;
+  const resendKey     = !!process.env.RESEND_API_KEY;
   const premiumEnabled = process.env.VITE_PREMIUM_ENABLED === "true";
-  const trialEmailsEnabled = !!process.env.RESEND_API_KEY;
-  const projectId = process.env.REVENUECAT_PROJECT_ID ?? null;
 
-  const allReady = revenueCatConnected && appleProductsConfigured && googleProductsConfigured && trialEmailsEnabled;
+  // Auto-check: analytics events and paywall view tracking
+  const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const [[totalEvents], [upgradeEvents], [trialCount]] = await Promise.all([
+    db.select({ c: count() }).from(analyticsEventsTable),
+    db.select({ c: count() }).from(analyticsEventsTable).where(
+      and(eq(analyticsEventsTable.event, "premium_page_viewed"), gte(analyticsEventsTable.createdAt, monthAgo))
+    ),
+    db.select({ c: count() }).from(userPlansTable),
+  ]);
+
+  const totalEventsCount   = Number(totalEvents?.c  ?? 0);
+  const upgradeEventsCount = Number(upgradeEvents?.c ?? 0);
+  const trialUsersCount    = Number(trialCount?.c    ?? 0);
+  const analyticsWorking   = totalEventsCount > 0;
+  const upgradeTracked     = upgradeEventsCount > 0 || trialUsersCount > 0;
+
+  const allAutoReady = rcWebhookKey && iosApiKey && androidApiKey && resendKey;
 
   res.json({
-    allReady,
+    allAutoReady,
     premiumEnabled,
     projectId,
-    checks: [
-      { key: "revenueCatConnected", label: "RevenueCat API key", ok: revenueCatConnected },
-      { key: "appleProductsConfigured", label: "Apple / iOS products", ok: appleProductsConfigured },
-      { key: "googleProductsConfigured", label: "Google / Android products", ok: googleProductsConfigured },
-      { key: "trialEmailsEnabled", label: "Trial reminder emails (Resend)", ok: trialEmailsEnabled },
-      { key: "premiumEnabled", label: "Premium paywall enabled (VITE_PREMIUM_ENABLED)", ok: premiumEnabled },
+    packages: [
+      { tier: "Founding Moms", price: "$39/yr (forever)", rcId: "founding_annual", store: "Both stores" },
+      { tier: "Annual",        price: "$49/yr",           rcId: "$rc_annual",       store: "Both stores" },
+      { tier: "Monthly",       price: "$5.99/mo",         rcId: "$rc_monthly",      store: "Both stores" },
+    ],
+    autoChecks: [
+      {
+        key: "rcWebhookKey",
+        label: "RevenueCat webhook key",
+        ok: rcWebhookKey,
+        detail: rcWebhookKey ? "REVENUECAT_SECRET_KEY is set" : "Set REVENUECAT_SECRET_KEY env var",
+      },
+      {
+        key: "iosApiKey",
+        label: "iOS RevenueCat API key",
+        ok: iosApiKey,
+        detail: iosApiKey ? "VITE_REVENUECAT_IOS_API_KEY is set" : "Set VITE_REVENUECAT_IOS_API_KEY env var",
+      },
+      {
+        key: "androidApiKey",
+        label: "Android RevenueCat API key",
+        ok: androidApiKey,
+        detail: androidApiKey ? "VITE_REVENUECAT_ANDROID_API_KEY is set" : "Set VITE_REVENUECAT_ANDROID_API_KEY env var",
+      },
+      {
+        key: "trialEmails",
+        label: "Trial reminder emails",
+        ok: resendKey,
+        detail: resendKey ? "Resend key configured · 7d/3d/1d emails ready" : "Set RESEND_API_KEY env var",
+      },
+      {
+        key: "analyticsWorking",
+        label: "Analytics events tracking",
+        ok: analyticsWorking,
+        detail: analyticsWorking
+          ? `${totalEventsCount} events total · ${upgradeEventsCount} paywall views (30d)`
+          : "No events recorded yet — open the app to generate events",
+      },
+      {
+        key: "upgradeTracked",
+        label: "Upgrade funnel tracking",
+        ok: upgradeTracked,
+        detail: upgradeTracked
+          ? `${upgradeEventsCount} paywall views · ${trialUsersCount} trial users`
+          : "No upgrade events yet — trigger an upgrade screen to test",
+      },
     ],
   });
 });

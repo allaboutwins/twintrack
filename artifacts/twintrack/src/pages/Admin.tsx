@@ -119,14 +119,58 @@ interface ReadinessCheck {
   key: string;
   label: string;
   ok: boolean;
+  detail: string;
+}
+
+interface ReadinessPackage {
+  tier: string;
+  price: string;
+  rcId: string;
+  store: string;
 }
 
 interface PremiumReadiness {
-  allReady: boolean;
+  allAutoReady: boolean;
   premiumEnabled: boolean;
   projectId: string | null;
-  checks: ReadinessCheck[];
+  packages: ReadinessPackage[];
+  autoChecks: ReadinessCheck[];
 }
+
+const MANUAL_CHECKS_KEY = "tt_launch_manual_checks";
+const MANUAL_CHECKS_DEFAULT = {
+  appleApproved: false,
+  googleApproved: false,
+  testPurchase: false,
+  cancellationSync: false,
+};
+type ManualCheckKey = keyof typeof MANUAL_CHECKS_DEFAULT;
+
+const MANUAL_CHECK_ITEMS: { key: ManualCheckKey; label: string; detail: string; link?: string }[] = [
+  {
+    key: "appleApproved",
+    label: "Apple subscriptions approved in App Store Connect",
+    detail: "Monthly $5.99 · Annual $49 · Founding Moms $39",
+    link: "https://appstoreconnect.apple.com",
+  },
+  {
+    key: "googleApproved",
+    label: "Google Play subscriptions approved in Play Console",
+    detail: "Monthly $5.99 · Annual $49 · Founding Moms $39",
+    link: "https://play.google.com/console",
+  },
+  {
+    key: "testPurchase",
+    label: "Test purchase verified end-to-end",
+    detail: "Use sandbox account · confirm RC receives the purchase event",
+    link: "https://app.revenuecat.com",
+  },
+  {
+    key: "cancellationSync",
+    label: "Cancellation & renewal events sync",
+    detail: "Cancel a sandbox sub · verify webhook at /api/revenuecat/webhook",
+  },
+];
 
 interface LiveUserEntry {
   userId: string;
@@ -264,6 +308,20 @@ export default function Admin() {
   const [premiumAnalytics, setPremiumAnalytics] = useState<PremiumAnalytics | null>(null);
   const [contentAnalytics, setContentAnalytics] = useState<ContentAnalytics | null>(null);
   const [premiumReadiness, setPremiumReadiness] = useState<PremiumReadiness | null>(null);
+  const [manualChecks, setManualChecks] = useState<typeof MANUAL_CHECKS_DEFAULT>(() => {
+    try {
+      const stored = localStorage.getItem(MANUAL_CHECKS_KEY);
+      return stored ? { ...MANUAL_CHECKS_DEFAULT, ...JSON.parse(stored) } : MANUAL_CHECKS_DEFAULT;
+    } catch { return MANUAL_CHECKS_DEFAULT; }
+  });
+
+  function toggleManualCheck(key: ManualCheckKey) {
+    setManualChecks((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      localStorage.setItem(MANUAL_CHECKS_KEY, JSON.stringify(next));
+      return next;
+    });
+  }
   const [testEmailTo, setTestEmailTo] = useState("");
   const [testEmailDays, setTestEmailDays] = useState<1 | 3 | 7>(7);
   const [testEmailStatus, setTestEmailStatus] = useState<"idle" | "sending" | "ok" | "error">("idle");
@@ -848,56 +906,164 @@ export default function Admin() {
             </section>
           )}
 
-          {/* ── PREMIUM READINESS CHECKLIST ── */}
-          {premiumReadiness && (
-            <section>
-              <SectionHeader icon={<CheckCircle2 size={16} />} title="Premium Launch Readiness" />
-              <div className="bg-white rounded-2xl border border-border p-4">
-                <div className={`flex items-center gap-3 mb-4 p-3 rounded-xl ${premiumReadiness.allReady ? "bg-green-50 border border-green-200" : "bg-amber-50 border border-amber-200"}`}>
-                  <span className="text-xl">{premiumReadiness.allReady ? "✅" : "⚠️"}</span>
-                  <div>
-                    <p className={`text-sm font-bold ${premiumReadiness.allReady ? "text-green-800" : "text-amber-800"}`}>
-                      {premiumReadiness.allReady ? "Backend is launch-ready!" : "Backend setup incomplete"}
-                    </p>
-                    <p className={`text-xs ${premiumReadiness.allReady ? "text-green-600" : "text-amber-600"}`}>
+          {/* ── FOUNDER LAUNCH CHECKLIST ── */}
+          {premiumReadiness && (() => {
+            const manualDoneCount = MANUAL_CHECK_ITEMS.filter((m) => manualChecks[m.key]).length;
+            const autoDoneCount   = premiumReadiness.autoChecks.filter((c) => c.ok).length;
+            const totalItems      = premiumReadiness.autoChecks.length + MANUAL_CHECK_ITEMS.length;
+            const totalDone       = autoDoneCount + manualDoneCount;
+            const allDone         = totalDone === totalItems;
+            const pct             = Math.round((totalDone / totalItems) * 100);
+
+            return (
+              <section>
+                <SectionHeader icon={<CheckCircle2 size={16} />} title="Founder Launch Checklist" />
+
+                {/* Status banner */}
+                <div className={`flex items-center gap-3 mb-4 p-4 rounded-2xl border ${
+                  premiumReadiness.premiumEnabled
+                    ? "bg-green-50 border-green-300"
+                    : allDone
+                    ? "bg-violet-50 border-violet-300"
+                    : "bg-amber-50 border-amber-200"
+                }`}>
+                  <span className="text-2xl flex-shrink-0">
+                    {premiumReadiness.premiumEnabled ? "💳" : allDone ? "🚀" : "🔒"}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className={`text-sm font-bold ${
+                      premiumReadiness.premiumEnabled ? "text-green-800" : allDone ? "text-violet-800" : "text-amber-800"
+                    }`}>
                       {premiumReadiness.premiumEnabled
-                        ? "💳 Paywall is LIVE — users see upgrade prompts"
-                        : "🔒 Paywall off — all features unlocked (feedback mode)"}
+                        ? "Paywall is LIVE — users are being charged"
+                        : allDone
+                        ? "All checks passed — ready to launch!"
+                        : `${totalDone} / ${totalItems} checks complete`}
+                    </p>
+                    <p className={`text-xs mt-0.5 ${
+                      premiumReadiness.premiumEnabled ? "text-green-600" : allDone ? "text-violet-600" : "text-amber-600"
+                    }`}>
+                      {premiumReadiness.premiumEnabled
+                        ? "Set VITE_PREMIUM_ENABLED=false to disable the paywall"
+                        : "Set VITE_PREMIUM_ENABLED=true only after ALL checks are ticked off"}
                     </p>
                   </div>
-                </div>
-
-                <div className="space-y-2.5 mb-4">
-                  {premiumReadiness.checks.map((check) => (
-                    <div key={check.key} className="flex items-center gap-3">
-                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${check.ok ? "bg-green-100" : "bg-red-100"}`}>
-                        <span className="text-xs">{check.ok ? "✓" : "✗"}</span>
-                      </div>
-                      <span className={`text-sm flex-1 ${check.ok ? "text-foreground" : "text-muted-foreground"}`}>{check.label}</span>
-                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${check.ok ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
-                        {check.ok ? "YES" : "NO"}
-                      </span>
+                  {!premiumReadiness.premiumEnabled && (
+                    <div className="flex-shrink-0 text-right">
+                      <p className={`text-lg font-bold ${allDone ? "text-violet-700" : "text-amber-700"}`}>{pct}%</p>
+                      <p className="text-xs text-muted-foreground">ready</p>
                     </div>
-                  ))}
+                  )}
                 </div>
 
-                {premiumReadiness.projectId && (
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/40 rounded-xl px-3 py-2">
-                    <span className="font-mono">{premiumReadiness.projectId}</span>
-                    <CopyBtn text={premiumReadiness.projectId} />
-                    <span className="ml-auto text-muted-foreground/60">RevenueCat project ID</span>
+                {/* RevenueCat packages */}
+                <div className="bg-white rounded-2xl border border-border p-4 mb-4">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">💕 Subscription Packages (RevenueCat offering: founding_moms)</p>
+                  <div className="space-y-2">
+                    {premiumReadiness.packages.map((pkg) => (
+                      <div key={pkg.rcId} className="flex items-center justify-between py-1.5 border-b border-border/50 last:border-0">
+                        <div>
+                          <p className="text-sm font-semibold text-foreground">{pkg.tier}</p>
+                          <p className="text-xs text-muted-foreground font-mono">{pkg.rcId}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-bold text-primary">{pkg.price}</p>
+                          <p className="text-xs text-muted-foreground">{pkg.store}</p>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                )}
+                  {premiumReadiness.projectId && (
+                    <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/50 text-xs text-muted-foreground">
+                      <span>RC project:</span>
+                      <span className="font-mono text-foreground">{premiumReadiness.projectId}</span>
+                      <CopyBtn text={premiumReadiness.projectId} />
+                    </div>
+                  )}
+                </div>
 
-                {!premiumReadiness.premiumEnabled && premiumReadiness.allReady && (
-                  <div className="mt-3 p-3 bg-violet-50 border border-violet-200 rounded-xl">
-                    <p className="text-xs font-semibold text-violet-700 mb-0.5">Ready to go live?</p>
-                    <p className="text-xs text-violet-600">Set <code className="bg-violet-100 px-1 rounded">VITE_PREMIUM_ENABLED=true</code> to enable the paywall for real users.</p>
+                {/* Auto-detected checks */}
+                <div className="bg-white rounded-2xl border border-border p-4 mb-4">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">⚡ Auto-detected ({autoDoneCount}/{premiumReadiness.autoChecks.length})</p>
+                  <div className="space-y-3">
+                    {premiumReadiness.autoChecks.map((check) => (
+                      <div key={check.key} className="flex items-start gap-3">
+                        <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 ${
+                          check.ok ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"
+                        }`}>
+                          <span className="text-xs font-bold">{check.ok ? "✓" : "✗"}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`text-sm font-medium ${check.ok ? "text-foreground" : "text-muted-foreground"}`}>{check.label}</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">{check.detail}</p>
+                        </div>
+                        <span className={`text-xs font-bold px-2 py-0.5 rounded-full flex-shrink-0 ${
+                          check.ok ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"
+                        }`}>
+                          {check.ok ? "YES" : "NO"}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                )}
-              </div>
-            </section>
-          )}
+                </div>
+
+                {/* Manual verification checks */}
+                <div className="bg-white rounded-2xl border border-border p-4">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-1">✋ Manual Verification ({manualDoneCount}/{MANUAL_CHECK_ITEMS.length})</p>
+                  <p className="text-xs text-muted-foreground mb-3">Tap each item to mark it done after you've verified it externally. Saved in this browser.</p>
+                  <div className="space-y-3">
+                    {MANUAL_CHECK_ITEMS.map((item) => {
+                      const done = manualChecks[item.key];
+                      return (
+                        <button
+                          key={item.key}
+                          onClick={() => toggleManualCheck(item.key)}
+                          className={`w-full flex items-start gap-3 text-left p-3 rounded-xl border transition-all ${
+                            done
+                              ? "bg-green-50 border-green-200"
+                              : "bg-muted/30 border-border hover:bg-muted/60"
+                          }`}
+                        >
+                          <div className={`w-5 h-5 rounded flex items-center justify-center flex-shrink-0 mt-0.5 border-2 transition-all ${
+                            done ? "bg-green-500 border-green-500 text-white" : "border-border bg-white"
+                          }`}>
+                            {done && <span className="text-xs font-bold">✓</span>}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className={`text-sm font-medium ${done ? "text-green-800 line-through decoration-green-400" : "text-foreground"}`}>
+                              {item.label}
+                            </p>
+                            <p className="text-xs text-muted-foreground mt-0.5 no-underline">{item.detail}</p>
+                          </div>
+                          {item.link && !done && (
+                            <a
+                              href={item.link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-xs text-primary underline flex-shrink-0 mt-0.5"
+                            >
+                              Open ↗
+                            </a>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {allDone && !premiumReadiness.premiumEnabled && (
+                    <div className="mt-4 p-3 bg-violet-50 border border-violet-300 rounded-xl">
+                      <p className="text-xs font-bold text-violet-800 mb-0.5">🚀 All checks complete — ready to go live</p>
+                      <p className="text-xs text-violet-700">
+                        Set <code className="bg-violet-100 px-1 rounded font-mono">VITE_PREMIUM_ENABLED=true</code> in Secrets to enable the paywall.
+                        Users will start seeing upgrade prompts immediately.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </section>
+            );
+          })()}
 
           {/* ── PREMIUM ANALYTICS ── */}
           {premiumAnalytics && (
