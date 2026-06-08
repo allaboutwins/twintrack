@@ -102,6 +102,20 @@ interface PremiumAnalytics {
   dailyTrials: { date: string; count: number }[];
 }
 
+interface FoundingMomsDashboard {
+  totalTrialUsers: number;
+  activeTrialUsers: number;
+  endingIn7Days: number;
+  endingIn3Days: number;
+  endingIn1Day: number;
+  foundingMomConversions: number;
+  annualPurchases: number;
+  monthlyPurchases: number;
+  conversionPct: number;
+  mrr: number;
+  arr: number;
+}
+
 interface ContentAnalytics {
   magazine: {
     totalOpens: number; uniqueUsers: number; reads: number; premiumClicks: number;
@@ -318,6 +332,7 @@ export default function Admin() {
   const [retentionData, setRetentionData] = useState<RetentionData | null>(null);
   const [liveUsers, setLiveUsers] = useState<LiveUsersData | null>(null);
   const [premiumAnalytics, setPremiumAnalytics] = useState<PremiumAnalytics | null>(null);
+  const [foundingMomsDashboard, setFoundingMomsDashboard] = useState<FoundingMomsDashboard | null>(null);
   const [contentAnalytics, setContentAnalytics] = useState<ContentAnalytics | null>(null);
   const [premiumReadiness, setPremiumReadiness] = useState<PremiumReadiness | null>(null);
   const [manualChecks, setManualChecks] = useState<typeof MANUAL_CHECKS_DEFAULT>(() => {
@@ -363,7 +378,7 @@ export default function Admin() {
     // browser to bypass its own cache and never store the response.
     const t = Date.now();
     try {
-      const [statsRes, aiRes, updatesRes, notifRes, retentionRes, premiumRes, contentRes, readinessRes, communityQRes] = await Promise.all([
+      const [statsRes, aiRes, updatesRes, notifRes, retentionRes, premiumRes, contentRes, readinessRes, communityQRes, foundingMomsRes] = await Promise.all([
         fetch(`${baseUrl}/api/admin/stats?${authQuery}&_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/admin/twin-ai-analytics?${authQuery}&_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/app-updates?limit=50&_t=${t}`, { cache: "no-store" }),
@@ -373,6 +388,7 @@ export default function Admin() {
         fetch(`${baseUrl}/api/admin/content-analytics?${authQuery}&_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/admin/premium-readiness?${authQuery}&_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/admin/community/questions?${authQuery}&_t=${t}`, { cache: "no-store" }),
+        fetch(`${baseUrl}/api/admin/founding-moms?${authQuery}&_t=${t}`, { cache: "no-store" }),
       ]);
       if (!statsRes.ok) throw new Error(`${statsRes.status}`);
       const data: AdminStats = await statsRes.json();
@@ -386,6 +402,7 @@ export default function Admin() {
       if (contentRes.ok) setContentAnalytics(await contentRes.json());
       if (readinessRes.ok) setPremiumReadiness(await readinessRes.json());
       if (communityQRes.ok) setCommunityQuestions(await communityQRes.json());
+      if (foundingMomsRes.ok) setFoundingMomsDashboard(await foundingMomsRes.json());
       setLastUpdated(new Date());
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -1107,6 +1124,63 @@ export default function Admin() {
                     {testEmailStatus === "sending" ? "…" : testEmailStatus === "ok" ? "✓ Sent!" : testEmailStatus === "error" ? "✗ Error" : "Send"}
                   </button>
                 </div>
+              </div>
+            </section>
+          )}
+
+          {/* ── FOUNDING MOMS DASHBOARD ── */}
+          {foundingMomsDashboard && (
+            <section>
+              <SectionHeader icon={<span className="text-sm">💕</span>} title="Founding Moms Dashboard" />
+
+              {/* Top stats */}
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 mb-4">
+                <StatCard label="Total trial users" value={foundingMomsDashboard.totalTrialUsers} sub="ever signed up" accent />
+                <StatCard label="Active trials" value={foundingMomsDashboard.activeTrialUsers} sub="still in trial" accent />
+                <StatCard label="Founding Moms 💕" value={foundingMomsDashboard.foundingMomConversions} sub="converted" accent />
+                <StatCard label="Conversion %" value={`${foundingMomsDashboard.conversionPct}%`} sub="trial → paid" accent />
+                <StatCard label="Annual plans" value={foundingMomsDashboard.annualPurchases} sub="$49/yr" />
+                <StatCard label="Monthly plans" value={foundingMomsDashboard.monthlyPurchases} sub="$5.99/mo" />
+                <StatCard label="MRR" value={`$${foundingMomsDashboard.mrr.toFixed(2)}`} sub="monthly recurring" accent />
+                <StatCard label="ARR" value={`$${foundingMomsDashboard.arr.toFixed(2)}`} sub="annual run rate" accent />
+              </div>
+
+              {/* Trials ending urgency */}
+              <div className="bg-white rounded-2xl p-4 border border-border mb-4">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">⏰ Trials Ending Soon</p>
+                <div className="space-y-3">
+                  {[
+                    { label: "Ending within 7 days", value: foundingMomsDashboard.endingIn7Days, color: "bg-amber-300" },
+                    { label: "Ending within 3 days", value: foundingMomsDashboard.endingIn3Days, color: "bg-orange-400" },
+                    { label: "Ending within 24 hours", value: foundingMomsDashboard.endingIn1Day, color: "bg-rose-500" },
+                  ].map(({ label, value, color }) => {
+                    const max = Math.max(foundingMomsDashboard.endingIn7Days, 1);
+                    return (
+                      <div key={label}>
+                        <div className="flex justify-between text-xs mb-1">
+                          <span className="text-foreground font-medium">{label}</span>
+                          <span className="text-muted-foreground font-semibold">{value} users</span>
+                        </div>
+                        <div className="h-2 bg-muted rounded-full overflow-hidden">
+                          <div className={`h-full ${color} rounded-full transition-all`} style={{ width: `${Math.round((value / max) * 100)}%` }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Export CSV */}
+              <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4">
+                <p className="text-xs font-bold text-pink-800 uppercase tracking-wide mb-1">👉 Export Founding Moms CSV</p>
+                <p className="text-xs text-pink-700 mb-3">Includes email, signup date, trial end date, plan selected, conversion date for all users.</p>
+                <a
+                  href={`${baseUrl}/api/admin/founding-moms/csv?${authQuery}`}
+                  download
+                  className="inline-block px-5 py-2.5 rounded-xl bg-primary text-white text-sm font-bold active:scale-[0.97] transition-all"
+                >
+                  ⬇ Download CSV
+                </a>
               </div>
             </section>
           )}

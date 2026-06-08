@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { and, desc, count, isNotNull, eq, gte, sql } from "drizzle-orm";
+import { and, desc, count, isNotNull, eq, gte, lte, gt, sql } from "drizzle-orm";
 import {
   db,
   twinsTable,
@@ -13,6 +13,7 @@ import {
   videoNotesTable,
   analyticsEventsTable,
   userPlansTable,
+  type UserPlan,
 } from "@workspace/db";
 import { backfillOnboardingRows, type OnboardingRowData } from "../sheets";
 import type { Request } from "express";
@@ -473,6 +474,114 @@ router.get("/admin/premium-readiness", async (req, res): Promise<void> => {
       },
     ],
   });
+});
+
+// ── GET /api/admin/founding-moms ─────────────────────────────────────────
+router.get("/admin/founding-moms", async (req, res): Promise<void> => {
+  if (!isAdminAuth(req)) { res.status(403).json({ error: "Forbidden" }); return; }
+
+  const now = new Date();
+  const in1Day  = new Date(now.getTime() + 1 * 24 * 60 * 60 * 1000);
+  const in3Days = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+  const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  const [
+    [total], [active],
+    [ending7], [ending3], [ending1],
+    [foundingConv], [annual], [monthly],
+  ] = await Promise.all([
+    db.select({ c: count() }).from(userPlansTable),
+    db.select({ c: count() }).from(userPlansTable).where(
+      and(eq(userPlansTable.status, "trial"), gt(userPlansTable.trialEndsAt, now)),
+    ),
+    db.select({ c: count() }).from(userPlansTable).where(
+      and(eq(userPlansTable.status, "trial"), gt(userPlansTable.trialEndsAt, now), lte(userPlansTable.trialEndsAt, in7Days)),
+    ),
+    db.select({ c: count() }).from(userPlansTable).where(
+      and(eq(userPlansTable.status, "trial"), gt(userPlansTable.trialEndsAt, now), lte(userPlansTable.trialEndsAt, in3Days)),
+    ),
+    db.select({ c: count() }).from(userPlansTable).where(
+      and(eq(userPlansTable.status, "trial"), gt(userPlansTable.trialEndsAt, now), lte(userPlansTable.trialEndsAt, in1Day)),
+    ),
+    db.select({ c: count() }).from(userPlansTable).where(
+      and(eq(userPlansTable.isFoundingMom, true), eq(userPlansTable.status, "active")),
+    ),
+    db.select({ c: count() }).from(userPlansTable).where(
+      and(eq(userPlansTable.plan, "annual"), eq(userPlansTable.status, "active")),
+    ),
+    db.select({ c: count() }).from(userPlansTable).where(
+      and(eq(userPlansTable.plan, "monthly"), eq(userPlansTable.status, "active")),
+    ),
+  ]);
+
+  const totalN    = Number(total?.c    ?? 0);
+  const annualN   = Number(annual?.c   ?? 0);
+  const monthlyN  = Number(monthly?.c  ?? 0);
+  const foundingN = Number(foundingConv?.c ?? 0);
+  const paidTotal = annualN + monthlyN + foundingN;
+  const conversionPct = totalN > 0 ? Math.round((paidTotal / totalN) * 1000) / 10 : 0;
+  // MRR in dollars
+  const mrr = Math.round((annualN * (49 / 12) + monthlyN * 5.99 + foundingN * (39 / 12)) * 100) / 100;
+
+  res.json({
+    totalTrialUsers:        totalN,
+    activeTrialUsers:       Number(active?.c   ?? 0),
+    endingIn7Days:          Number(ending7?.c  ?? 0),
+    endingIn3Days:          Number(ending3?.c  ?? 0),
+    endingIn1Day:           Number(ending1?.c  ?? 0),
+    foundingMomConversions: foundingN,
+    annualPurchases:        annualN,
+    monthlyPurchases:       monthlyN,
+    conversionPct,
+    mrr,
+    arr: Math.round(mrr * 12 * 100) / 100,
+  });
+});
+
+// ── GET /api/admin/founding-moms/csv ─────────────────────────────────────
+router.get("/admin/founding-moms/csv", async (req, res): Promise<void> => {
+  if (!isAdminAuth(req)) { res.status(403).json({ error: "Forbidden" }); return; }
+
+  const [rows, onboardingEmails] = await Promise.all([
+    db.select({
+      userId:      userPlansTable.userId,
+      email:       userPlansTable.userEmail,
+      signupDate:  userPlansTable.createdAt,
+      trialEndDate: userPlansTable.trialEndsAt,
+      plan:        userPlansTable.plan,
+      status:      userPlansTable.status,
+      isFoundingMom: userPlansTable.isFoundingMom,
+      convertedAt: userPlansTable.convertedAt,
+    }).from(userPlansTable).orderBy(desc(userPlansTable.createdAt)),
+    db.select({ userId: onboardingTable.userId, email: onboardingTable.email })
+      .from(onboardingTable).where(isNotNull(onboardingTable.email)),
+  ]);
+
+  const emailMap = new Map(onboardingEmails.map((o) => [o.userId, o.email]));
+
+  type Row = typeof rows[number];
+  const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+  const fmtDate = (d: Date | null) => d ? d.toISOString().split("T")[0] : "";
+
+  const header = ["email", "signup_date", "trial_end_date", "plan_selected", "status", "is_founding_mom", "conversion_date"];
+  const csvRows = rows.map((r: Row) => [
+    r.email ?? emailMap.get(r.userId) ?? "",
+    fmtDate(r.signupDate),
+    fmtDate(r.trialEndDate),
+    r.plan,
+    r.status,
+    r.isFoundingMom ? "yes" : "no",
+    fmtDate(r.convertedAt),
+  ]);
+
+  const csv = [header, ...csvRows]
+    .map((row) => row.map((v) => escape(String(v))).join(","))
+    .join("\n");
+
+  const dateStr = new Date().toISOString().split("T")[0];
+  res.setHeader("Content-Type", "text/csv");
+  res.setHeader("Content-Disposition", `attachment; filename="founding-moms-${dateStr}.csv"`);
+  res.send(csv);
 });
 
 export default router;

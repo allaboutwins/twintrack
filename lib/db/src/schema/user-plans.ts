@@ -12,6 +12,7 @@ export const userPlansTable = pgTable("user_plans", {
   billingSource: varchar("billing_source", { length: 30 }),
   externalSubscriptionId: varchar("external_subscription_id", { length: 255 }),
   trialRemindersSent: varchar("trial_reminders_sent", { length: 50 }),
+  convertedAt: timestamp("converted_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

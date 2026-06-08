@@ -9,6 +9,7 @@
 - [Caregiver system](caregiver-system.md) — caregivers table (owner_id, caregiver_email, caregiver_id, role, invite_token, status); invite flow via Settings; /api/caregivers + /api/caregivers/me + /api/caregivers/invite + /api/caregivers/accept.
 - [Community Questions](community-questions.md) — community_questions + community_answers + community_answer_likes tables; admin can publish/pin/add; CommunityQuestionsSection in Learn.tsx Community tab; thank-you feedback message pattern.
 - [Bath tracking](bath-tracking.md) — bath_entries table; GET/POST /bath + DELETE /bath/:id; Bath.tsx at /bath (not in nav); uses Layout + PageHeader + TwinTabs from @/components/Layout.
+- [Founding Moms Dashboard](founding-moms-dashboard.md) — GET /admin/founding-moms (stats) + GET /admin/founding-moms/csv (export); convertedAt added to user_plans; section lives after Premium Analytics in Admin.tsx.
 - [Onboarding multi-select](onboarding-multiselect.md) — biggestChallenge + featureInterest are string[] in FormState, toggled in array, joined with "," on save; Admin LABELS.challenge and LABELS.feature include both old and new keys for backwards compat.
 - [Sleep overnight fix](sleep-overnight.md) — also fetch yesterday's sleep entries; activeEntry falls back to yesterdayEntries.find(!e.endTime); invalidate also busts yesterday's query key.
 - [PWA install prompt disabled](pwa-disabled.md) — InstallPrompt.tsx returns null; native App Store/Play is primary path; do NOT re-enable without checking App Store submission status.
