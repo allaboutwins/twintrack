@@ -392,4 +392,37 @@ router.get("/admin/content-analytics", async (req, res): Promise<void> => {
   });
 });
 
+// ── GET /api/admin/premium-readiness ─────────────────────────────────────
+router.get("/admin/premium-readiness", async (req, res): Promise<void> => {
+  if (!isAdminAuth(req)) { res.status(403).json({ error: "Forbidden" }); return; }
+
+  const revenueCatConnected = !!process.env.REVENUECAT_SECRET_KEY;
+  const appleProductsConfigured = !!(
+    process.env.REVENUECAT_APPLE_APP_STORE_APP_ID &&
+    process.env.VITE_REVENUECAT_IOS_API_KEY
+  );
+  const googleProductsConfigured = !!(
+    process.env.REVENUECAT_GOOGLE_PLAY_STORE_APP_ID &&
+    process.env.VITE_REVENUECAT_ANDROID_API_KEY
+  );
+  const premiumEnabled = process.env.VITE_PREMIUM_ENABLED === "true";
+  const trialEmailsEnabled = !!process.env.RESEND_API_KEY;
+  const projectId = process.env.REVENUECAT_PROJECT_ID ?? null;
+
+  const allReady = revenueCatConnected && appleProductsConfigured && googleProductsConfigured && trialEmailsEnabled;
+
+  res.json({
+    allReady,
+    premiumEnabled,
+    projectId,
+    checks: [
+      { key: "revenueCatConnected", label: "RevenueCat API key", ok: revenueCatConnected },
+      { key: "appleProductsConfigured", label: "Apple / iOS products", ok: appleProductsConfigured },
+      { key: "googleProductsConfigured", label: "Google / Android products", ok: googleProductsConfigured },
+      { key: "trialEmailsEnabled", label: "Trial reminder emails (Resend)", ok: trialEmailsEnabled },
+      { key: "premiumEnabled", label: "Premium paywall enabled (VITE_PREMIUM_ENABLED)", ok: premiumEnabled },
+    ],
+  });
+});
+
 export default router;

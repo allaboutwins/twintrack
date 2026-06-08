@@ -1,6 +1,6 @@
 import { X } from "lucide-react";
 import { usePlan, trackPlanEvent } from "@/hooks/usePlan";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSubscription, PREMIUM_ENABLED, type TierKey } from "@/lib/revenuecat";
 
 export type PremiumFeature = "twin_ai" | "caregivers" | "magazine" | "academy" | "memories" | "general";
@@ -74,6 +74,12 @@ export default function UpgradeScreen({ open, onClose, feature = "general", sour
   );
   const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (open) {
+      trackPlanEvent("premium_page_viewed", { feature, source, isInTrial, trialDaysLeft });
+    }
+  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const info = FEATURE_INFO[feature];
   const showFoundingPrice = isInTrial && pricing?.founding != null;

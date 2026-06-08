@@ -115,6 +115,19 @@ interface ContentAnalytics {
 
 interface PollOption { key: string; label: string; }
 
+interface ReadinessCheck {
+  key: string;
+  label: string;
+  ok: boolean;
+}
+
+interface PremiumReadiness {
+  allReady: boolean;
+  premiumEnabled: boolean;
+  projectId: string | null;
+  checks: ReadinessCheck[];
+}
+
 interface LiveUserEntry {
   userId: string;
   lastSeen: string;
@@ -250,6 +263,7 @@ export default function Admin() {
   const [liveUsers, setLiveUsers] = useState<LiveUsersData | null>(null);
   const [premiumAnalytics, setPremiumAnalytics] = useState<PremiumAnalytics | null>(null);
   const [contentAnalytics, setContentAnalytics] = useState<ContentAnalytics | null>(null);
+  const [premiumReadiness, setPremiumReadiness] = useState<PremiumReadiness | null>(null);
   const [testEmailTo, setTestEmailTo] = useState("");
   const [testEmailDays, setTestEmailDays] = useState<1 | 3 | 7>(7);
   const [testEmailStatus, setTestEmailStatus] = useState<"idle" | "sending" | "ok" | "error">("idle");
@@ -279,7 +293,7 @@ export default function Admin() {
     // browser to bypass its own cache and never store the response.
     const t = Date.now();
     try {
-      const [statsRes, aiRes, updatesRes, notifRes, retentionRes, premiumRes, contentRes] = await Promise.all([
+      const [statsRes, aiRes, updatesRes, notifRes, retentionRes, premiumRes, contentRes, readinessRes] = await Promise.all([
         fetch(`${baseUrl}/api/admin/stats?${authQuery}&_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/admin/twin-ai-analytics?${authQuery}&_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/app-updates?limit=50&_t=${t}`, { cache: "no-store" }),
@@ -287,6 +301,7 @@ export default function Admin() {
         fetch(`${baseUrl}/api/admin/retention?${authQuery}&days=30&_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/admin/premium-analytics?${authQuery}&_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/admin/content-analytics?${authQuery}&_t=${t}`, { cache: "no-store" }),
+        fetch(`${baseUrl}/api/admin/premium-readiness?${authQuery}&_t=${t}`, { cache: "no-store" }),
       ]);
       if (!statsRes.ok) throw new Error(`${statsRes.status}`);
       const data: AdminStats = await statsRes.json();
@@ -298,6 +313,7 @@ export default function Admin() {
       if (retentionRes.ok) setRetentionData(await retentionRes.json());
       if (premiumRes.ok) setPremiumAnalytics(await premiumRes.json());
       if (contentRes.ok) setContentAnalytics(await contentRes.json());
+      if (readinessRes.ok) setPremiumReadiness(await readinessRes.json());
       setLastUpdated(new Date());
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -828,6 +844,57 @@ export default function Admin() {
                     </div>
                   )
                 }
+              </div>
+            </section>
+          )}
+
+          {/* ── PREMIUM READINESS CHECKLIST ── */}
+          {premiumReadiness && (
+            <section>
+              <SectionHeader icon={<CheckCircle2 size={16} />} title="Premium Launch Readiness" />
+              <div className="bg-white rounded-2xl border border-border p-4">
+                <div className={`flex items-center gap-3 mb-4 p-3 rounded-xl ${premiumReadiness.allReady ? "bg-green-50 border border-green-200" : "bg-amber-50 border border-amber-200"}`}>
+                  <span className="text-xl">{premiumReadiness.allReady ? "✅" : "⚠️"}</span>
+                  <div>
+                    <p className={`text-sm font-bold ${premiumReadiness.allReady ? "text-green-800" : "text-amber-800"}`}>
+                      {premiumReadiness.allReady ? "Backend is launch-ready!" : "Backend setup incomplete"}
+                    </p>
+                    <p className={`text-xs ${premiumReadiness.allReady ? "text-green-600" : "text-amber-600"}`}>
+                      {premiumReadiness.premiumEnabled
+                        ? "💳 Paywall is LIVE — users see upgrade prompts"
+                        : "🔒 Paywall off — all features unlocked (feedback mode)"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-2.5 mb-4">
+                  {premiumReadiness.checks.map((check) => (
+                    <div key={check.key} className="flex items-center gap-3">
+                      <div className={`w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 ${check.ok ? "bg-green-100" : "bg-red-100"}`}>
+                        <span className="text-xs">{check.ok ? "✓" : "✗"}</span>
+                      </div>
+                      <span className={`text-sm flex-1 ${check.ok ? "text-foreground" : "text-muted-foreground"}`}>{check.label}</span>
+                      <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${check.ok ? "bg-green-100 text-green-700" : "bg-red-100 text-red-600"}`}>
+                        {check.ok ? "YES" : "NO"}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {premiumReadiness.projectId && (
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/40 rounded-xl px-3 py-2">
+                    <span className="font-mono">{premiumReadiness.projectId}</span>
+                    <CopyBtn text={premiumReadiness.projectId} />
+                    <span className="ml-auto text-muted-foreground/60">RevenueCat project ID</span>
+                  </div>
+                )}
+
+                {!premiumReadiness.premiumEnabled && premiumReadiness.allReady && (
+                  <div className="mt-3 p-3 bg-violet-50 border border-violet-200 rounded-xl">
+                    <p className="text-xs font-semibold text-violet-700 mb-0.5">Ready to go live?</p>
+                    <p className="text-xs text-violet-600">Set <code className="bg-violet-100 px-1 rounded">VITE_PREMIUM_ENABLED=true</code> to enable the paywall for real users.</p>
+                  </div>
+                )}
               </div>
             </section>
           )}

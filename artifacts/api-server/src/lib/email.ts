@@ -87,12 +87,12 @@ function buildTrialReminderHtml(p: TrialReminderParams): { subject: string; html
       "Your free trial ends in <strong>3 days</strong>. After that, the special $39/year price disappears and annual pricing becomes $49/year. Lock it in now — it stays $39 forever.";
     urgency = "3 days remaining";
   } else {
-    subject = "Last chance 💕 Your Founding Moms offer expires tomorrow";
-    headlineEmoji = "🚨";
-    headline = "Last chance 💕<br/>Your Founding Moms offer expires tomorrow";
+    subject = "Your Founding Moms offer ends tomorrow 💕";
+    headlineEmoji = "💕";
+    headline = "Your Founding Moms offer<br/>ends tomorrow";
     body =
-      "This is your final reminder. Your free trial ends <strong>tomorrow</strong>. Secure your $39/year Founding Moms rate before it's gone. After today, annual pricing goes back to $49/year.";
-    urgency = "Expires tomorrow";
+      "Your free trial ends <strong>tomorrow</strong>. We'd love to keep you as a Founding Mom — lock in your $39/year rate before it slips away. After tomorrow, annual pricing goes back to $49/year.";
+    urgency = "Last day · Founding Moms rate";
   }
 
   const benefits = [
