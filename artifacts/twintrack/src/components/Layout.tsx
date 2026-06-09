@@ -7,6 +7,7 @@ import { useSubmitFeedback } from "@workspace/api-client-react";
 import NotificationCenter from "@/components/NotificationCenter";
 import InstallPrompt from "@/components/InstallPrompt";
 import OfflineBanner from "@/components/OfflineBanner";
+import SubscriptionSafetyBanner from "@/components/SubscriptionSafetyBanner";
 import FoundingMomsButton from "@/components/FoundingMomsButton";
 import { useAppPrefs } from "@/hooks/useAppPrefs";
 import { posthog } from "@/lib/posthog";
@@ -186,6 +187,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     // Facebook/Instagram WebView and iOS Safari where fixed + transform can fail.
     <div className="flex flex-col h-[100dvh] max-w-[430px] mx-auto bg-background overflow-hidden">
       <OfflineBanner />
+      <SubscriptionSafetyBanner />
 
       {/* Top header — never scrolls */}
       <div className="flex-shrink-0 bg-white border-b border-border/30">

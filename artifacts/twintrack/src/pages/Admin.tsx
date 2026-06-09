@@ -114,6 +114,8 @@ interface FoundingMomsDashboard {
   conversionPct: number;
   mrr: number;
   arr: number;
+  verificationFailures7d: number;
+  verificationFailuresTotal: number;
 }
 
 interface ContentAnalytics {
@@ -1168,6 +1170,32 @@ export default function Admin() {
                     );
                   })}
                 </div>
+              </div>
+
+              {/* Subscription verification failures */}
+              <div className={`rounded-2xl p-4 border mb-4 ${foundingMomsDashboard.verificationFailures7d > 0 ? "bg-rose-50 border-rose-200" : "bg-white border-border"}`}>
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">
+                  🔍 Subscription Verification Health
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className={`rounded-xl p-3 ${foundingMomsDashboard.verificationFailures7d > 0 ? "bg-rose-100" : "bg-muted/40"}`}>
+                    <p className={`text-2xl font-bold ${foundingMomsDashboard.verificationFailures7d > 0 ? "text-rose-700" : "text-foreground"}`}>
+                      {foundingMomsDashboard.verificationFailures7d}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-0.5">Failures last 7 days</p>
+                  </div>
+                  <div className="rounded-xl p-3 bg-muted/40">
+                    <p className="text-2xl font-bold text-foreground">{foundingMomsDashboard.verificationFailuresTotal}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">All-time failures</p>
+                  </div>
+                </div>
+                {foundingMomsDashboard.verificationFailures7d === 0 ? (
+                  <p className="text-xs text-green-700 mt-2 font-medium">✅ All subscription checks healthy — no fallbacks triggered</p>
+                ) : (
+                  <p className="text-xs text-rose-700 mt-2">
+                    ⚠️ Users fell back to cached plan data. Check API server logs for <code className="bg-rose-100 px-1 rounded">rc_verification_failure</code> events.
+                  </p>
+                )}
               </div>
 
               {/* Export CSV */}

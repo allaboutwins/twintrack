@@ -485,10 +485,13 @@ router.get("/admin/founding-moms", async (req, res): Promise<void> => {
   const in3Days = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
   const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
 
+  const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
   const [
     [total], [active],
     [ending7], [ending3], [ending1],
     [foundingConv], [annual], [monthly],
+    [verificationFailures7d], [verificationFailuresTotal],
   ] = await Promise.all([
     db.select({ c: count() }).from(userPlansTable),
     db.select({ c: count() }).from(userPlansTable).where(
@@ -512,6 +515,12 @@ router.get("/admin/founding-moms", async (req, res): Promise<void> => {
     db.select({ c: count() }).from(userPlansTable).where(
       and(eq(userPlansTable.plan, "monthly"), eq(userPlansTable.status, "active")),
     ),
+    db.select({ c: count() }).from(analyticsEventsTable).where(
+      and(eq(analyticsEventsTable.event, "rc_verification_failure"), gte(analyticsEventsTable.createdAt, sevenDaysAgo)),
+    ),
+    db.select({ c: count() }).from(analyticsEventsTable).where(
+      eq(analyticsEventsTable.event, "rc_verification_failure"),
+    ),
   ]);
 
   const totalN    = Number(total?.c    ?? 0);
@@ -524,17 +533,19 @@ router.get("/admin/founding-moms", async (req, res): Promise<void> => {
   const mrr = Math.round((annualN * (49 / 12) + monthlyN * 5.99 + foundingN * (39 / 12)) * 100) / 100;
 
   res.json({
-    totalTrialUsers:        totalN,
-    activeTrialUsers:       Number(active?.c   ?? 0),
-    endingIn7Days:          Number(ending7?.c  ?? 0),
-    endingIn3Days:          Number(ending3?.c  ?? 0),
-    endingIn1Day:           Number(ending1?.c  ?? 0),
-    foundingMomConversions: foundingN,
-    annualPurchases:        annualN,
-    monthlyPurchases:       monthlyN,
+    totalTrialUsers:            totalN,
+    activeTrialUsers:           Number(active?.c   ?? 0),
+    endingIn7Days:              Number(ending7?.c  ?? 0),
+    endingIn3Days:              Number(ending3?.c  ?? 0),
+    endingIn1Day:               Number(ending1?.c  ?? 0),
+    foundingMomConversions:     foundingN,
+    annualPurchases:            annualN,
+    monthlyPurchases:           monthlyN,
     conversionPct,
     mrr,
-    arr: Math.round(mrr * 12 * 100) / 100,
+    arr:                        Math.round(mrr * 12 * 100) / 100,
+    verificationFailures7d:     Number(verificationFailures7d?.c  ?? 0),
+    verificationFailuresTotal:  Number(verificationFailuresTotal?.c ?? 0),
   });
 });
 
