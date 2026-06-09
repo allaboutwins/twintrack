@@ -17,7 +17,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { TwinTabs, PageHeader } from "@/components/Layout";
-import { Trash2, Pencil, X, Check, Plus, ChevronDown, ChevronUp, Play, Pause, Square, Clock, Droplets } from "lucide-react";
+import { Trash2, Pencil, X, Check, Plus, ChevronDown, ChevronUp, Play, Pause, Square, Clock, Droplets, ArrowLeftRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // ── Constants ─────────────────────────────────────────────────────────────
@@ -999,6 +999,7 @@ export default function Feeding() {
   const [editingEntry, setEditingEntry] = useState<EditEntry | null>(null);
   const [showAddFood, setShowAddFood] = useState(false);
   const [foodsExpanded, setFoodsExpanded] = useState(true);
+  const [movedToTwin, setMovedToTwin] = useState<string | null>(null);
 
   const { data: twins = [] } = useListTwins(
     { userId: user?.id ?? "" },
@@ -1082,6 +1083,24 @@ export default function Feeding() {
     updateEntry.mutate(
       { id: editingEntry.id, data: updates },
       { onSuccess: () => { invalidateFeeding(); setEditingEntry(null); } },
+    );
+  }
+
+  function moveToOtherTwin(entryId: number) {
+    const otherTwin = twins.find((t) => t.id !== twinId);
+    if (!otherTwin) return;
+    updateEntry.mutate(
+      { id: entryId, data: { twinId: otherTwin.id } },
+      {
+        onSuccess: () => {
+          invalidateFeeding();
+          qc.invalidateQueries({ queryKey: getListFeedingEntriesQueryKey({ twinId: otherTwin.id, date: today, timezone: TZ }) });
+          qc.invalidateQueries({ queryKey: getGetFeedingSummaryQueryKey({ twinId: otherTwin.id, date: today, timezone: TZ }) });
+          const name = otherTwin.name ?? otherTwin.label ?? "other twin";
+          setMovedToTwin(name);
+          setTimeout(() => setMovedToTwin(null), 1800);
+        },
+      },
     );
   }
 
@@ -1199,6 +1218,11 @@ export default function Feeding() {
         {sortedEntries.length > 0 && (
           <div className="space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1">Today's Log</p>
+            {movedToTwin && (
+              <div className="bg-green-50 border border-green-200 rounded-xl py-2.5 px-4 text-center text-xs font-medium text-green-700">
+                ✅ Moved to {movedToTwin}
+              </div>
+            )}
             {sortedEntries.map((entry) => {
               const ft = FEEDING_TYPES.find((f) => f.key === entry.feedingType);
               const e = entry as typeof entry & {
@@ -1244,6 +1268,16 @@ export default function Feeding() {
                     >
                       <Pencil size={13} />
                     </button>
+                    {twins.length > 1 && (
+                      <button
+                        onClick={() => moveToOtherTwin(entry.id)}
+                        className="text-muted-foreground hover:text-accent p-2 transition-colors"
+                        aria-label={`Move to ${twins.find((t) => t.id !== twinId)?.name ?? "other twin"}`}
+                        title={`Move to ${twins.find((t) => t.id !== twinId)?.name ?? "other twin"}`}
+                      >
+                        <ArrowLeftRight size={13} />
+                      </button>
+                    )}
                     <button
                       onClick={() => deleteEntry.mutate({ id: entry.id }, { onSuccess: invalidateFeeding })}
                       className="text-muted-foreground hover:text-destructive p-2 transition-colors"

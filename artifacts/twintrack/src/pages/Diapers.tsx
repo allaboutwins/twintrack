@@ -11,9 +11,11 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { TwinTabs, PageHeader } from "@/components/Layout";
-import { Trash2, Pencil, X, Check } from "lucide-react";
+import { Trash2, Pencil, X, Check, ArrowLeftRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
+
+const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 type DiaperType = "wet" | "dirty" | "mixed";
 
@@ -25,6 +27,16 @@ const DIAPER_TYPES: { key: DiaperType; label: string; emoji: string; color: stri
 
 function formatTime(iso: string) {
   return new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function timeSince(iso: string): string {
+  const diff = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (diff < 60) return "just now";
+  const mins = Math.floor(diff / 60);
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  const rem = mins % 60;
+  return rem > 0 ? `${hours}h ${rem}m ago` : `${hours}h ago`;
 }
 
 function toDatetimeLocal(iso: string) {
@@ -117,6 +129,13 @@ export default function Diapers() {
   const today = new Date().toLocaleDateString("en-CA");
   const [justLogged, setJustLogged] = useState<DiaperType | null>(null);
   const [editingEntry, setEditingEntry] = useState<DiaperEntry | null>(null);
+  const [movedToTwin, setMovedToTwin] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => setTick((t) => t + 1), 30000);
+    return () => clearInterval(id);
+  }, []);
 
   const { data: twins = [] } = useListTwins(
     { userId: user?.id ?? "" },
@@ -135,9 +154,11 @@ export default function Diapers() {
     if (twins.length > 0 && activeTwinId === null) setActiveTwinId(twins[0].id);
   }, [twins, activeTwinId]);
 
+  const diaperParams = { twinId: twinId ?? 0, date: today, timezone: TZ };
+
   const { data: entries = [], isLoading } = useListDiaperEntries(
-    { twinId: twinId ?? 0, date: today },
-    { query: { enabled: !!twinId, queryKey: getListDiaperEntriesQueryKey({ twinId: twinId ?? 0, date: today }) } },
+    diaperParams,
+    { query: { enabled: !!twinId, queryKey: getListDiaperEntriesQueryKey(diaperParams) } },
   );
 
   const createEntry = useCreateDiaperEntry();
@@ -145,7 +166,7 @@ export default function Diapers() {
   const deleteEntry = useDeleteDiaperEntry();
 
   function invalidate() {
-    qc.invalidateQueries({ queryKey: getListDiaperEntriesQueryKey({ twinId: twinId ?? 0, date: today }) });
+    qc.invalidateQueries({ queryKey: getListDiaperEntriesQueryKey(diaperParams) });
   }
 
   function logDiaper(type: DiaperType) {
@@ -170,6 +191,29 @@ export default function Diapers() {
       },
     );
   }
+
+  function moveToOtherTwin(entryId: number) {
+    const otherTwin = twins.find((t) => t.id !== twinId);
+    if (!otherTwin) return;
+    updateEntry.mutate(
+      { id: entryId, data: { twinId: otherTwin.id } },
+      {
+        onSuccess: () => {
+          invalidate();
+          qc.invalidateQueries({ queryKey: getListDiaperEntriesQueryKey({ twinId: otherTwin.id, date: today, timezone: TZ }) });
+          const name = otherTwin.name ?? otherTwin.label ?? "other twin";
+          setMovedToTwin(name);
+          setTimeout(() => setMovedToTwin(null), 1800);
+        },
+      },
+    );
+  }
+
+  const lastEntry = entries.length > 0
+    ? [...entries].sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())[0]
+    : null;
+
+  void tick;
 
   return (
     <Layout>
@@ -198,8 +242,15 @@ export default function Diapers() {
                 <p className="text-xs text-muted-foreground">Mixed</p>
               </div>
             </div>
-            <div className="mt-3 pt-3 border-t border-border text-center">
-              <p className="text-sm font-medium text-foreground">{entries.length} total changes today</p>
+            <div className="mt-3 pt-3 border-t border-border">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-medium text-foreground">{entries.length} total today</p>
+                {lastEntry && (
+                  <p className="text-xs text-muted-foreground">
+                    Last: {formatTime(lastEntry.time)} · <span className="tabular-nums">{timeSince(lastEntry.time)}</span>
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -214,6 +265,17 @@ export default function Diapers() {
               className="bg-green-50 border border-green-200 rounded-xl py-3 px-4 text-center text-sm font-medium text-green-700"
             >
               {DIAPER_TYPES.find((d) => d.key === justLogged)?.emoji} Logged! Great job.
+            </motion.div>
+          )}
+          {movedToTwin && (
+            <motion.div
+              key="moved"
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-green-50 border border-green-200 rounded-xl py-3 px-4 text-center text-sm font-medium text-green-700"
+            >
+              ✅ Moved to {movedToTwin}
             </motion.div>
           )}
         </AnimatePresence>
@@ -264,6 +326,16 @@ export default function Diapers() {
                     >
                       <Pencil size={13} />
                     </button>
+                    {twins.length > 1 && (
+                      <button
+                        onClick={() => moveToOtherTwin(entry.id)}
+                        className="text-muted-foreground hover:text-accent p-2 transition-colors"
+                        aria-label={`Move to ${twins.find((t) => t.id !== twinId)?.name ?? "other twin"}`}
+                        title={`Move to ${twins.find((t) => t.id !== twinId)?.name ?? "other twin"}`}
+                      >
+                        <ArrowLeftRight size={13} />
+                      </button>
+                    )}
                     <button
                       onClick={() => deleteEntry.mutate({ id: entry.id }, { onSuccess: invalidate })}
                       className="text-muted-foreground hover:text-destructive p-2 transition-colors"

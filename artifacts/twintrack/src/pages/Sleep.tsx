@@ -13,8 +13,10 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { TwinTabs, PageHeader } from "@/components/Layout";
-import { Moon, Play, Square, Plus, Trash2, Pencil, X, Check } from "lucide-react";
+import { Moon, Play, Square, Plus, Trash2, Pencil, X, Check, ArrowLeftRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+
+const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 function formatMinutes(mins: number) {
   const h = Math.floor(mins / 60);
@@ -120,7 +122,7 @@ function EditSleepSheet({
         </div>
 
         <div>
-          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">End Time (leave blank if ongoing)</p>
+          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">End Time</p>
           <input
             type="datetime-local"
             value={endVal}
@@ -128,12 +130,6 @@ function EditSleepSheet({
             className="w-full px-4 py-3 rounded-xl bg-muted/30 border border-border text-sm outline-none focus:ring-2 ring-primary/30"
           />
         </div>
-
-        {endVal && calcDuration() !== null && (
-          <p className="text-xs text-muted-foreground text-center">
-            Duration: <span className="font-semibold text-primary">{formatMinutes(calcDuration()!)}</span>
-          </p>
-        )}
 
         <div className="flex gap-3 pt-1">
           <button
@@ -166,6 +162,7 @@ export default function Sleep() {
   const [showAdd, setShowAdd] = useState(false);
   const [addType, setAddType] = useState<"nap" | "night">("nap");
   const [editingEntry, setEditingEntry] = useState<SleepEntry | null>(null);
+  const [movedToTwin, setMovedToTwin] = useState<string | null>(null);
 
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 1000);
@@ -189,19 +186,23 @@ export default function Sleep() {
     if (twins.length > 0 && activeTwinId === null) setActiveTwinId(twins[0].id);
   }, [twins, activeTwinId]);
 
+  const sleepParams = { twinId: twinId ?? 0, date: today, timezone: TZ };
+  const yesterdayParams = { twinId: twinId ?? 0, date: yesterday, timezone: TZ };
+  const summaryParams = { twinId: twinId ?? 0, date: today, timezone: TZ };
+
   const { data: entries = [], isLoading } = useListSleepEntries(
-    { twinId: twinId ?? 0, date: today },
-    { query: { enabled: !!twinId, queryKey: getListSleepEntriesQueryKey({ twinId: twinId ?? 0, date: today }) } },
+    sleepParams,
+    { query: { enabled: !!twinId, queryKey: getListSleepEntriesQueryKey(sleepParams) } },
   );
 
   const { data: yesterdayEntries = [] } = useListSleepEntries(
-    { twinId: twinId ?? 0, date: yesterday },
-    { query: { enabled: !!twinId, queryKey: getListSleepEntriesQueryKey({ twinId: twinId ?? 0, date: yesterday }) } },
+    yesterdayParams,
+    { query: { enabled: !!twinId, queryKey: getListSleepEntriesQueryKey(yesterdayParams) } },
   );
 
   const { data: summary } = useGetSleepSummary(
-    { twinId: twinId ?? 0, date: today },
-    { query: { enabled: !!twinId, queryKey: getGetSleepSummaryQueryKey({ twinId: twinId ?? 0, date: today }) } },
+    summaryParams,
+    { query: { enabled: !!twinId, queryKey: getGetSleepSummaryQueryKey(summaryParams) } },
   );
 
   const createEntry = useCreateSleepEntry();
@@ -211,9 +212,9 @@ export default function Sleep() {
   const activeEntry = entries.find((e) => !e.endTime) ?? yesterdayEntries.find((e) => !e.endTime);
 
   function invalidate() {
-    qc.invalidateQueries({ queryKey: getListSleepEntriesQueryKey({ twinId: twinId ?? 0, date: today }) });
-    qc.invalidateQueries({ queryKey: getListSleepEntriesQueryKey({ twinId: twinId ?? 0, date: yesterday }) });
-    qc.invalidateQueries({ queryKey: getGetSleepSummaryQueryKey({ twinId: twinId ?? 0, date: today }) });
+    qc.invalidateQueries({ queryKey: getListSleepEntriesQueryKey(sleepParams) });
+    qc.invalidateQueries({ queryKey: getListSleepEntriesQueryKey(yesterdayParams) });
+    qc.invalidateQueries({ queryKey: getGetSleepSummaryQueryKey(summaryParams) });
   }
 
   function startSleep(type: "nap" | "night") {
@@ -267,6 +268,24 @@ export default function Sleep() {
     );
   }
 
+  function moveToOtherTwin(entryId: number) {
+    const otherTwin = twins.find((t) => t.id !== twinId);
+    if (!otherTwin) return;
+    updateEntry.mutate(
+      { id: entryId, data: { twinId: otherTwin.id } },
+      {
+        onSuccess: () => {
+          invalidate();
+          qc.invalidateQueries({ queryKey: getListSleepEntriesQueryKey({ twinId: otherTwin.id, date: today, timezone: TZ }) });
+          qc.invalidateQueries({ queryKey: getGetSleepSummaryQueryKey({ twinId: otherTwin.id, date: today, timezone: TZ }) });
+          const name = otherTwin.name ?? otherTwin.label ?? "other twin";
+          setMovedToTwin(name);
+          setTimeout(() => setMovedToTwin(null), 1800);
+        },
+      },
+    );
+  }
+
   return (
     <Layout>
       <PageHeader title="Sleep Tracker" subtitle="Track naps and night sleep" />
@@ -298,24 +317,17 @@ export default function Sleep() {
                 <p className="text-xs text-muted-foreground">Night</p>
               </div>
             </div>
-            {summary.weeklyTotalMinutes > 0 && (
-              <div className="mt-3 pt-3 border-t border-border text-center">
-                <p className="text-xs text-muted-foreground">
-                  7-day avg: <span className="font-semibold text-foreground">{formatMinutes(Math.round(summary.weeklyTotalMinutes / 7))}/day</span>
-                </p>
-              </div>
-            )}
           </div>
         )}
 
         {/* Active sleep timer */}
         {activeEntry && (
-          <div className="bg-primary/5 border border-primary/20 rounded-2xl p-5 text-center space-y-3">
-            <div className="flex items-center justify-center gap-2 text-primary">
-              <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              <span className="text-sm font-semibold capitalize">{activeEntry.type} in progress</span>
+          <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+              <p className="text-sm font-semibold text-primary capitalize">{activeEntry.type} in progress</p>
             </div>
-            <p className="text-3xl font-bold text-primary font-mono">{elapsed(activeEntry.startTime)}</p>
+            <p className="text-3xl font-bold text-primary tabular-nums">{elapsed(activeEntry.startTime)}</p>
             <p className="text-xs text-muted-foreground">Started at {formatTime(activeEntry.startTime)}</p>
             <button
               onClick={stopSleep}
@@ -393,6 +405,13 @@ export default function Sleep() {
         {entries.length > 0 && (
           <div className="space-y-2">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1">Today's Log</p>
+
+            {movedToTwin && (
+              <div className="bg-green-50 border border-green-200 rounded-xl py-2.5 px-4 text-center text-xs font-medium text-green-700">
+                ✅ Moved to {movedToTwin}
+              </div>
+            )}
+
             {entries.map((entry) => (
               <div
                 key={entry.id}
@@ -425,6 +444,16 @@ export default function Sleep() {
                   >
                     <Pencil size={13} />
                   </button>
+                  {twins.length > 1 && (
+                    <button
+                      onClick={() => moveToOtherTwin(entry.id)}
+                      className="text-muted-foreground hover:text-accent p-2 transition-colors"
+                      aria-label={`Move to ${twins.find((t) => t.id !== twinId)?.name ?? "other twin"}`}
+                      title={`Move to ${twins.find((t) => t.id !== twinId)?.name ?? "other twin"}`}
+                    >
+                      <ArrowLeftRight size={13} />
+                    </button>
+                  )}
                   <button
                     onClick={() =>
                       deleteEntry.mutate({ id: entry.id }, { onSuccess: invalidate })
@@ -440,9 +469,31 @@ export default function Sleep() {
           </div>
         )}
 
+        {yesterdayEntries.filter((e) => !e.endTime).length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide px-1">Overnight (started yesterday)</p>
+            {yesterdayEntries.filter((e) => !e.endTime).map((entry) => (
+              <div
+                key={entry.id}
+                className="bg-accent/5 rounded-xl border border-accent/20 px-4 py-3 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <Moon size={16} className="text-accent" />
+                  <div>
+                    <p className="text-sm font-semibold capitalize">{entry.type}</p>
+                    <p className="text-xs text-muted-foreground">
+                      Started {formatTime(entry.startTime)} (ongoing)
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
         {!isLoading && entries.length === 0 && twinId && (
           <div className="text-center py-8 text-muted-foreground text-sm">
-            No sleep entries yet today. Start the timer above.
+            No sleep entries yet today.
           </div>
         )}
 

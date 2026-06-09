@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, gte, lte, sql } from "drizzle-orm";
+import { eq, and, gte, lte } from "drizzle-orm";
 import { db, sleepEntriesTable } from "@workspace/db";
 import {
   CreateSleepEntryBody,
@@ -12,6 +12,31 @@ import {
 
 const router: IRouter = Router();
 
+function getDayBoundsUTC(date: string, timezone?: string | null): { dayStart: Date; dayEnd: Date } {
+  if (!timezone) {
+    return {
+      dayStart: new Date(`${date}T00:00:00Z`),
+      dayEnd: new Date(`${date}T23:59:59Z`),
+    };
+  }
+  try {
+    const noonUTC = new Date(`${date}T12:00:00Z`);
+    const localStr = noonUTC.toLocaleString("en-CA", { timeZone: timezone, hour12: false });
+    const localNoon = new Date(localStr.replace(", ", "T") + "Z");
+    const offsetMs = noonUTC.getTime() - localNoon.getTime();
+    const dayStartMs = new Date(`${date}T00:00:00Z`).getTime() + offsetMs;
+    return {
+      dayStart: new Date(dayStartMs),
+      dayEnd: new Date(dayStartMs + 24 * 3600 * 1000 - 1000),
+    };
+  } catch {
+    return {
+      dayStart: new Date(`${date}T00:00:00Z`),
+      dayEnd: new Date(`${date}T23:59:59Z`),
+    };
+  }
+}
+
 router.get("/sleep/summary", async (req, res): Promise<void> => {
   const parsed = GetSleepSummaryQueryParams.safeParse(req.query);
   if (!parsed.success) {
@@ -19,8 +44,8 @@ router.get("/sleep/summary", async (req, res): Promise<void> => {
     return;
   }
   const { twinId, date } = parsed.data;
-  const dayStart = new Date(`${date}T00:00:00Z`);
-  const dayEnd = new Date(`${date}T23:59:59Z`);
+  const timezone = (parsed.data as Record<string, unknown>).timezone as string | null | undefined;
+  const { dayStart, dayEnd } = getDayBoundsUTC(date, timezone);
   const weekStart = new Date(dayStart);
   weekStart.setDate(weekStart.getDate() - 6);
 
@@ -63,10 +88,10 @@ router.get("/sleep", async (req, res): Promise<void> => {
     return;
   }
   const { twinId, date } = parsed.data;
+  const timezone = (parsed.data as Record<string, unknown>).timezone as string | null | undefined;
   const conditions = [eq(sleepEntriesTable.twinId, twinId)];
   if (date) {
-    const dayStart = new Date(`${date}T00:00:00Z`);
-    const dayEnd = new Date(`${date}T23:59:59Z`);
+    const { dayStart, dayEnd } = getDayBoundsUTC(date, timezone);
     conditions.push(gte(sleepEntriesTable.startTime, dayStart));
     conditions.push(lte(sleepEntriesTable.startTime, dayEnd));
   }
@@ -133,6 +158,7 @@ router.patch("/sleep/:id", async (req, res): Promise<void> => {
   if (parsed.data.durationMinutes !== undefined) updates.durationMinutes = parsed.data.durationMinutes;
   if (parsed.data.type !== undefined && parsed.data.type !== null) updates.type = parsed.data.type;
   if (parsed.data.notes !== undefined) updates.notes = parsed.data.notes;
+  if (parsed.data.twinId != null) updates.twinId = parsed.data.twinId;
 
   const [entry] = await db
     .update(sleepEntriesTable)

@@ -110,6 +110,11 @@ export interface UpdateSleepEntryBody {
   type?: string | null;
   /** @nullable */
   notes?: string | null;
+  /**
+   * Move entry to a different twin
+   * @nullable
+   */
+  twinId?: number | null;
 }
 
 export interface SleepSummary {
@@ -189,6 +194,11 @@ export interface UpdateFeedingEntryBody {
   quantity?: string | null;
   /** @nullable */
   notes?: string | null;
+  /**
+   * Move entry to a different twin
+   * @nullable
+   */
+  twinId?: number | null;
 }
 
 export interface FeedingSummary {
@@ -252,6 +262,16 @@ export interface CreateBathEntryBody {
   notes?: string | null;
 }
 
+export interface UpdateBathEntryBody {
+  /**
+   * Move entry to a different twin
+   * @nullable
+   */
+  twinId?: number | null;
+  /** @nullable */
+  notes?: string | null;
+}
+
 export interface DeleteBathEntryParams {
   id: number;
 }
@@ -286,6 +306,11 @@ export interface UpdateDiaperEntryBody {
   time?: string | null;
   /** @nullable */
   notes?: string | null;
+  /**
+   * Move entry to a different twin
+   * @nullable
+   */
+  twinId?: number | null;
 }
 
 export interface RoutineTask {
@@ -702,6 +727,11 @@ export type ListSleepEntriesParams = {
    * @nullable
    */
   date?: string | null;
+  /**
+   * IANA timezone name (e.g. Australia/Perth)
+   * @nullable
+   */
+  timezone?: string | null;
 };
 
 export type GetSleepSummaryParams = {
@@ -710,6 +740,11 @@ export type GetSleepSummaryParams = {
    * ISO date string (YYYY-MM-DD)
    */
   date: string;
+  /**
+   * IANA timezone name (e.g. Australia/Perth)
+   * @nullable
+   */
+  timezone?: string | null;
 };
 
 export type ListFeedingEntriesParams = {
@@ -745,6 +780,11 @@ export type ListDiaperEntriesParams = {
    * @nullable
    */
   date?: string | null;
+  /**
+   * IANA timezone name (e.g. Australia/Perth)
+   * @nullable
+   */
+  timezone?: string | null;
 };
 
 export type ListBathEntriesParams = {
@@ -786,6 +826,11 @@ export type ListMilestonesParams = {
 export type GetDashboardSummaryParams = {
   userId: string;
   date: string;
+  /**
+   * IANA timezone name (e.g. Australia/Perth)
+   * @nullable
+   */
+  timezone?: string | null;
 };
 
 export type GetActivePollParams = {

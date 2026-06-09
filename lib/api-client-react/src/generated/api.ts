@@ -75,6 +75,7 @@ import type {
   TwinAiAnalytics,
   TwinAiChatRequest,
   TwinAiMessageFeedbackRequest,
+  UpdateBathEntryBody,
   UpdateDiaperEntryBody,
   UpdateFeedingEntryBody,
   UpdateRoutineBody,
@@ -2303,6 +2304,93 @@ export const useCreateBathEntry = <
   TContext
 > => {
   return useMutation(getCreateBathEntryMutationOptions(options));
+};
+
+/**
+ * @summary Update a bath entry (e.g. move to other twin)
+ */
+export const getUpdateBathEntryUrl = (id: number) => {
+  return `/api/bath/${id}`;
+};
+
+export const updateBathEntry = async (
+  id: number,
+  updateBathEntryBody: UpdateBathEntryBody,
+  options?: RequestInit,
+): Promise<BathEntry> => {
+  return customFetch<BathEntry>(getUpdateBathEntryUrl(id), {
+    ...options,
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(updateBathEntryBody),
+  });
+};
+
+export const getUpdateBathEntryMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateBathEntry>>,
+    TError,
+    { id: number; data: BodyType<UpdateBathEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateBathEntry>>,
+  TError,
+  { id: number; data: BodyType<UpdateBathEntryBody> },
+  TContext
+> => {
+  const mutationKey = ["updateBathEntry"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateBathEntry>>,
+    { id: number; data: BodyType<UpdateBathEntryBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateBathEntry(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateBathEntryMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateBathEntry>>
+>;
+export type UpdateBathEntryMutationBody = BodyType<UpdateBathEntryBody>;
+export type UpdateBathEntryMutationError = ErrorType<void>;
+
+/**
+ * @summary Update a bath entry (e.g. move to other twin)
+ */
+export const useUpdateBathEntry = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateBathEntry>>,
+    TError,
+    { id: number; data: BodyType<UpdateBathEntryBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateBathEntry>>,
+  TError,
+  { id: number; data: BodyType<UpdateBathEntryBody> },
+  TContext
+> => {
+  return useMutation(getUpdateBathEntryMutationOptions(options));
 };
 
 /**

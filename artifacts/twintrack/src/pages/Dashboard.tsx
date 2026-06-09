@@ -117,9 +117,12 @@ export default function Dashboard() {
   const [, setLocation] = useLocation();
   const today = new Date().toLocaleDateString("en-CA");
 
+  const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const dashParams = { userId: user?.id ?? "", date: today, timezone: TZ };
+
   const { data: summary, isLoading } = useGetDashboardSummary(
-    { userId: user?.id ?? "", date: today },
-    { query: { enabled: !!user?.id, queryKey: getGetDashboardSummaryQueryKey({ userId: user?.id ?? "", date: today }) } },
+    dashParams,
+    { query: { enabled: !!user?.id, queryKey: getGetDashboardSummaryQueryKey(dashParams) } },
   );
 
   const { data: twins = [] } = useListTwins(

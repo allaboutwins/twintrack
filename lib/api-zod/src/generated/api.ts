@@ -126,6 +126,7 @@ export const DeleteTwinParams = zod.object({
 export const ListSleepEntriesQueryParams = zod.object({
   twinId: zod.coerce.number(),
   date: zod.coerce.string().nullish(),
+  timezone: zod.coerce.string().nullish(),
 });
 
 export const ListSleepEntriesResponseItem = zod.object({
@@ -165,6 +166,7 @@ export const UpdateSleepEntryBody = zod.object({
   durationMinutes: zod.number().nullish(),
   type: zod.string().nullish().describe("nap, night"),
   notes: zod.string().nullish(),
+  twinId: zod.number().nullish().describe("Move entry to a different twin"),
 });
 
 export const UpdateSleepEntryResponse = zod.object({
@@ -191,6 +193,7 @@ export const DeleteSleepEntryParams = zod.object({
 export const GetSleepSummaryQueryParams = zod.object({
   twinId: zod.coerce.number(),
   date: zod.coerce.string(),
+  timezone: zod.coerce.string().nullish(),
 });
 
 export const GetSleepSummaryResponse = zod.object({
@@ -265,6 +268,7 @@ export const UpdateFeedingEntryBody = zod.object({
   time: zod.string().nullish(),
   quantity: zod.string().nullish(),
   notes: zod.string().nullish(),
+  twinId: zod.number().nullish().describe("Move entry to a different twin"),
 });
 
 export const UpdateFeedingEntryResponse = zod.object({
@@ -363,6 +367,7 @@ export const DeleteFoodIntroducedParams = zod.object({
 export const ListDiaperEntriesQueryParams = zod.object({
   twinId: zod.coerce.number(),
   date: zod.coerce.string().nullish(),
+  timezone: zod.coerce.string().nullish(),
 });
 
 export const ListDiaperEntriesResponseItem = zod.object({
@@ -398,6 +403,7 @@ export const UpdateDiaperEntryBody = zod.object({
   type: zod.string().nullish().describe("wet, dirty, mixed"),
   time: zod.string().nullish(),
   notes: zod.string().nullish(),
+  twinId: zod.number().nullish().describe("Move entry to a different twin"),
 });
 
 export const UpdateDiaperEntryResponse = zod.object({
@@ -440,6 +446,26 @@ export const CreateBathEntryBody = zod.object({
   twinId: zod.number(),
   notedAt: zod.string(),
   notes: zod.string().nullish(),
+});
+
+/**
+ * @summary Update a bath entry (e.g. move to other twin)
+ */
+export const UpdateBathEntryParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateBathEntryBody = zod.object({
+  twinId: zod.number().nullish().describe("Move entry to a different twin"),
+  notes: zod.string().nullish(),
+});
+
+export const UpdateBathEntryResponse = zod.object({
+  id: zod.number(),
+  twinId: zod.number(),
+  notedAt: zod.string(),
+  notes: zod.string().nullish(),
+  createdAt: zod.string(),
 });
 
 /**
@@ -790,6 +816,7 @@ export const DeleteMilestoneParams = zod.object({
 export const GetDashboardSummaryQueryParams = zod.object({
   userId: zod.coerce.string(),
   date: zod.coerce.string(),
+  timezone: zod.coerce.string().nullish(),
 });
 
 export const GetDashboardSummaryResponse = zod.object({

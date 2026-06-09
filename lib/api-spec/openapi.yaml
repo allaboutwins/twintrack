@@ -172,6 +172,12 @@ paths:
           schema:
             type: ["string", "null"]
             description: ISO date string (YYYY-MM-DD), omit for all entries
+        - in: query
+          name: timezone
+          required: false
+          schema:
+            type: ["string", "null"]
+            description: IANA timezone name (e.g. Australia/Perth)
       responses:
         "200":
           description: List of sleep entries
@@ -256,6 +262,12 @@ paths:
           schema:
             type: string
             description: ISO date string (YYYY-MM-DD)
+        - in: query
+          name: timezone
+          required: false
+          schema:
+            type: ["string", "null"]
+            description: IANA timezone name (e.g. Australia/Perth)
       responses:
         "200":
           description: Sleep summary
@@ -455,6 +467,12 @@ paths:
           required: false
           schema:
             type: ["string", "null"]
+        - in: query
+          name: timezone
+          required: false
+          schema:
+            type: ["string", "null"]
+            description: IANA timezone name (e.g. Australia/Perth)
       responses:
         "200":
           description: List of diaper entries
@@ -565,6 +583,31 @@ paths:
                 $ref: "#/components/schemas/BathEntry"
 
   /bath/{id}:
+    patch:
+      operationId: updateBathEntry
+      tags: [bath]
+      summary: Update a bath entry (e.g. move to other twin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateBathEntryBody"
+      responses:
+        "200":
+          description: Updated bath entry
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BathEntry"
+        "404":
+          description: Not found
     delete:
       operationId: deleteBathEntry
       tags: [bath]
@@ -944,6 +987,12 @@ paths:
           required: true
           schema:
             type: string
+        - in: query
+          name: timezone
+          required: false
+          schema:
+            type: ["string", "null"]
+            description: IANA timezone name (e.g. Australia/Perth)
       responses:
         "200":
           description: Dashboard summary
@@ -1506,6 +1555,9 @@ components:
           description: "nap, night"
         notes:
           type: ["string", "null"]
+        twinId:
+          type: ["integer", "null"]
+          description: Move entry to a different twin
 
     SleepSummary:
       type: object
@@ -1612,6 +1664,9 @@ components:
           type: ["string", "null"]
         notes:
           type: ["string", "null"]
+        twinId:
+          type: ["integer", "null"]
+          description: Move entry to a different twin
 
     FeedingSummary:
       type: object
@@ -1736,6 +1791,15 @@ components:
         - twinId
         - notedAt
 
+    UpdateBathEntryBody:
+      type: object
+      properties:
+        twinId:
+          type: ["integer", "null"]
+          description: Move entry to a different twin
+        notes:
+          type: ["string", "null"]
+
     DeleteBathEntryParams:
       type: object
       properties:
@@ -1794,6 +1858,9 @@ components:
           type: ["string", "null"]
         notes:
           type: ["string", "null"]
+        twinId:
+          type: ["integer", "null"]
+          description: Move entry to a different twin
 
     Routine:
       type: object

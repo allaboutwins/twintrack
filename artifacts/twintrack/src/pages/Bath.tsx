@@ -7,9 +7,13 @@ import {
   useListBathEntries,
   getListBathEntriesQueryKey,
   useCreateBathEntry,
+  useUpdateBathEntry,
   useDeleteBathEntry,
 } from "@workspace/api-client-react";
 import Layout, { PageHeader, TwinTabs } from "@/components/Layout";
+import { ArrowLeftRight } from "lucide-react";
+
+const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
 export default function Bath() {
   const { user } = useUser();
@@ -19,6 +23,7 @@ export default function Bath() {
   const [notes, setNotes] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [justLogged, setJustLogged] = useState(false);
+  const [movedToTwin, setMovedToTwin] = useState<string | null>(null);
 
   const { data: twins = [] } = useListTwins(
     { userId: user?.id ?? "" },
@@ -30,17 +35,19 @@ export default function Bath() {
   }, [twins, activeTwinId]);
 
   const twinId = activeTwinId ?? twins[0]?.id ?? null;
+  const bathParams = { twinId: twinId ?? 0, date: today };
 
   const { data: entries = [], isLoading } = useListBathEntries(
-    { twinId: twinId ?? 0, date: today },
-    { query: { enabled: !!twinId, queryKey: getListBathEntriesQueryKey({ twinId: twinId ?? 0, date: today }) } },
+    bathParams,
+    { query: { enabled: !!twinId, queryKey: getListBathEntriesQueryKey(bathParams) } },
   );
 
   const createEntry = useCreateBathEntry();
+  const updateEntry = useUpdateBathEntry();
   const deleteEntry = useDeleteBathEntry();
 
   function invalidate() {
-    qc.invalidateQueries({ queryKey: getListBathEntriesQueryKey({ twinId: twinId ?? 0, date: today }) });
+    qc.invalidateQueries({ queryKey: getListBathEntriesQueryKey(bathParams) });
   }
 
   function logBath() {
@@ -66,6 +73,23 @@ export default function Bath() {
     );
   }
 
+  function moveToOtherTwin(entryId: number) {
+    const otherTwin = twins.find((t) => t.id !== twinId);
+    if (!otherTwin) return;
+    updateEntry.mutate(
+      { id: entryId, data: { twinId: otherTwin.id } },
+      {
+        onSuccess: () => {
+          invalidate();
+          qc.invalidateQueries({ queryKey: getListBathEntriesQueryKey({ twinId: otherTwin.id, date: today }) });
+          const name = otherTwin.name ?? otherTwin.label ?? "other twin";
+          setMovedToTwin(name);
+          setTimeout(() => setMovedToTwin(null), 1800);
+        },
+      },
+    );
+  }
+
   function removeEntry(id: number) {
     deleteEntry.mutate(
       { id },
@@ -74,6 +98,7 @@ export default function Bath() {
   }
 
   const activeTwin = twins.find((t) => t.id === twinId);
+  void TZ;
 
   return (
     <Layout>
@@ -92,6 +117,12 @@ export default function Bath() {
           <div className="bg-green-50 border border-green-200 rounded-2xl p-4 text-center">
             <p className="text-2xl mb-1">🛁</p>
             <p className="text-sm font-semibold text-green-800">Bath logged!</p>
+          </div>
+        )}
+
+        {movedToTwin && (
+          <div className="bg-green-50 border border-green-200 rounded-2xl p-3 text-center">
+            <p className="text-sm font-semibold text-green-800">✅ Moved to {movedToTwin}</p>
           </div>
         )}
 
@@ -155,12 +186,24 @@ export default function Bath() {
                       <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{entry.notes}</p>
                     )}
                   </div>
-                  <button
-                    onClick={() => removeEntry(entry.id)}
-                    className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-50 transition-colors flex-shrink-0"
-                  >
-                    ✕
-                  </button>
+                  <div className="flex items-center gap-1 flex-shrink-0">
+                    {twins.length > 1 && (
+                      <button
+                        onClick={() => moveToOtherTwin(entry.id)}
+                        className="p-1.5 rounded-lg text-muted-foreground hover:text-accent hover:bg-accent/10 transition-colors"
+                        aria-label={`Move to ${twins.find((t) => t.id !== twinId)?.name ?? "other twin"}`}
+                        title={`Move to ${twins.find((t) => t.id !== twinId)?.name ?? "other twin"}`}
+                      >
+                        <ArrowLeftRight size={13} />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => removeEntry(entry.id)}
+                      className="p-1.5 rounded-lg text-muted-foreground hover:text-red-400 hover:bg-red-50 transition-colors"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
