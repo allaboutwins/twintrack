@@ -115,13 +115,27 @@ In Codemagic → your app → **Environment variables**, add:
 
 | Variable | Value | Secret? |
 |---|---|---|
-| `CLERK_PUBLISHABLE_KEY` | Your Clerk publishable key | No |
-| `VITE_CLERK_PUBLISHABLE_KEY` | Same Clerk publishable key | No |
-| `REVENUECAT_IOS_API_KEY` | RevenueCat iOS public SDK key | No |
+| `VITE_CLERK_PUBLISHABLE_KEY` | Your Clerk publishable key (starts with `pk_live_`) | Yes |
+| `VITE_REVENUECAT_IOS_API_KEY` | RevenueCat iOS public key (starts with `appl_`) | Yes |
+| `VITE_PREMIUM_ENABLED` | `true` (or `false` to disable paywall for testing) | No |
 
-> These are the only build-time variables TwinTrack needs. All other secrets
-> (database credentials, session secret, etc.) live on your server and are
-> never baked into the iOS binary.
+> ⚠️ **Do NOT add `VITE_CLERK_PROXY_URL`** to Codemagic. This variable points
+> to your Replit dev server and is only used in the Replit preview. In the native
+> iOS app, Clerk must connect directly to its own CDN — not through a Replit proxy.
+> If this variable is set, authentication will fail on real devices.
+
+> All other secrets (database credentials, session secret, etc.) live on your
+> API server and are never baked into the iOS binary.
+
+### Where to find these values
+
+**Clerk publishable key:**
+- Clerk Dashboard → your app → API Keys → Publishable key
+- Use the `pk_live_...` key (not `pk_test_...`) for production builds
+
+**RevenueCat iOS key:**
+- RevenueCat Dashboard → your project → API Keys → Public app-specific key → iOS
+- Starts with `appl_`
 
 ---
 
