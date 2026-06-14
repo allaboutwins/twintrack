@@ -141,3 +141,89 @@ workflows:
     artifacts:
       - build/ios/ipa/*.ipa
       - /tmp/xcodebuild_logs/*.log
+
+  # ─────────────────────────────────────────────────────────────────────────────
+  # Android — Google Play (internal track upload)
+  # Runs on Linux — no Mac required, faster and cheaper than macOS builds
+  # ─────────────────────────────────────────────────────────────────────────────
+  android-google-play:
+    name: TwinTrack Android — Google Play
+    max_build_duration: 60
+    instance_type: linux_x2
+
+    environment:
+      node: 20.19.2
+      java: 17
+      vars:
+        PACKAGE_NAME: com.allaboutwins.twintrack
+        # Secret env vars — add these in Codemagic dashboard → your app → Environment variables:
+        #   CM_KEYSTORE          — base64-encoded .jks keystore (Codemagic generates this for you)
+        #   CM_KEYSTORE_PASSWORD — keystore password you chose
+        #   CM_KEY_ALIAS         — key alias (e.g. "twintrack")
+        #   CM_KEY_PASSWORD      — key password you chose
+        #   GCLOUD_SERVICE_ACCOUNT_CREDENTIALS — Google Play service account JSON (single line)
+        #   VITE_CLERK_PUBLISHABLE_KEY          — Clerk pk_live_... key
+        #   VITE_PREMIUM_ENABLED               — false (keep off until ready)
+
+    scripts:
+      - name: Install pnpm
+        script: npm install -g pnpm@latest
+
+      - name: Install workspace dependencies
+        script: pnpm install --frozen-lockfile
+
+      - name: Build web app
+        script: |
+          pnpm --filter @workspace/twintrack run build
+
+      - name: Add Android platform (first build — safe to re-run)
+        script: |
+          cd artifacts/twintrack
+          npx cap add android 2>/dev/null && echo "✅ Android platform added" || echo "ℹ️  Android platform already present"
+
+      - name: Sync Capacitor (copy web assets into Android project)
+        script: |
+          cd artifacts/twintrack
+          npx cap sync android
+
+      - name: Set Android versionCode from Codemagic build number
+        script: |
+          python3 -c "
+          import re, os
+          vcode = os.environ.get('BUILD_NUMBER', '1')
+          path = 'artifacts/twintrack/android/app/build.gradle.kts'
+          txt = open(path).read()
+          txt = re.sub(r'versionCode\s*=\s*\d+', f'versionCode = {vcode}', txt)
+          open(path, 'w').write(txt)
+          print(f'versionCode set to {vcode}')
+          "
+
+      - name: Decode keystore
+        script: |
+          echo $CM_KEYSTORE | base64 --decode > /tmp/twintrack.keystore
+          echo "✅ Keystore ready"
+
+      - name: Build signed release AAB
+        script: |
+          cd artifacts/twintrack/android
+          ./gradlew bundleRelease \
+            -Pandroid.injected.signing.store.file=/tmp/twintrack.keystore \
+            -Pandroid.injected.signing.store.password=$CM_KEYSTORE_PASSWORD \
+            -Pandroid.injected.signing.key.alias=$CM_KEY_ALIAS \
+            -Pandroid.injected.signing.key.password=$CM_KEY_PASSWORD
+
+    artifacts:
+      - artifacts/twintrack/android/app/build/outputs/**/*.aab
+      - artifacts/twintrack/android/app/build/outputs/**/mapping.txt
+
+    publishing:
+      email:
+        recipients:
+          - your@email.com     # Replace with your email
+        notify:
+          success: true
+          failure: true
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: internal
+        submit_as_draft: false
