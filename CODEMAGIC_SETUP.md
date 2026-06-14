@@ -107,7 +107,8 @@ In Codemagic → your TwinTrack app → **Environment variables**, add these as
 | `CM_KEY_PASSWORD` | Key password from Step A3 | Yes |
 | `GCLOUD_SERVICE_ACCOUNT_CREDENTIALS` | Contents of the JSON file from Step A4 (paste entire JSON as one value) | Yes |
 | `VITE_CLERK_PUBLISHABLE_KEY` | Clerk Dashboard → API Keys → `pk_live_...` | Yes |
-| `VITE_PREMIUM_ENABLED` | `false` (keep off until ready to launch subscriptions) | No |
+| `VITE_REVENUECAT_ANDROID_API_KEY` | RevenueCat Dashboard → your project → API Keys → Public app-specific key → Android (starts with `goog_`) | Yes |
+| `VITE_PREMIUM_ENABLED` | `false` — keep off until subscriptions are ready to launch | No |
 
 > ⚠️ **Do NOT add `VITE_CLERK_PROXY_URL`** — this Replit-specific variable
 > must be absent for native builds. Clerk connects to its own CDN directly.

@@ -157,13 +157,14 @@ workflows:
       vars:
         PACKAGE_NAME: com.allaboutwins.twintrack
         # Secret env vars — add these in Codemagic dashboard → your app → Environment variables:
-        #   CM_KEYSTORE          — base64-encoded .jks keystore (Codemagic generates this for you)
-        #   CM_KEYSTORE_PASSWORD — keystore password you chose
-        #   CM_KEY_ALIAS         — key alias (e.g. "twintrack")
-        #   CM_KEY_PASSWORD      — key password you chose
+        #   CM_KEYSTORE                        — base64-encoded .jks keystore (Codemagic generates this for you)
+        #   CM_KEYSTORE_PASSWORD               — keystore password you chose
+        #   CM_KEY_ALIAS                       — key alias (e.g. "twintrack")
+        #   CM_KEY_PASSWORD                    — key password you chose
         #   GCLOUD_SERVICE_ACCOUNT_CREDENTIALS — Google Play service account JSON (single line)
-        #   VITE_CLERK_PUBLISHABLE_KEY          — Clerk pk_live_... key
-        #   VITE_PREMIUM_ENABLED               — false (keep off until ready)
+        #   VITE_CLERK_PUBLISHABLE_KEY         — Clerk pk_live_... key
+        #   VITE_REVENUECAT_ANDROID_API_KEY    — RevenueCat Android public key (starts with goog_)
+        #   VITE_PREMIUM_ENABLED               — false (keep off until subscriptions are ready)
 
     scripts:
       - name: Install pnpm
