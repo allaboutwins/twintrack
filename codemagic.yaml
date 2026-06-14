@@ -192,9 +192,10 @@ workflows:
           python3 -c "
           import re, os
           vcode = os.environ.get('BUILD_NUMBER', '1')
-          path = 'artifacts/twintrack/android/app/build.gradle.kts'
+          # Capacitor generates Groovy build.gradle (not .kts) — syntax: versionCode 1 (no equals sign)
+          path = 'artifacts/twintrack/android/app/build.gradle'
           txt = open(path).read()
-          txt = re.sub(r'versionCode\s*=\s*\d+', f'versionCode = {vcode}', txt)
+          txt = re.sub(r'versionCode\s+\d+', f'versionCode {vcode}', txt)
           open(path, 'w').write(txt)
           print(f'versionCode set to {vcode}')
           "
