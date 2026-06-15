@@ -9,6 +9,7 @@
  */
 
 import { useState } from "react";
+import { isNativePlatform } from "@/lib/native";
 
 type InAppBrowser =
   | "instagram"
@@ -84,6 +85,11 @@ export default function InAppBrowserGate({ children }: Props) {
   const [dismissed, setDismissed] = useState(false);
   const [copied, setCopied] = useState(false);
   const [openTried, setOpenTried] = useState(false);
+
+  // Never show the gate inside the Capacitor native app — the wv) user-agent
+  // pattern that detects Android WebViews would otherwise match Capacitor's
+  // own WebView and block the entire app with the "open in Chrome" screen.
+  if (isNativePlatform()) return <>{children}</>;
 
   const browser = detectInAppBrowser();
   const platform = detectPlatform();

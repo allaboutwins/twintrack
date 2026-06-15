@@ -214,7 +214,7 @@ workflows:
 
       - name: Decode keystore
         script: |
-          echo $CM_KEYSTORE | base64 --decode > /tmp/twintrack.keystore
+          printf '%s' "$CM_KEYSTORE" | base64 --decode > /tmp/twintrack.keystore
           echo "✅ Keystore ready"
 
       - name: Build signed release AAB
