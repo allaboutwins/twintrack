@@ -14,3 +14,4 @@
 - [Sleep overnight fix](sleep-overnight.md) — also fetch yesterday's sleep entries; activeEntry falls back to yesterdayEntries.find(!e.endTime); invalidate also busts yesterday's query key.
 - [PWA install prompt disabled](pwa-disabled.md) — InstallPrompt.tsx returns null; native App Store/Play is primary path; do NOT re-enable without checking App Store submission status.
 - [RevenueCat setup](revenuecat-setup.md) — v2 key required (not legacy v1); project proj09a461ed; seed script skips test_store (not valid in v2 API); VITE_PREMIUM_ENABLED=false until launch.
+- [Native API base URL](native-api-base-url.md) — VITE_API_URL must be set in Codemagic; setBaseUrl() called in main.tsx on startup; InAppBrowserGate skips on isNativePlatform() to avoid wv) UA false match.

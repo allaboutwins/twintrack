@@ -48,6 +48,7 @@ Set these in Codemagic → your TwinTrack app → **Environment variables** (mar
 | `CM_KEY_ALIAS` | `twintrack` | |
 | `CM_KEY_PASSWORD` | Key password you chose | ✅ |
 | `GCLOUD_SERVICE_ACCOUNT_CREDENTIALS` | Full JSON contents of the service account key file | ✅ |
+| `VITE_API_URL` | Your production Replit URL, e.g. `https://twintrack.replit.app` — **required**, without it every API call fails on Android | ✅ |
 | `VITE_CLERK_PUBLISHABLE_KEY` | Clerk Dashboard → API Keys → `pk_live_...` (not pk_test) | ✅ |
 | `VITE_REVENUECAT_ANDROID_API_KEY` | RevenueCat → your project → API Keys → Android public key (`goog_...`) | ✅ |
 | `VITE_PREMIUM_ENABLED` | `false` — keep subscriptions off for launch | |

@@ -254,6 +254,11 @@ function ClerkQueryClientCacheInvalidator() {
   return null;
 }
 
+// On native Capacitor builds VITE_API_URL is the absolute production server
+// URL (e.g. https://twintrack.replit.app). On web it is unset and we use a
+// relative path that the Replit reverse proxy routes to the API server.
+const _apiBase = (import.meta.env.VITE_API_URL as string | undefined) ?? "";
+
 /** POST a crash report to the server (used from error boundaries). */
 function reportCrash(payload: Record<string, unknown>) {
   try {
@@ -264,9 +269,9 @@ function reportCrash(payload: Record<string, unknown>) {
       ts: Date.now(),
     });
     if (navigator.sendBeacon) {
-      navigator.sendBeacon("/api/client-errors", new Blob([body], { type: "application/json" }));
+      navigator.sendBeacon(`${_apiBase}/api/client-errors`, new Blob([body], { type: "application/json" }));
     } else {
-      fetch("/api/client-errors", { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {});
+      fetch(`${_apiBase}/api/client-errors`, { method: "POST", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {});
     }
   } catch { /* never crash the crash reporter */ }
 }
