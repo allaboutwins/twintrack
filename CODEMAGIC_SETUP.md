@@ -19,6 +19,41 @@ the App Store using Codemagic cloud builds. No Mac required for Android.
 
 ---
 
+## Troubleshooting
+
+### ❌ "No matching profiles found for bundle identifier com.allaboutwins.twintrack"
+
+**Cause:** The `ios-app-store` workflow ran before an Apple Distribution certificate
+existed in the Apple Developer account. Codemagic cannot auto-fetch or create a
+provisioning profile until a valid distribution certificate is present.
+
+**Fix — do these steps in order, then re-trigger the workflow:**
+
+**Step 1 — Confirm the App Store Connect API key is connected**
+1. Codemagic → click your **team name** (top-left) → **Integrations**
+2. Under **App Store Connect**, check that a key named exactly **`AppStore_API_Key`** is listed
+3. If it is missing, click **Connect** → enter your Key ID, Issuer ID, and paste the `.p8` file contents → save and name it `AppStore_API_Key`
+
+**Step 2 — Generate the Apple Distribution certificate**
+1. Codemagic → **team name** → **Code signing identities** → **iOS** tab
+2. Click **"Generate certificate"**
+3. Select type: **Apple Distribution**
+4. Codemagic uses your App Store Connect API key to create the certificate on Apple's
+   servers — no Mac, no CSR, no Keychain required
+5. Wait for the green checkmark — the certificate now exists in your Apple Developer account
+
+**Step 3 — Provisioning profile (automatic)**
+Codemagic fetches or creates the App Store provisioning profile for
+`com.allaboutwins.twintrack` automatically during the next build — no manual action needed.
+
+**Step 4 — Re-trigger the build**
+1. Codemagic → **Start new build** → branch `main`
+2. Workflow: **TwinTrack iOS — App Store**
+3. The `Apply Xcode code-signing profiles` step should now succeed
+4. Build completes (~25 min) and uploads to TestFlight automatically
+
+---
+
 # PART A — Android / Google Play
 
 **Fastest path to real users. No Mac, no Xcode, no provisioning profiles.**
@@ -185,17 +220,30 @@ to the internal testing track automatically.
 
 ## B3 — Create Distribution certificate and provisioning profile
 
-Codemagic's automatic signing needs these to exist in your Apple Developer account.
+Codemagic's automatic signing needs an Apple Distribution certificate to exist
+in your Apple Developer account before it can fetch or create a provisioning profile.
+**Skipping this step causes "No matching profiles found" — see the Troubleshooting
+section at the top of this document for a step-by-step fix.**
 
-**Option A — Let Codemagic create them:**
-- In Codemagic → team → **Code signing identities** → iOS tab
-- Click **Generate certificate** → select Apple Distribution
-- Codemagic uses your App Store Connect API key to create the certificate
-  on Apple's servers with no CSR or Mac required
+**Recommended — Let Codemagic create the certificate (no Mac needed):**
 
-**Option B — Create manually in Apple Developer portal:**
-- Certificates → Apple Distribution → requires CSR (needs a Mac or Codemagic)
-- Profiles → App Store Connect → select your bundle ID → Generate
+1. Codemagic → click your **team name** (top-left) → **Code signing identities**
+2. Click the **iOS** tab
+3. Click **"Generate certificate"**
+4. Select type: **Apple Distribution** (not Development)
+5. Codemagic uses your `AppStore_API_Key` to create the certificate directly on
+   Apple's servers — no CSR file, no Mac, no Keychain required
+6. Wait for the green checkmark confirming the certificate was created
+7. The App Store provisioning profile for `com.allaboutwins.twintrack` is fetched
+   automatically on the next build — no further manual action needed
+
+> ⚠️ **The API key name must be exactly `AppStore_API_Key`** — the `codemagic.yaml`
+> references this name verbatim. A typo or different casing will cause an auth error.
+
+**Alternative — Create manually in the Apple Developer portal (requires a Mac):**
+- Certificates → Apple Distribution → Download and install certificate
+- Profiles → App Store Connect → select bundle ID `com.allaboutwins.twintrack` → Generate
+- Upload both to Codemagic → Code signing identities → iOS tab
 
 ---
 

@@ -20,6 +20,18 @@ workflows:
         BUNDLE_ID: com.allaboutwins.twintrack
         XCODE_WORKSPACE: artifacts/twintrack/ios/App/App.xcworkspace
         XCODE_SCHEME: App
+        # Secret env vars — add these in Codemagic dashboard → your app → Environment variables:
+        #   VITE_CLERK_PUBLISHABLE_KEY      — Clerk Dashboard → API Keys → pk_live_... key
+        #   VITE_REVENUECAT_IOS_API_KEY     — RevenueCat Dashboard → project → API Keys → iOS public key (appl_...)
+        #   VITE_PREMIUM_ENABLED            — false (keep off until subscriptions are ready)
+        #
+        # Do NOT add VITE_CLERK_PROXY_URL — must be absent for native iOS builds.
+        #
+        # Signing prereqs — complete these BEFORE triggering this workflow or it
+        # will fail with "No matching profiles found for com.allaboutwins.twintrack":
+        #   1. Codemagic → Teams → Integrations → App Store Connect → add key named AppStore_API_Key
+        #   2. Codemagic → Teams → Code signing identities → iOS → Generate certificate (Apple Distribution)
+        #   3. Provisioning profile is fetched automatically once the certificate exists
 
     scripts:
       - name: Install pnpm
