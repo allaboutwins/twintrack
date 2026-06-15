@@ -80,8 +80,13 @@ function getAuthorizedParties(): string[] {
     const trimmed = d.trim();
     if (trimmed) parties.push(`https://${trimmed}`);
   }
-  // Also accept localhost and dev origins
-  parties.push("http://localhost", "http://localhost:3000", "http://localhost:19107");
+  // Also accept localhost, dev origins, and the Capacitor native origin
+  parties.push(
+    "http://localhost",
+    "http://localhost:3000",
+    "http://localhost:19107",
+    "capacitor://localhost",   // Android + iOS Capacitor WebView
+  );
   return parties;
 }
 

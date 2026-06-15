@@ -1,6 +1,6 @@
 import { Component, useEffect, useRef, useState, useCallback, type ReactNode, type ErrorInfo } from "react";
 import { posthog } from "./lib/posthog";
-import { ClerkProvider, SignIn, SignUp, Show, useClerk, useUser } from "@clerk/react";
+import { ClerkProvider, SignIn, SignUp, Show, useAuth, useClerk, useUser } from "@clerk/react";
 import { publishableKeyFromHost } from "@clerk/react/internal";
 import { shadcn } from "@clerk/themes";
 import { Switch, Route, useLocation, Router as WouterRouter, Redirect } from "wouter";
@@ -37,6 +37,7 @@ import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
 import InviteAccept from "@/pages/InviteAccept";
 import { SubscriptionProvider, initializeRevenueCat } from "@/lib/revenuecat";
+import { setAuthTokenGetter } from "@workspace/api-client-react";
 
 const clerkPubKey = publishableKeyFromHost(
   window.location.hostname,
@@ -128,6 +129,23 @@ function RevenueCatInitializer() {
   useEffect(() => {
     if (user?.id) initializeRevenueCat(user.id);
   }, [user?.id]);
+  return null;
+}
+
+/**
+ * On native Capacitor builds, API calls are cross-origin (capacitor://localhost
+ * → https://twintrack.allaboutwins.com) so the Clerk session cookie is never
+ * sent. This component registers Clerk's getToken() as the Bearer-token getter
+ * so every customFetch request carries an Authorization header instead.
+ * On web the getter is never set and the existing cookie-based auth is used.
+ */
+function NativeAuthTokenSetter() {
+  const { getToken } = useAuth();
+  useEffect(() => {
+    if (!isNativePlatform()) return;
+    setAuthTokenGetter(getToken);
+    return () => { setAuthTokenGetter(null); };
+  }, [getToken]);
   return null;
 }
 
@@ -484,6 +502,7 @@ function ClerkProviderWithRoutes() {
         <ClerkQueryClientCacheInvalidator />
         <PostHogIdentifier />
         <RevenueCatInitializer />
+        <NativeAuthTokenSetter />
         <TooltipProvider>
           <SwUpdateNotifier />
           <DeepLinkHandler />
