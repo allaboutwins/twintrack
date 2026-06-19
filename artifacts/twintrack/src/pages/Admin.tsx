@@ -126,6 +126,14 @@ interface FoundingMomsDashboard {
   verificationFailuresTotal: number;
 }
 
+interface FeatureAdoption {
+  twinAI: { opens: number; uniqueUsers: number };
+  memories: { opens: number; uniqueUsers: number };
+  caregiver: { views: number };
+  community: { questions: number };
+  spotlight: { totalClicks: number; byFeature: { feature: string; count: number }[] };
+}
+
 interface ContentAnalytics {
   magazine: {
     totalOpens: number; uniqueUsers: number; reads: number; premiumClicks: number;
@@ -357,6 +365,7 @@ export default function Admin() {
   const [premiumAnalytics, setPremiumAnalytics] = useState<PremiumAnalytics | null>(null);
   const [foundingMomsDashboard, setFoundingMomsDashboard] = useState<FoundingMomsDashboard | null>(null);
   const [contentAnalytics, setContentAnalytics] = useState<ContentAnalytics | null>(null);
+  const [featureAdoption, setFeatureAdoption] = useState<FeatureAdoption | null>(null);
   const [premiumReadiness, setPremiumReadiness] = useState<PremiumReadiness | null>(null);
   const [manualChecks, setManualChecks] = useState<typeof MANUAL_CHECKS_DEFAULT>(() => {
     try {
@@ -401,7 +410,7 @@ export default function Admin() {
     // browser to bypass its own cache and never store the response.
     const t = Date.now();
     try {
-      const [statsRes, aiRes, updatesRes, notifRes, retentionRes, premiumRes, contentRes, readinessRes, communityQRes, foundingMomsRes] = await Promise.all([
+      const [statsRes, aiRes, updatesRes, notifRes, retentionRes, premiumRes, contentRes, readinessRes, communityQRes, foundingMomsRes, featureAdoptionRes] = await Promise.all([
         fetch(`${baseUrl}/api/admin/stats?${authQuery}&_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/admin/twin-ai-analytics?${authQuery}&_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/app-updates?limit=50&_t=${t}`, { cache: "no-store" }),
@@ -412,6 +421,7 @@ export default function Admin() {
         fetch(`${baseUrl}/api/admin/premium-readiness?${authQuery}&_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/admin/community/questions?${authQuery}&_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/admin/founding-moms?${authQuery}&_t=${t}`, { cache: "no-store" }),
+        fetch(`${baseUrl}/api/admin/feature-adoption?${authQuery}&_t=${t}`, { cache: "no-store" }),
       ]);
       if (!statsRes.ok) throw new Error(`${statsRes.status}`);
       const data: AdminStats = await statsRes.json();
@@ -426,6 +436,7 @@ export default function Admin() {
       if (readinessRes.ok) setPremiumReadiness(await readinessRes.json());
       if (communityQRes.ok) setCommunityQuestions(await communityQRes.json());
       if (foundingMomsRes.ok) setFoundingMomsDashboard(await foundingMomsRes.json());
+      if (featureAdoptionRes.ok) setFeatureAdoption(await featureAdoptionRes.json());
       setLastUpdated(new Date());
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -1303,6 +1314,34 @@ export default function Admin() {
                   }
                 </div>
               </div>
+            </section>
+          )}
+
+          {/* ── FEATURE ADOPTION ── */}
+          {featureAdoption && (
+            <section>
+              <SectionHeader icon={<Sparkles size={16} />} title="Feature Adoption (30d)" />
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 mb-4">
+                <StatCard label="Twin AI opens" value={featureAdoption.twinAI.opens} sub={`${featureAdoption.twinAI.uniqueUsers} unique users`} accent />
+                <StatCard label="Memories opens" value={featureAdoption.memories.opens} sub={`${featureAdoption.memories.uniqueUsers} unique users`} />
+                <StatCard label="Caregiver views" value={featureAdoption.caregiver.views} sub="invite page" />
+                <StatCard label="Community questions" value={featureAdoption.community.questions} sub="posted" accent />
+                <StatCard label="Spotlight taps" value={featureAdoption.spotlight.totalClicks} sub="discovery card" />
+              </div>
+              {featureAdoption.spotlight.byFeature.length > 0 && (
+                <div className="bg-white rounded-2xl p-4 border border-border">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-3">🔦 Most Tapped Spotlight Features</p>
+                  <div className="space-y-2">
+                    {featureAdoption.spotlight.byFeature.map((item, i) => (
+                      <div key={item.feature} className="flex items-center gap-3">
+                        <span className="text-xs font-bold text-primary/40 w-4">{i + 1}</span>
+                        <span className="text-xs text-foreground flex-1 truncate">{item.feature}</span>
+                        <span className="text-xs font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded-full">{item.count}×</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </section>
           )}
 

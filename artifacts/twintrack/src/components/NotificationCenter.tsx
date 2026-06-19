@@ -16,16 +16,16 @@ interface NotificationItem {
 
 const BASE_URL = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
 
-const WHATS_NEW_KEY = "tt_whats_new_v5";
+const WHATS_NEW_KEY = "tt_whats_new_v6";
 const WHATS_NEW_UPDATES = [
+  { icon: "✨", text: "Ask Twin AI — get expert answers to sleep, feeding, and routines instantly" },
+  { icon: "💕", text: "Memories — capture first smiles, steps, and words with beautiful milestone cards" },
+  { icon: "👨‍👩‍👧", text: "Caregiver Access — invite your partner to track together in real time" },
+  { icon: "💬", text: "Community — see what other twin parents are asking and share your experience" },
+  { icon: "📚", text: "Twins Magazine — expert twin parenting articles curated every month" },
   { icon: "⚡", text: "Quick nap buttons — log 15m, 20m, 30m, 45m, 1h, 1.5h, or 2h naps in one tap" },
-  { icon: "✏️", text: "Custom nap duration — enter any hours and minutes for precise manual entries" },
-  { icon: "🌙", text: "Night sleep fix — overnight sessions crossing midnight now show correctly in daily totals" },
-  { icon: "💩", text: "Diaper notes — add colour, consistency, or any observation when editing a diaper entry" },
-  { icon: "🌅", text: "Wake windows — awake time calculated automatically between naps on the Home screen" },
-  { icon: "📊", text: "Stats tab — daily & weekly charts for sleep, feeds, and diapers" },
-  { icon: "🔔", text: "Smart notifications — quiet hours and context-aware reminders" },
-  { icon: "🎂", text: "Precise age — exact months & days so milestones are always accurate" },
+  { icon: "🌙", text: "Night sleep fix — overnight sessions crossing midnight now count correctly" },
+  { icon: "💩", text: "Diaper notes — add colour, consistency, or any observation to a diaper entry" },
 ];
 
 function WhatsNewCard() {

@@ -1,0 +1,209 @@
+TwinTrack — Feature Discovery & Daily Engagement System 💕🚀
+
+The next priority is helping moms discover and regularly use the best parts of TwinTrack.
+
+Current challenge:
+
+Many users are only using:
+
+* feeds
+* diapers
+* sleep
+
+But are not discovering:
+
+* Twin AI
+* Memories
+* Caregiver access
+* Community Questions
+* Community Polls
+* Twins Magazines
+* Twins Academy
+* Notifications
+
+We need gentle daily nudges.
+
+---
+
+1. DAILY FEATURE SPOTLIGHT CARD (HIGH PRIORITY)
+
+Add a rotating Home page card.
+
+Show only ONE spotlight per day.
+
+Examples:
+
+💕 Memory of the Month
+"Capture a special moment and create a beautiful keepsake."
+
+✨ Ask Twin AI
+"Need help with sleep, feeding or routines? Ask Twin AI."
+
+📚 Twins Magazine
+"Read this month's expert twin parenting magazine."
+
+🎓 Twins Academy
+"Discover expert courses created for twin parents."
+
+👨‍👩‍👧 Caregiver Access
+"Invite your partner or caregiver to help with tracking."
+
+💬 Community Questions
+"See what other twin parents are asking."
+
+📊 Weekly Summary
+"See your twins' trends and routines."
+
+Goal:
+
+Increase feature discovery naturally.
+
+---
+
+2. FEATURE ADOPTION ANALYTICS
+
+Add Admin metrics:
+
+Twin AI:
+
+* users who opened AI
+* users who asked at least 1 question
+
+Memories:
+
+* users who opened Memories
+* memories created
+* memory cards shared
+
+Caregiver:
+
+* invite page viewed
+* invite sent
+* caregiver activated
+
+Magazines:
+
+* magazine opens
+* downloads
+
+Academy:
+
+* card views
+* clicks
+* course opens
+
+Community:
+
+* questions posted
+* answers posted
+* poll votes
+
+Goal:
+
+Understand which features are being adopted.
+
+---
+
+3. HOME PAGE PERSONALIZED SUGGESTIONS
+
+Rotate suggestions based on activity.
+
+Examples:
+
+If user never opened Memories:
+"Capture your first memory 💕"
+
+If user never used Twin AI:
+"Try Twin AI - ask your first question"
+
+If user never opened Magazines:
+"Read this month's Twins Magazine"
+
+If user never voted:
+"See how other twin parents answered"
+
+Goal:
+
+Help moms discover value gradually.
+
+---
+
+4. PREMIUM FEATURE INTEREST TRACKING
+
+Track:
+
+* Twin AI viewed
+* Twin AI prompt shown
+* Magazine prompt shown
+* Academy prompt shown
+* Caregiver prompt shown
+* Memory template viewed
+
+Admin should show:
+
+Most viewed Premium feature
+
+Most desired Premium feature
+
+Most clicked upgrade source
+
+Goal:
+
+Learn what users value most before subscriptions go live.
+
+---
+
+5. NOTIFICATION CENTER REFRESH
+
+Update the latest 3 Home page updates.
+
+Move all older updates into the Cherries Notification Center.
+
+Only show updates that matter to parents.
+
+Never show:
+
+* admin features
+* technical updates
+* backend changes
+
+Only show:
+
+* new parenting features
+* memory features
+* Twin AI updates
+* community features
+* tracking improvements
+
+---
+
+6. DAILY ENGAGEMENT NOTIFICATIONS
+
+Create rotating supportive notifications.
+
+Examples:
+
+💕 "You’re doing an amazing job."
+
+📸 "Capture a memory from today."
+
+📊 "Your weekly summary is ready."
+
+💬 "A new twin parent question was posted."
+
+📚 "A new Twins Magazine is available."
+
+✨ "Need support today? Ask Twin AI."
+
+Important:
+
+* supportive
+* calm
+* never spammy
+* max 2 engagement notifications per day 
+
+Goal:
+
+Increase habit formation without creating notification fatigue.
+
+💕

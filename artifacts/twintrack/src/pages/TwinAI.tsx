@@ -131,6 +131,16 @@ export default function TwinAI() {
   const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
+    try { localStorage.setItem("tt_visited_twin_ai", "1"); } catch {}
+    posthog?.capture("twin_ai_opened", { source: "page_load" });
+    fetch(`${baseUrl}/api/plan/track`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event: "twin_ai_opened", properties: { source: "page_load" } }),
+    }).catch(() => {});
+  }, [baseUrl]);
+
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isStreaming]);
 

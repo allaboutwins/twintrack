@@ -392,6 +392,9 @@ export default function Dashboard() {
         {/* What's New */}
         {!noTwins && !isLoading && <WhatsNewCard />}
 
+        {/* Feature Spotlight */}
+        {!noTwins && !isLoading && <FeatureSpotlightCard />}
+
         {/* For You Today */}
         {!noTwins && !isLoading && (
           <div className="space-y-3">
@@ -642,6 +645,103 @@ function GoodDayCard({ feedings, diapers, sleepMins }: { feedings: number; diape
             </div>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Feature Spotlight (items 1 + 3) ─────────────────────────────────────────
+
+interface Spotlight {
+  emoji: string;
+  label: string;
+  title: string;
+  desc: string;
+  path: string | null;
+  visitKey: string;
+  trackEvent: string;
+  gradient: string;
+  border: string;
+  labelColor: string;
+}
+
+const SPOTLIGHTS: Spotlight[] = [
+  { emoji: "✨", label: "Ask Twin AI", title: "Need twin parenting support today?", desc: "Get expert answers to sleep, feeding, and routines — instantly, just for twin families.", path: "/twin-ai", visitKey: "tt_visited_twin_ai", trackEvent: "twin_ai_opened", gradient: "from-violet-50 to-pink-50", border: "border-violet-200/60", labelColor: "text-violet-600" },
+  { emoji: "💕", label: "Memories", title: "Capture a precious moment", desc: "First smiles, first steps, first words — create beautiful keepsakes for your twins.", path: "/milestones", visitKey: "tt_visited_memories", trackEvent: "memories_opened", gradient: "from-rose-50 to-pink-50", border: "border-rose-200/60", labelColor: "text-rose-600" },
+  { emoji: "📚", label: "Twins Magazine", title: "Expert reads for twin parents", desc: "Curated articles, real stories, and evidence-based twin parenting advice — just for you.", path: "/learn", visitKey: "tt_visited_magazines", trackEvent: "spotlight_card_clicked", gradient: "from-sky-50 to-blue-50", border: "border-sky-200/60", labelColor: "text-sky-700" },
+  { emoji: "🎓", label: "Twins Academy", title: "Courses made for twin parents", desc: "Expert mini-courses on sleep training, schedules, and development milestones.", path: "/learn", visitKey: "tt_visited_academy", trackEvent: "spotlight_card_clicked", gradient: "from-emerald-50 to-teal-50", border: "border-emerald-200/60", labelColor: "text-emerald-700" },
+  { emoji: "👨‍👩‍👧", label: "Caregiver Access", title: "Invite your partner or caregiver", desc: "Share tracking access so everyone helping with your twins stays perfectly in sync.", path: "/settings", visitKey: "tt_visited_caregiver", trackEvent: "caregiver_invite_viewed", gradient: "from-amber-50 to-orange-50", border: "border-amber-200/60", labelColor: "text-amber-700" },
+  { emoji: "💬", label: "Community", title: "See what other twin parents are asking", desc: "Real questions and thoughtful answers from twin families just like yours.", path: "/learn", visitKey: "tt_visited_community", trackEvent: "spotlight_card_clicked", gradient: "from-primary/8 to-violet-50", border: "border-primary/20", labelColor: "text-primary" },
+  { emoji: "📊", label: "Weekly Summary", title: "See your twins' trends", desc: "Sleep patterns, feeding frequency, diaper counts — all in one beautiful weekly view.", path: "/stats", visitKey: "tt_visited_stats", trackEvent: "spotlight_card_clicked", gradient: "from-indigo-50 to-blue-50", border: "border-indigo-200/60", labelColor: "text-indigo-700" },
+  { emoji: "🔔", label: "Smart Reminders", title: "Never miss a feed or nap window", desc: "Enable gentle push notifications — feed alerts, sleep windows, and daily encouragement.", path: null, visitKey: "tt_visited_notifications", trackEvent: "spotlight_card_clicked", gradient: "from-teal-50 to-cyan-50", border: "border-teal-200/60", labelColor: "text-teal-700" },
+];
+
+function FeatureSpotlightCard() {
+  const [, setLocation] = useLocation();
+  const today = new Date().toLocaleDateString("en-CA");
+  const baseUrl = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+
+  const [dismissed, setDismissed] = useState(() => {
+    try { return localStorage.getItem(`tt_spotlight_${today}`) === "1"; } catch { return false; }
+  });
+
+  const spotlight = useMemo((): Spotlight => {
+    const unvisited = SPOTLIGHTS.filter((s) => {
+      try { return !localStorage.getItem(s.visitKey); } catch { return true; }
+    });
+    if (unvisited.length > 0) return unvisited[0];
+    const dayIndex = Math.floor(Date.now() / 86400000) % SPOTLIGHTS.length;
+    return SPOTLIGHTS[dayIndex];
+  }, []);
+
+  if (dismissed) return null;
+
+  function handleTap() {
+    try { localStorage.setItem(spotlight.visitKey, "1"); } catch {}
+    posthog?.capture(spotlight.trackEvent, { feature: spotlight.label, source: "spotlight_card" });
+    fetch(`${baseUrl}/api/plan/track`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event: "spotlight_card_clicked", properties: { feature: spotlight.label } }),
+    }).catch(() => {});
+    try { localStorage.setItem(`tt_spotlight_${today}`, "1"); } catch {}
+    setDismissed(true);
+    if (spotlight.path) setLocation(spotlight.path);
+  }
+
+  function handleDismiss() {
+    try { localStorage.setItem(`tt_spotlight_${today}`, "1"); } catch {}
+    setDismissed(true);
+  }
+
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={handleTap}
+      onKeyDown={(e) => e.key === "Enter" && handleTap()}
+      className={`w-full bg-gradient-to-br ${spotlight.gradient} rounded-2xl border ${spotlight.border} p-4 flex items-center gap-4 text-left hover:opacity-90 active:scale-[0.99] transition-all relative cursor-pointer`}
+      data-testid="feature-spotlight"
+    >
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); handleDismiss(); }}
+        className="absolute top-3 right-3 p-1 rounded-lg text-muted-foreground/60 hover:text-muted-foreground z-10"
+        aria-label="Dismiss spotlight"
+      >
+        <X size={13} />
+      </button>
+      <div className="w-12 h-12 rounded-xl bg-white/70 flex items-center justify-center text-2xl flex-shrink-0 shadow-sm">
+        {spotlight.emoji}
+      </div>
+      <div className="flex-1 min-w-0 pr-5">
+        <div className="flex items-center gap-1.5 mb-0.5">
+          <Sparkles size={9} className={spotlight.labelColor} />
+          <p className={`text-[9px] font-bold uppercase tracking-wide ${spotlight.labelColor}`}>Discover</p>
+        </div>
+        <p className="font-semibold text-sm text-foreground leading-snug">{spotlight.title}</p>
+        <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{spotlight.desc}</p>
+        <p className={`text-[11px] font-semibold mt-1.5 ${spotlight.labelColor}`}>{spotlight.label} →</p>
       </div>
     </div>
   );

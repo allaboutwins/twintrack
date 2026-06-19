@@ -621,4 +621,44 @@ router.get("/admin/founding-moms/csv", async (req, res): Promise<void> => {
   res.send(csv);
 });
 
+// ── GET /api/admin/feature-adoption ─────────────────────────────────────────
+
+router.get("/admin/feature-adoption", async (req, res): Promise<void> => {
+  if (!isAdminAuth(req)) { res.status(403).json({ error: "Forbidden" }); return; }
+
+  const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+  const [
+    [aiOpens], aiUniqueUsers,
+    [memoriesOpens], memoriesUniqueUsers,
+    [caregiverViews],
+    [communityQs],
+    [spotlightClicks],
+    spotlightByFeature,
+  ] = await Promise.all([
+    db.select({ c: count() }).from(analyticsEventsTable).where(and(eq(analyticsEventsTable.event, "twin_ai_opened"), gte(analyticsEventsTable.createdAt, monthAgo))),
+    db.selectDistinct({ userId: analyticsEventsTable.userId }).from(analyticsEventsTable).where(and(eq(analyticsEventsTable.event, "twin_ai_opened"), gte(analyticsEventsTable.createdAt, monthAgo))),
+    db.select({ c: count() }).from(analyticsEventsTable).where(and(eq(analyticsEventsTable.event, "memories_opened"), gte(analyticsEventsTable.createdAt, monthAgo))),
+    db.selectDistinct({ userId: analyticsEventsTable.userId }).from(analyticsEventsTable).where(and(eq(analyticsEventsTable.event, "memories_opened"), gte(analyticsEventsTable.createdAt, monthAgo))),
+    db.select({ c: count() }).from(analyticsEventsTable).where(and(eq(analyticsEventsTable.event, "caregiver_invite_viewed"), gte(analyticsEventsTable.createdAt, monthAgo))),
+    db.select({ c: count() }).from(analyticsEventsTable).where(and(eq(analyticsEventsTable.event, "community_question_submitted"), gte(analyticsEventsTable.createdAt, monthAgo))),
+    db.select({ c: count() }).from(analyticsEventsTable).where(and(eq(analyticsEventsTable.event, "spotlight_card_clicked"), gte(analyticsEventsTable.createdAt, monthAgo))),
+    db.select({ key: sql<string>`${analyticsEventsTable.properties}->>'feature'`, c: count() })
+      .from(analyticsEventsTable)
+      .where(and(eq(analyticsEventsTable.event, "spotlight_card_clicked"), gte(analyticsEventsTable.createdAt, monthAgo)))
+      .groupBy(sql`${analyticsEventsTable.properties}->>'feature'`).orderBy(desc(count())).limit(8),
+  ]);
+
+  res.json({
+    twinAI: { opens: Number(aiOpens?.c ?? 0), uniqueUsers: aiUniqueUsers.length },
+    memories: { opens: Number(memoriesOpens?.c ?? 0), uniqueUsers: memoriesUniqueUsers.length },
+    caregiver: { views: Number(caregiverViews?.c ?? 0) },
+    community: { questions: Number(communityQs?.c ?? 0) },
+    spotlight: {
+      totalClicks: Number(spotlightClicks?.c ?? 0),
+      byFeature: spotlightByFeature.map((r) => ({ feature: r.key ?? "unknown", count: Number(r.c) })),
+    },
+  });
+});
+
 export default router;

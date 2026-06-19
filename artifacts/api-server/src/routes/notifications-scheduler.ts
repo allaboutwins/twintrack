@@ -54,6 +54,15 @@ const POLL_MESSAGES = [
   { title: "New twin mom poll! 🗳️", body: "Your voice matters. A quick community poll is waiting — share your twin parenting experience." },
 ];
 
+const ENGAGEMENT_MESSAGES = [
+  { title: "You're doing an amazing job 💕", body: "Every nap logged, every feed recorded — your twins are so lucky to have such a dedicated parent.", url: "/dashboard" },
+  { title: "Capture a memory today 📸", body: "Something special happened today. Log it in Memories before the moment slips away.", url: "/milestones" },
+  { title: "Ask Twin AI anything ✨", body: "Need help with sleep, feeding, or routines? Your AI twin parenting companion is ready.", url: "/twin-ai" },
+  { title: "New in the Community 💬", body: "See what other twin parents are asking today — you might find exactly what you need.", url: "/learn" },
+  { title: "Read the Twins Magazine 📚", body: "Expert twin parenting articles, curated just for families like yours.", url: "/learn" },
+  { title: "Your twins are growing so fast 💕", body: "Log a milestone before today is over — future-you will treasure this moment.", url: "/milestones" },
+];
+
 function isQuietHours(): boolean {
   const h = new Date().getUTCHours();
   return h >= 22 || h < 7;
@@ -218,6 +227,13 @@ async function processUser(userId: string): Promise<{ userId: string; sent: stri
     const msg = WEEKLY_MESSAGES[0];
     await sendPushToUser(userId, { ...msg, type: "weekly", icon: "/icon-192.png", url: "/stats" });
     sent.push("weekly");
+  }
+
+  // ── 7. Daily engagement (supportive + feature discovery) ──────────────────
+  if (h >= 10 && h < 19 && !await alreadySentRecently(userId, "engagement", 1440)) {
+    const msg = ENGAGEMENT_MESSAGES[Math.floor(Math.random() * ENGAGEMENT_MESSAGES.length)];
+    await sendPushToUser(userId, { title: msg.title, body: msg.body, type: "engagement", icon: "/icon-192.png", url: msg.url });
+    sent.push("engagement");
   }
 
   return { userId, sent };
