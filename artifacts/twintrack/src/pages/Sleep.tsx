@@ -174,6 +174,10 @@ export default function Sleep() {
     { query: { enabled: !!user?.id, queryKey: getListTwinsQueryKey({ userId: user?.id ?? "" }) } },
   );
 
+  const [quickDuration, setQuickDuration] = useState<number | null>(null);
+  const [customHours, setCustomHours] = useState("");
+  const [customMinutes, setCustomMinutes] = useState("");
+
   const [activeTwinId, setActiveTwinId] = useState<number | null>(() => {
     try {
       const id = new URLSearchParams(window.location.search).get("twinId");
@@ -237,21 +241,41 @@ export default function Sleep() {
     );
   }
 
+  const QUICK_DURATIONS = [
+    { label: "15m", mins: 15 },
+    { label: "20m", mins: 20 },
+    { label: "30m", mins: 30 },
+    { label: "45m", mins: 45 },
+    { label: "1h", mins: 60 },
+    { label: "1.5h", mins: 90 },
+    { label: "2h", mins: 120 },
+  ];
+
+  function getEffectiveDuration(): number | null {
+    if (quickDuration !== null) return quickDuration;
+    const h = parseInt(customHours || "0", 10);
+    const m = parseInt(customMinutes || "0", 10);
+    const total = h * 60 + m;
+    return total > 0 ? total : null;
+  }
+
   function addManual() {
     if (!twinId) return;
-    const start = new Date();
-    start.setHours(start.getHours() - 1);
+    const duration = getEffectiveDuration();
+    if (!duration) return;
+    const end = new Date();
+    const start = new Date(end.getTime() - duration * 60000);
     createEntry.mutate(
+      { data: { twinId, type: addType, startTime: start.toISOString(), endTime: end.toISOString(), durationMinutes: duration } },
       {
-        data: {
-          twinId,
-          type: addType,
-          startTime: start.toISOString(),
-          endTime: new Date().toISOString(),
-          durationMinutes: 60,
+        onSuccess: () => {
+          invalidate();
+          setShowAdd(false);
+          setQuickDuration(null);
+          setCustomHours("");
+          setCustomMinutes("");
         },
       },
-      { onSuccess: () => { invalidate(); setShowAdd(false); } },
     );
   }
 
@@ -375,27 +399,86 @@ export default function Sleep() {
         </button>
 
         {showAdd && (
-          <div className="bg-white rounded-2xl border border-border p-4 space-y-3">
-            <p className="font-semibold text-sm text-foreground">Add 1-hour entry (now)</p>
-            <div className="flex gap-2">
-              {(["nap", "night"] as const).map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setAddType(t)}
-                  className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
-                    addType === t ? "bg-primary text-white" : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  {t === "nap" ? "Nap" : "Night Sleep"}
-                </button>
-              ))}
+          <div className="bg-white rounded-2xl border border-border p-4 space-y-4">
+            <p className="font-semibold text-sm text-foreground">Add Manual Entry</p>
+
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Type</p>
+              <div className="flex gap-2">
+                {(["nap", "night"] as const).map((t) => (
+                  <button
+                    type="button"
+                    key={t}
+                    onClick={() => setAddType(t)}
+                    className={`flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                      addType === t ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {t === "nap" ? "🌤 Nap" : "🌙 Night Sleep"}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Quick Duration</p>
+              <div className="grid grid-cols-4 gap-2">
+                {QUICK_DURATIONS.map(({ label, mins }) => (
+                  <button
+                    type="button"
+                    key={mins}
+                    onClick={() => { setQuickDuration(mins); setCustomHours(""); setCustomMinutes(""); }}
+                    className={`py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                      quickDuration === mins ? "bg-primary text-white" : "bg-muted text-muted-foreground"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Custom Duration</p>
+              <div className="flex gap-2 items-center">
+                <div className="flex-1 relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="23"
+                    inputMode="numeric"
+                    placeholder="0"
+                    value={customHours}
+                    onChange={(e) => { setCustomHours(e.target.value); setQuickDuration(null); }}
+                    className="w-full px-3 py-2.5 rounded-xl bg-muted/30 border border-border text-sm text-center outline-none focus:ring-2 ring-primary/30"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">h</span>
+                </div>
+                <span className="text-muted-foreground font-bold">:</span>
+                <div className="flex-1 relative">
+                  <input
+                    type="number"
+                    min="0"
+                    max="59"
+                    inputMode="numeric"
+                    placeholder="0"
+                    value={customMinutes}
+                    onChange={(e) => { setCustomMinutes(e.target.value); setQuickDuration(null); }}
+                    className="w-full px-3 py-2.5 rounded-xl bg-muted/30 border border-border text-sm text-center outline-none focus:ring-2 ring-primary/30"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground pointer-events-none">m</span>
+                </div>
+              </div>
+            </div>
+
             <button
+              type="button"
               onClick={addManual}
-              className="w-full py-3 rounded-xl bg-accent text-white font-semibold text-sm active:scale-95 transition-all"
+              disabled={!getEffectiveDuration() || createEntry.isPending}
+              className="w-full py-3 rounded-xl bg-primary text-white font-semibold text-sm active:scale-95 transition-all disabled:opacity-50"
               data-testid="button-confirm-add-sleep"
             >
-              Add Entry
+              {createEntry.isPending ? "Adding…" : `Add ${getEffectiveDuration() ? formatMinutes(getEffectiveDuration()!) : "—"} Entry`}
             </button>
           </div>
         )}

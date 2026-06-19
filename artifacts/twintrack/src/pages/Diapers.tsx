@@ -49,6 +49,7 @@ type DiaperEntry = {
   id: number;
   type: string;
   time: string;
+  notes?: string | null;
 };
 
 function EditDiaperSheet({
@@ -58,10 +59,11 @@ function EditDiaperSheet({
 }: {
   entry: DiaperEntry;
   onClose: () => void;
-  onSave: (updates: { type: string; time: string }) => void;
+  onSave: (updates: { type: string; time: string; notes: string | null }) => void;
 }) {
   const [diaperType, setDiaperType] = useState<DiaperType>(entry.type as DiaperType);
   const [timeVal, setTimeVal] = useState(toDatetimeLocal(entry.time));
+  const [notes, setNotes] = useState(entry.notes ?? "");
 
   return (
     <div className="fixed inset-0 z-50 flex items-end">
@@ -103,6 +105,18 @@ function EditDiaperSheet({
           />
         </div>
 
+        <div>
+          <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Notes (optional)</p>
+          <textarea
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            placeholder="e.g. unusual color, small amount…"
+            rows={2}
+            maxLength={200}
+            className="w-full px-4 py-3 rounded-xl bg-muted/30 border border-border text-sm outline-none focus:ring-2 ring-primary/30 resize-none"
+          />
+        </div>
+
         <div className="flex gap-3 pt-1">
           <button
             onClick={onClose}
@@ -111,7 +125,7 @@ function EditDiaperSheet({
             Cancel
           </button>
           <button
-            onClick={() => onSave({ type: diaperType, time: new Date(timeVal).toISOString() })}
+            onClick={() => onSave({ type: diaperType, time: new Date(timeVal).toISOString(), notes: notes.trim() || null })}
             className="flex-1 py-3 rounded-xl bg-primary text-white font-semibold text-sm flex items-center justify-center gap-2 active:scale-95 transition-all"
           >
             <Check size={15} />
@@ -179,7 +193,7 @@ export default function Diapers() {
     );
   }
 
-  function saveEdit(updates: { type: string; time: string }) {
+  function saveEdit(updates: { type: string; time: string; notes: string | null }) {
     if (!editingEntry) return;
     updateEntry.mutate(
       { id: editingEntry.id, data: updates },
@@ -315,6 +329,7 @@ export default function Diapers() {
                     <div>
                       <p className="text-sm font-semibold capitalize">{dt?.label ?? entry.type}</p>
                       <p className="text-xs text-muted-foreground">{formatTime(entry.time)}</p>
+                      {entry.notes && <p className="text-xs text-muted-foreground/80 mt-0.5 italic">{entry.notes}</p>}
                     </div>
                   </div>
                   <div className="flex items-center gap-1">

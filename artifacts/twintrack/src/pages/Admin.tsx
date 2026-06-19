@@ -40,6 +40,14 @@ interface AdminStats {
     ambassadors: number;
     emailsCaptured: number;
     newsletterSubscribers: number;
+    growth?: {
+      thisWeekSignups: number;
+      prevWeekSignups: number;
+      thisWeekEmails: number;
+      prevWeekEmails: number;
+      thisMonthSignups: number;
+      prevMonthSignups: number;
+    };
   };
   onboarding: {
     parentStatus: Breakdown[]; multipleType: Breakdown[]; babyAgeGroup: Breakdown[];
@@ -231,12 +239,25 @@ const FB_STYLE: Record<string, string> = {
 };
 const FB_ICON: Record<string, string> = { bug:"🐛", feature:"💡", feedback:"💬", confusion:"😕", love:"💕" };
 
-function StatCard({ label, value, sub, accent }: { label: string; value: number | string; sub?: string; accent?: boolean }) {
+function pctChange(current: number, previous: number): string | null {
+  if (previous === 0) return current > 0 ? "+new" : null;
+  const pct = Math.round(((current - previous) / previous) * 100);
+  return pct >= 0 ? `+${pct}%` : `${pct}%`;
+}
+
+function StatCard({ label, value, sub, accent, change, changeLabel }: { label: string; value: number | string; sub?: string; accent?: boolean; change?: string | null; changeLabel?: string }) {
+  const isPositive = change && (change.startsWith("+") || change === "+new");
+  const isNegative = change && change.startsWith("-");
   return (
     <div className={`rounded-2xl p-4 border flex flex-col gap-1 ${accent ? "bg-primary/10 border-primary/20" : "bg-white border-border"}`}>
       <p className={`text-2xl font-bold ${accent ? "text-primary" : "text-foreground"}`}>{value}</p>
       <p className="text-xs font-semibold text-foreground">{label}</p>
       {sub && <p className="text-xs text-muted-foreground">{sub}</p>}
+      {change && (
+        <span className={`mt-0.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full w-fit ${isPositive ? "bg-green-100 text-green-700" : isNegative ? "bg-red-100 text-red-700" : "bg-muted text-muted-foreground"}`}>
+          {change}{changeLabel ? ` ${changeLabel}` : " this week"}
+        </span>
+      )}
     </div>
   );
 }
@@ -696,10 +717,26 @@ export default function Admin() {
             <SectionHeader icon={<Users size={16} />} title="Users" />
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               <StatCard label="Users with twins" value={stats.users.uniqueUsersWithTwins} sub="unique accounts" />
-              <StatCard label="Onboarding done" value={stats.users.onboardingCompleted} sub={`of ${stats.users.onboardingTotal} started`} />
-              <StatCard label="Completion rate" value={stats.users.onboardingTotal ? `${Math.round((stats.users.onboardingCompleted / stats.users.onboardingTotal) * 100)}%` : "—"} sub="onboarding" />
+              <StatCard
+                label="Onboarding done"
+                value={stats.users.onboardingCompleted}
+                sub={`of ${stats.users.onboardingTotal} started`}
+                change={stats.users.growth ? pctChange(stats.users.growth.thisWeekSignups, stats.users.growth.prevWeekSignups) : undefined}
+              />
+              <StatCard
+                label="This month"
+                value={stats.users.growth?.thisMonthSignups ?? "—"}
+                sub="signups (30d)"
+                change={stats.users.growth ? pctChange(stats.users.growth.thisMonthSignups, stats.users.growth.prevMonthSignups) : undefined}
+                changeLabel="vs last month"
+              />
               <StatCard label="Ambassadors 💕" value={stats.users.ambassadors} sub="want to help" accent />
-              <StatCard label="Emails captured" value={stats.users.emailsCaptured} sub="have email" />
+              <StatCard
+                label="Emails captured"
+                value={stats.users.emailsCaptured}
+                sub="have email"
+                change={stats.users.growth ? pctChange(stats.users.growth.thisWeekEmails, stats.users.growth.prevWeekEmails) : undefined}
+              />
               <StatCard label="Newsletter 📧" value={stats.users.newsletterSubscribers} sub="subscribed" accent />
             </div>
           </section>
@@ -1352,7 +1389,7 @@ export default function Admin() {
                   : (
                     <>
                       <div className="space-y-0">
-                        {(showAllTopQuestions ? twinAiAnalytics.topQuestions : twinAiAnalytics.topQuestions.slice(0, 2)).map((q, i) => (
+                        {(showAllTopQuestions ? twinAiAnalytics.topQuestions : twinAiAnalytics.topQuestions.slice(0, 3)).map((q, i) => (
                           <div key={i} className="flex items-start gap-3 py-2.5 border-b border-border/60 last:border-0">
                             <span className="text-xs font-bold text-primary/50 w-5 flex-shrink-0 pt-0.5">{i + 1}</span>
                             <p className="text-sm text-foreground leading-snug flex-1">{q.question}</p>
@@ -1694,7 +1731,7 @@ export default function Admin() {
             ) : (
               <>
                 <div className="space-y-2">
-                  {(showAllUpdates ? appUpdatesList : appUpdatesList.slice(0, 2)).map((u) => (
+                  {(showAllUpdates ? appUpdatesList : appUpdatesList.slice(0, 3)).map((u) => (
                     <div key={u.id} className="bg-white rounded-2xl border border-border px-4 py-3 flex items-start gap-3">
                       <span className="text-xl flex-shrink-0 mt-0.5">{u.emoji}</span>
                       <div className="flex-1 min-w-0">

@@ -16,15 +16,16 @@ interface NotificationItem {
 
 const BASE_URL = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
 
-const WHATS_NEW_KEY = "tt_whats_new_v4";
+const WHATS_NEW_KEY = "tt_whats_new_v5";
 const WHATS_NEW_UPDATES = [
+  { icon: "⚡", text: "Quick nap buttons — log 15m, 20m, 30m, 45m, 1h, 1.5h, or 2h naps in one tap" },
+  { icon: "✏️", text: "Custom nap duration — enter any hours and minutes for precise manual entries" },
+  { icon: "🌙", text: "Night sleep fix — overnight sessions crossing midnight now show correctly in daily totals" },
+  { icon: "💩", text: "Diaper notes — add colour, consistency, or any observation when editing a diaper entry" },
   { icon: "🌅", text: "Wake windows — awake time calculated automatically between naps on the Home screen" },
-  { icon: "🐛", text: "Twin B quick-action fix — tapping a twin's stats now opens their tracker directly" },
-  { icon: "🎂", text: "Precise age — exact months & days so milestones are always accurate (no more early birthdays!)" },
-  { icon: "🌙", text: "Night sleep — overnight sessions across midnight are now tracked and totalled correctly" },
-  { icon: "🍽️", text: "First Solids milestone — added to the Memories template gallery" },
   { icon: "📊", text: "Stats tab — daily & weekly charts for sleep, feeds, and diapers" },
   { icon: "🔔", text: "Smart notifications — quiet hours and context-aware reminders" },
+  { icon: "🎂", text: "Precise age — exact months & days so milestones are always accurate" },
 ];
 
 function WhatsNewCard() {

@@ -115,6 +115,24 @@ router.get("/admin/stats", async (req, res): Promise<void> => {
     babyAgeGroup: r.babyAgeGroup ?? null,
   }));
 
+  const now = Date.now();
+  const oneWeekMs = 7 * 24 * 3600 * 1000;
+  const thisWeekSignups = completed.filter((r) => now - new Date(r.createdAt).getTime() < oneWeekMs).length;
+  const prevWeekSignups = completed.filter((r) => {
+    const age = now - new Date(r.createdAt).getTime();
+    return age >= oneWeekMs && age < 2 * oneWeekMs;
+  }).length;
+  const thisWeekEmails = emailList.filter((r) => now - new Date(r.createdAt).getTime() < oneWeekMs).length;
+  const prevWeekEmails = emailList.filter((r) => {
+    const age = now - new Date(r.createdAt).getTime();
+    return age >= oneWeekMs && age < 2 * oneWeekMs;
+  }).length;
+  const thisMonthSignups = completed.filter((r) => now - new Date(r.createdAt).getTime() < 30 * 24 * 3600 * 1000).length;
+  const prevMonthSignups = completed.filter((r) => {
+    const age = now - new Date(r.createdAt).getTime();
+    return age >= 30 * 24 * 3600 * 1000 && age < 60 * 24 * 3600 * 1000;
+  }).length;
+
   res.json({
     users: {
       uniqueUsersWithTwins: uniqueUsers.length,
@@ -123,6 +141,14 @@ router.get("/admin/stats", async (req, res): Promise<void> => {
       ambassadors: completed.filter((r) => r.isAmbassador).length,
       emailsCaptured: emailList.length,
       newsletterSubscribers: emailList.filter((e) => e.newsletterConsent).length,
+      growth: {
+        thisWeekSignups,
+        prevWeekSignups,
+        thisWeekEmails,
+        prevWeekEmails,
+        thisMonthSignups,
+        prevMonthSignups,
+      },
     },
     onboarding: {
       parentStatus: breakdown((r) => r.parentStatus),

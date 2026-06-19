@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, and, gte, lte } from "drizzle-orm";
+import { eq, and, gte, lte, lt, isNotNull } from "drizzle-orm";
 import { db, sleepEntriesTable } from "@workspace/db";
 import {
   CreateSleepEntryBody,
@@ -49,34 +49,51 @@ router.get("/sleep/summary", async (req, res): Promise<void> => {
   const weekStart = new Date(dayStart);
   weekStart.setDate(weekStart.getDate() - 6);
 
-  const dailyEntries = await db
-    .select()
-    .from(sleepEntriesTable)
-    .where(
-      and(
-        eq(sleepEntriesTable.twinId, twinId),
-        gte(sleepEntriesTable.startTime, dayStart),
-        lte(sleepEntriesTable.startTime, dayEnd),
+  const [dailyEntries, crossMidnightEntries, weeklyEntries] = await Promise.all([
+    db
+      .select()
+      .from(sleepEntriesTable)
+      .where(
+        and(
+          eq(sleepEntriesTable.twinId, twinId),
+          gte(sleepEntriesTable.startTime, dayStart),
+          lte(sleepEntriesTable.startTime, dayEnd),
+        ),
       ),
-    );
-
-  const weeklyEntries = await db
-    .select()
-    .from(sleepEntriesTable)
-    .where(
-      and(
-        eq(sleepEntriesTable.twinId, twinId),
-        gte(sleepEntriesTable.startTime, weekStart),
-        lte(sleepEntriesTable.startTime, dayEnd),
+    // Night sleep that started before today but ended within today (cross-midnight)
+    db
+      .select()
+      .from(sleepEntriesTable)
+      .where(
+        and(
+          eq(sleepEntriesTable.twinId, twinId),
+          eq(sleepEntriesTable.type, "night"),
+          lt(sleepEntriesTable.startTime, dayStart),
+          gte(sleepEntriesTable.startTime, new Date(dayStart.getTime() - 24 * 3600 * 1000)),
+          isNotNull(sleepEntriesTable.endTime),
+          gte(sleepEntriesTable.endTime!, dayStart),
+          lte(sleepEntriesTable.endTime!, dayEnd),
+        ),
       ),
-    );
+    db
+      .select()
+      .from(sleepEntriesTable)
+      .where(
+        and(
+          eq(sleepEntriesTable.twinId, twinId),
+          gte(sleepEntriesTable.startTime, weekStart),
+          lte(sleepEntriesTable.startTime, dayEnd),
+        ),
+      ),
+  ]);
 
-  const dailyTotalMinutes = dailyEntries.reduce((sum, e) => sum + (e.durationMinutes ?? 0), 0);
+  const crossMidnightMinutes = crossMidnightEntries.reduce((sum, e) => sum + (e.durationMinutes ?? 0), 0);
+  const dailyTotalMinutes = dailyEntries.reduce((sum, e) => sum + (e.durationMinutes ?? 0), 0) + crossMidnightMinutes;
   const weeklyTotalMinutes = weeklyEntries.reduce((sum, e) => sum + (e.durationMinutes ?? 0), 0);
   const napCount = dailyEntries.filter((e) => e.type === "nap").length;
-  const nightSleepMinutes = dailyEntries
-    .filter((e) => e.type === "night")
-    .reduce((sum, e) => sum + (e.durationMinutes ?? 0), 0);
+  const nightSleepMinutes =
+    dailyEntries.filter((e) => e.type === "night").reduce((sum, e) => sum + (e.durationMinutes ?? 0), 0) +
+    crossMidnightMinutes;
 
   res.json({ twinId, date, dailyTotalMinutes, weeklyTotalMinutes, napCount, nightSleepMinutes });
 });

@@ -1,0 +1,263 @@
+TwinTrack — Real Twin Mom Feedback Round 💕🚀
+
+We received additional feedback from active twin moms. Please prioritize the following fixes and improvements.
+
+---
+
+1. NAP LOGGING ISSUES (HIGH PRIORITY)
+
+Feedback:
+
+* Manual nap entries sometimes do not register when tapping buttons.
+* Play/start nap button sometimes does not respond.
+* Manual nap duration options feel too limited.
+
+Please investigate:
+
+* button click reliability
+* mobile touch handling
+* state update issues
+* nap timer start logic
+
+Also add quick nap buttons:
+
+* 15 min
+* 20 min
+* 30 min
+* 45 min
+* 1 hour
+* 1.5 hours
+* 2 hours
+
+Goal:
+Faster logging for exhausted parents.
+
+---
+
+2. NIGHT SLEEP CALCULATION BUG 🌙
+
+Feedback:
+
+Night sleep totals appear incorrect.
+
+Example:
+A user reports only ~19 total hours showing for an entire week despite sleeping 7–10 hours per night.
+
+Please audit:
+
+* cross-midnight sleep calculations
+* overnight sleep sessions
+* weekly aggregation logic
+* stats calculations
+* timezone interactions
+
+This is a high-priority trust issue.
+
+---
+
+3. FEEDBACK BUTTON POSITION
+
+Feedback:
+
+"The feedback button is in the way."
+
+Please review:
+
+* placement
+* overlap with content
+* mobile responsiveness
+
+Goal:
+Keep feedback accessible without blocking important actions.
+
+---
+
+4. STATS → DAILY DETAIL VIEW
+
+Feedback:
+
+Parents need to see exact event times when reviewing past days.
+
+Especially important for:
+
+* medications
+* supplements
+* iron doses
+* feeding schedules
+
+Please improve daily stats/history pages to show:
+
+* timestamp
+* entry type
+* notes
+* medication name if logged
+
+Goal:
+Parents can confidently verify what happened on a specific day.
+
+---
+
+5. DIAPER NOTES 💩
+
+Feedback:
+
+Users want notes on diaper entries.
+
+Please add optional diaper notes:
+
+Examples:
+
+* color
+* consistency
+* small amount
+* unusual observations
+
+Similar to bottle/feed notes.
+
+---
+
+6. COPY TO OTHER TWIN 👶👶
+
+Feedback:
+
+Parents frequently log the same activity for both twins.
+
+Please add:
+
+"Copy to Twin B"
+"Copy to Twin A"
+
+Examples:
+
+* medication
+* supplements
+* vitamins
+* routines
+* sleep
+* feeds
+
+Goal:
+Reduce duplicate entry effort.
+
+---
+
+7. MANUAL NAP ENTRY FLEXIBILITY
+
+Feedback:
+
+Users cannot enter arbitrary nap durations.
+
+Please allow:
+
+* custom hours
+* custom minutes
+
+Not only preset durations.
+
+---
+
+8. ACCOUNT DELETION PAGE
+
+Google Play requires a public account deletion page.
+
+Please create:
+
+/delete-account
+
+Requirements:
+
+* explain how users request deletion
+* describe what data is deleted
+* explain retention period if applicable
+* TwinTrack branding
+* mobile friendly
+
+This page will be used for Google Play compliance.
+
+---
+
+9. NOTIFICATION / UPDATE CENTER REFRESH 🍒
+
+Please update the Update Center with the latest app changes.
+
+Requirements:
+
+Home page:
+
+* show only latest 3 updates
+
+Cherry Notification Center:
+
+* show full update history
+
+Please ensure the newest features/fixes appear there.
+
+---
+
+10. ADMIN PANEL CLEANUP 📊
+
+A) 🍒 Update Center
+
+Currently shows too many updates.
+
+Please:
+
+* show latest 3 updates
+* add:
+  "Show All"
+
+for older updates.
+
+---
+
+B) ✨ Twin AI Usage → Top Questions
+
+Please:
+
+* show latest 3 questions only
+* add:
+  "Show All"
+
+for the remaining questions.
+
+---
+
+11. ADMIN GROWTH INDICATORS 📈
+
+Please add percentage change indicators under important metrics.
+
+Examples:
+
+Users:
++12% this week
+
+Newsletter:
++8% this month
+
+Retention:
+-4% this week
+
+Requirements:
+
+* green = growth
+* red = decline
+* compare against previous period
+* visible directly on dashboard cards
+
+Suggested metrics:
+
+* signups
+* active users
+* onboarding completion
+* newsletter subscribers
+* premium trials
+* premium conversions
+* Twin AI usage
+* memories created
+* poll participation
+
+Goal:
+
+Allow quick understanding of whether TwinTrack is growing or declining without manually comparing numbers.
+
+💕

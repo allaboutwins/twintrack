@@ -35,6 +35,7 @@ import Stats from "@/pages/Stats";
 import AppScreenshots from "@/pages/AppScreenshots";
 import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
+import DeleteAccount from "@/pages/DeleteAccount";
 import InviteAccept from "@/pages/InviteAccept";
 import { SubscriptionProvider, initializeRevenueCat } from "@/lib/revenuecat";
 import { setAuthTokenGetter } from "@workspace/api-client-react";
@@ -516,6 +517,7 @@ function ClerkProviderWithRoutes() {
               <Route path="/sign-up/*?" component={SignUpPage} />
               <Route path="/privacy" component={Privacy} />
               <Route path="/terms" component={Terms} />
+              <Route path="/delete-account" component={DeleteAccount} />
               <Route path="/dashboard">
                 <RouteErrorBoundary route="dashboard">
                   <ProtectedRoute component={Dashboard} />
