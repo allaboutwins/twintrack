@@ -44,7 +44,7 @@ import insideApr26 from "@assets/Twins_Magazine_Apr._26_Index_1778767835834.png"
 const SOCIAL_LINKS = [
   { name: "Instagram", handle: "@allaboutwins", url: "https://www.instagram.com/allaboutwins", color: "#fff", Icon: FaInstagram, bg: "#E1306C" },
   { name: "YouTube", handle: "All About Twins", url: "https://www.youtube.com/@AllAboutTwins", color: "#fff", Icon: FaYoutube, bg: "#FF0000" },
-  { name: "Facebook", handle: "All About Twins", url: "https://tinyurl.com/m7efnvc8", color: "#fff", Icon: FaFacebook, bg: "#1877F2" },
+  { name: "Facebook", handle: "All About Twins", url: "https://www.facebook.com/profile.php?id=100087793732710", color: "#fff", Icon: FaFacebook, bg: "#1877F2" },
   { name: "TikTok", handle: "@allabouttwins", url: "https://www.tiktok.com/@allabouttwins", color: "#fff", Icon: FaTiktok, bg: "#000000" },
   { name: "Pinterest", handle: "allabout2wins", url: "https://www.pinterest.com/allabout2wins", color: "#fff", Icon: FaPinterest, bg: "#E60023" },
 ];
@@ -65,17 +65,17 @@ function getDayTip() {
 
 // Magazine data — static curated list with real cover + inside images
 const MAGAZINES = [
-  { id: 1,  issue: "Jan / Feb 2024", season: "Winter 2024",  url: "https://tinyurl.com/TMJan2024",  cover: coverJan24,  inside: insideJan24 },
-  { id: 2,  issue: "Apr / May 2024", season: "Spring 2024",  url: "https://tinyurl.com/4axxtxvf",   cover: coverApr24,  inside: insideApr24 },
-  { id: 3,  issue: "Jul / Aug 2024", season: "Summer 2024",  url: "https://tinyurl.com/3f4kj2tz",   cover: coverJul24,  inside: insideJul24 },
-  { id: 4,  issue: "Nov / Dec 2024", season: "Fall 2024",    url: "https://tinyurl.com/ku3uvkjn",   cover: coverNov24,  inside: insideNov24 },
-  { id: 5,  issue: "Jan / Feb 2025", season: "Winter 2025",  url: "https://tinyurl.com/4rcee82w",   cover: coverJan25,  inside: insideJan25 },
-  { id: 6,  issue: "Apr / May 2025", season: "Spring 2025",  url: "https://tinyurl.com/yaf8zm5v",   cover: coverApr25,  inside: insideApr25 },
-  { id: 7,  issue: "Jul / Aug 2025", season: "Summer 2025",  url: "https://tinyurl.com/uy8mx53s",   cover: coverJul25,  inside: insideJul25 },
-  { id: 8,  issue: "Nov / Dec 2025", season: "Fall 2025",    url: "https://tinyurl.com/j4wz9taa",   cover: coverNov25,  inside: insideNov25 },
-  { id: 9,  issue: "Jan / Feb 2026", season: "Winter 2026",  url: "https://tinyurl.com/3962vvbn",   cover: coverJan26,  inside: insideJan26 },
-  { id: 10, issue: "Apr / May 2026", season: "Spring 2026",  url: "https://tinyurl.com/3ujxz5vy",   cover: coverApr26,  inside: insideApr26 },
-  { id: 11, issue: "Jul / Aug 2026", season: "Summer 2026",  url: "https://tinyurl.com/2yd3r8vz",   cover: coverComingSoon, inside: null },
+  { id: 1,  issue: "Jan / Feb 2024", season: "Winter 2024",  url: "https://allaboutwins.com/wp-content/uploads/2024/02/Twins-Magazine-Jan.-24.pdf",                                      cover: coverJan24,       inside: insideJan24 },
+  { id: 2,  issue: "Apr / May 2024", season: "Spring 2024",  url: "https://allaboutwins.com/wp-content/uploads/woocommerce_uploads/2024/03/Twins-Magazine-Apr.-24-bhpoe2.pdf",          cover: coverApr24,       inside: insideApr24 },
+  { id: 3,  issue: "Jul / Aug 2024", season: "Summer 2024",  url: "https://allaboutwins.com/wp-content/uploads/woocommerce_uploads/2024/04/Twins-Magazine-Jul.-24-1d0maz.pdf",          cover: coverJul24,       inside: insideJul24 },
+  { id: 4,  issue: "Nov / Dec 2024", season: "Fall 2024",    url: "https://allaboutwins.com/wp-content/uploads/woocommerce_uploads/2024/04/Twins-Magazine-Nov.-24-pyhwqr.pdf",          cover: coverNov24,       inside: insideNov24 },
+  { id: 5,  issue: "Jan / Feb 2025", season: "Winter 2025",  url: "https://allaboutwins.com/wp-content/uploads/woocommerce_uploads/2024/10/Twins-Magazine-Jan.-2025-stifbi.pdf",        cover: coverJan25,       inside: insideJan25 },
+  { id: 6,  issue: "Apr / May 2025", season: "Spring 2025",  url: "https://allaboutwins.com/wp-content/uploads/woocommerce_uploads/2024/12/Twins-Magazine-Apr.-25-g0fw9n.pdf",          cover: coverApr25,       inside: insideApr25 },
+  { id: 7,  issue: "Jul / Aug 2025", season: "Summer 2025",  url: "https://allaboutwins.com/wp-content/uploads/woocommerce_uploads/2025/03/Twins-Magazine-Jul.-25-3gcpub.pdf",          cover: coverJul25,       inside: insideJul25 },
+  { id: 8,  issue: "Nov / Dec 2025", season: "Fall 2025",    url: "https://allaboutwins.com/wp-content/uploads/woocommerce_uploads/2025/06/Twins-Magazine-Nov.-25--bzyubk.pdf",         cover: coverNov25,       inside: insideNov25 },
+  { id: 9,  issue: "Jan / Feb 2026", season: "Winter 2026",  url: "https://allaboutwins.com/wp-content/uploads/2025/10/Twins-Magazine-January-2026.pdf",                                cover: coverJan26,       inside: insideJan26 },
+  { id: 10, issue: "Apr / May 2026", season: "Spring 2026",  url: "https://allaboutwins.com/wp-content/uploads/woocommerce_uploads/2025/12/Twins-Magazine-Apr.-26-gbqgbx.pdf",          cover: coverApr26,       inside: insideApr26 },
+  { id: 11, issue: "Jul / Aug 2026", season: "Summer 2026",  url: "https://allaboutwins.com/product/twins-magazine-july-2026",                                                           cover: coverComingSoon,  inside: null },
 ] as const;
 
 
