@@ -164,6 +164,8 @@ workflows:
     instance_type: linux_x2
 
     environment:
+      groups:
+        - google_play
       node: 20.19.2
       java: 17
       vars:
