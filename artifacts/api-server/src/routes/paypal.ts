@@ -123,7 +123,12 @@ router.post("/paypal/create-subscription", async (req: Request, res): Promise<vo
     const { userId } = getAuth(req);
     if (!userId) { res.status(401).json({ error: "Unauthorized" }); return; }
 
-    const appUrl = process.env.APP_URL ?? "https://twintrack.allaboutwins.com";
+    // Use the browser's actual origin so PayPal redirects back to wherever the
+    // user is (dev preview or production). Falls back to APP_URL if no Origin
+    // header is present (e.g. server-side or non-browser calls).
+    const productionUrl = process.env.APP_URL ?? "https://twintrack.allaboutwins.com";
+    const requestOrigin = req.headers.origin as string | undefined;
+    const appUrl = requestOrigin ?? productionUrl;
     const token = await getPayPalAccessToken();
     const planId = await getOrCreateBillingPlan(token);
 

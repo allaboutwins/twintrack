@@ -66,8 +66,10 @@ router.post("/caregivers/invite", async (req, res): Promise<void> => {
     .values({ ownerId, caregiverEmail, role, displayName, inviteToken, status: "pending" })
     .returning();
 
-  // Build the invite link — use provided base URL or fall back to the request origin
-  const base = appBaseUrl ?? `${req.protocol}://${req.get("host")}`;
+  // Always use the configured production URL for invite links so caregiver
+  // emails never contain a Replit dev-preview URL (which triggers an interstitial).
+  // Client-provided appBaseUrl is ignored for email purposes.
+  const base = process.env.APP_URL ?? "https://twintrack.allaboutwins.com";
   const inviteLink = `${base}/invite?token=${inviteToken}`;
 
   // Send branded invitation email (non-blocking — failure never blocks the invite creation)
