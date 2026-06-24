@@ -167,20 +167,36 @@ router.post("/paypal/activate", async (req: Request, res): Promise<void> => {
     if (!subscriptionId) { res.status(400).json({ error: "subscriptionId required" }); return; }
 
     const token = await getPayPalAccessToken();
-    const sub = await paypalRequest(`/v1/billing/subscriptions/${subscriptionId}`, "GET", token, undefined) as {
-      id: string;
-      status: string;
-      custom_id: string;
-      plan_id: string;
-    };
 
-    // Security check: ensure this subscription belongs to this user
-    if (sub.custom_id !== userId) {
-      res.status(403).json({ error: "Subscription does not belong to this user" }); return;
+    // Poll for up to 20 seconds — PayPal sandbox (and sometimes live) takes a few seconds
+    // to transition APPROVAL_PENDING → APPROVED after the user clicks "Subscribe Now".
+    type SubResponse = { id: string; status: string; custom_id: string; plan_id: string };
+    let sub: SubResponse | null = null;
+    const MAX_ATTEMPTS = 10;
+    const DELAY_MS = 2000;
+    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+      const fetched = await paypalRequest(
+        `/v1/billing/subscriptions/${subscriptionId}`, "GET", token, undefined
+      ) as SubResponse;
+
+      // Security check on first read — bail immediately if ownership mismatch
+      if (attempt === 1 && fetched.custom_id !== userId) {
+        res.status(403).json({ error: "Subscription does not belong to this user" }); return;
+      }
+
+      if (["ACTIVE", "APPROVED"].includes(fetched.status)) {
+        sub = fetched;
+        break;
+      }
+      if (fetched.status === "APPROVAL_PENDING" && attempt < MAX_ATTEMPTS) {
+        await new Promise((r) => setTimeout(r, DELAY_MS));
+        continue;
+      }
+      // Any other terminal status — fail immediately
+      res.status(400).json({ error: `Subscription status is ${fetched.status} — payment not confirmed` }); return;
     }
-
-    if (!["ACTIVE", "APPROVED"].includes(sub.status)) {
-      res.status(400).json({ error: `Subscription status is ${sub.status} — not yet active` }); return;
+    if (!sub) {
+      res.status(408).json({ error: "PayPal subscription approval timed out — please contact support" }); return;
     }
 
     // Activate premium in user_plans

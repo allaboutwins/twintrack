@@ -35,6 +35,10 @@ function saveCache(data: PlanData): void {
   } catch {}
 }
 
+export function clearPlanCache(): void {
+  try { localStorage.removeItem(CACHE_KEY); } catch {}
+}
+
 function loadCache(): PlanData | null {
   try {
     const raw = localStorage.getItem(CACHE_KEY);

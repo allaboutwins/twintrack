@@ -1,18 +1,26 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useLocation, useSearch } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import { useUser } from "@clerk/react";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { clearPlanCache } from "@/hooks/usePlan";
 
 export default function PayPalSuccess() {
   const [, setLocation] = useLocation();
   const search = useSearch();
   const queryClient = useQueryClient();
   const { user } = useUser();
+  const hasFiredRef = useRef(false);
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [errorMsg, setErrorMsg] = useState("");
 
   useEffect(() => {
+    // Wait until Clerk has resolved the user — prevents double-fire when user goes null→loaded
+    if (!user?.id) return;
+    // Prevent double-activation if the effect re-runs (e.g. React StrictMode, dep changes)
+    if (hasFiredRef.current) return;
+    hasFiredRef.current = true;
+
     const params = new URLSearchParams(search);
     const subscriptionId = params.get("subscription_id");
     if (!subscriptionId) {
@@ -23,6 +31,7 @@ export default function PayPalSuccess() {
 
     (async () => {
       try {
+        // The server polls PayPal up to 20s for APPROVAL_PENDING → APPROVED transition
         const res = await fetch("/api/paypal/activate", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -32,7 +41,10 @@ export default function PayPalSuccess() {
           const d = await res.json() as { error?: string };
           throw new Error(d.error ?? `HTTP ${res.status}`);
         }
-        await queryClient.invalidateQueries({ queryKey: ["plan", user?.id] });
+        // Clear localStorage plan cache so stale "trial" data is not served as fallback
+        clearPlanCache();
+        // Invalidate React Query cache so next usePlan read fetches fresh premium status
+        await queryClient.invalidateQueries({ queryKey: ["plan", user.id] });
         setStatus("success");
         setTimeout(() => setLocation("/dashboard"), 2500);
       } catch (e) {
