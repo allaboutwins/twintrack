@@ -37,6 +37,8 @@ import Privacy from "@/pages/Privacy";
 import Terms from "@/pages/Terms";
 import DeleteAccount from "@/pages/DeleteAccount";
 import InviteAccept from "@/pages/InviteAccept";
+import PayPalSuccess from "@/pages/PayPalSuccess";
+import PayPalCancel from "@/pages/PayPalCancel";
 import { SubscriptionProvider, initializeRevenueCat } from "@/lib/revenuecat";
 import { setAuthTokenGetter } from "@workspace/api-client-react";
 
@@ -588,6 +590,12 @@ function ClerkProviderWithRoutes() {
               </Route>
               <Route path="/app-screenshots" component={AppScreenshots} />
               <Route path="/invite" component={InviteAccept} />
+              <Route path="/paypal/success">
+                <RouteErrorBoundary route="paypal-success">
+                  <ProtectedRoute component={PayPalSuccess} />
+                </RouteErrorBoundary>
+              </Route>
+              <Route path="/paypal/cancel" component={PayPalCancel} />
               <Route component={NotFound} />
             </Switch>
           </PageTransition>

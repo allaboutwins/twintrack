@@ -2,6 +2,7 @@ import { X } from "lucide-react";
 import { usePlan, trackPlanEvent } from "@/hooks/usePlan";
 import { useState, useEffect } from "react";
 import { useSubscription, PREMIUM_ENABLED, type TierKey } from "@/lib/revenuecat";
+import { isNativePlatform } from "@/lib/native";
 
 export type PremiumFeature = "twin_ai" | "caregivers" | "magazine" | "academy" | "memories" | "general";
 
@@ -74,6 +75,27 @@ export default function UpgradeScreen({ open, onClose, feature = "general", sour
   );
   const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [paypalLoading, setPaypalLoading] = useState(false);
+
+  const isWeb = !isNativePlatform();
+
+  async function handlePayPal() {
+    trackPlanEvent("paypal_button_clicked", { feature, tier: selectedTier, source });
+    setPaypalLoading(true);
+    try {
+      const res = await fetch("/api/paypal/create-subscription", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tier: selectedTier }),
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const { approvalUrl } = await res.json() as { approvalUrl: string };
+      window.location.href = approvalUrl;
+    } catch (err) {
+      console.warn("[PayPal] create-subscription error:", err);
+      setPaypalLoading(false);
+    }
+  }
 
   useEffect(() => {
     if (open) {
@@ -279,10 +301,29 @@ export default function UpgradeScreen({ open, onClose, feature = "general", sour
                 {loading || isPurchasing ? "One moment…" : isInTrial ? "💕 Unlock Founding Moms" : "💕 Unlock Premium"}
               </button>
 
+              {isWeb && (
+                <button
+                  onClick={() => { void handlePayPal(); }}
+                  disabled={paypalLoading || loading || isPurchasing}
+                  className="w-full py-3.5 rounded-2xl font-bold text-sm active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2 border-2 border-[#003087] bg-[#FFC439] text-[#003087]"
+                >
+                  {paypalLoading ? (
+                    "Redirecting to PayPal…"
+                  ) : (
+                    <>
+                      <span className="font-extrabold tracking-tight">Pay</span>
+                      <span className="font-extrabold tracking-tight text-[#009cde]">Pal</span>
+                    </>
+                  )}
+                </button>
+              )}
+
               <p className="text-center text-xs text-muted-foreground leading-relaxed">
                 {isInTrial
                   ? "Secure your Founding Moms price before the offer expires."
-                  : "Cancel anytime. Billed through App Store or Google Play."}
+                  : isWeb
+                    ? "Cancel anytime. Pay via App Store, Google Play, or PayPal."
+                    : "Cancel anytime. Billed through App Store or Google Play."}
               </p>
               <p className="text-center text-[11px] text-muted-foreground/60">No pushy sales. Ever. 💕</p>
             </>

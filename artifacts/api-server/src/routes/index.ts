@@ -26,6 +26,7 @@ import caregiversRouter from "./caregivers";
 import communityRouter from "./community";
 import planRouter from "./plan";
 import revenuecatWebhookRouter from "./revenuecat-webhook";
+import paypalRouter from "./paypal";
 import bathRouter from "./bath";
 
 const router: IRouter = Router();
@@ -57,6 +58,7 @@ router.use(caregiversRouter);
 router.use(communityRouter);
 router.use(planRouter);
 router.use(revenuecatWebhookRouter);
+router.use(paypalRouter);
 router.use("/bath", bathRouter);
 
 export default router;

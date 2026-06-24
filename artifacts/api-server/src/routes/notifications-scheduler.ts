@@ -246,10 +246,35 @@ async function processTrialReminders(): Promise<string[]> {
   const now = new Date();
   const appUrl = process.env.APP_URL ?? "https://twintrack.allaboutwins.com";
 
-  const trialUsers = await db
-    .select()
-    .from(userPlansTable)
-    .where(eq(userPlansTable.status, "trial"));
+  // Also pick up users whose trial expired within the last 24h for the day-0 email
+  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const [trialUsers, expiredTodayUsers] = await Promise.all([
+    db.select().from(userPlansTable).where(eq(userPlansTable.status, "trial")),
+    db.select().from(userPlansTable).where(
+      and(eq(userPlansTable.status, "expired"), gte(userPlansTable.trialEndsAt, yesterday))
+    ),
+  ]);
+
+  // Day-0 expiry email for users whose trial just ended
+  for (const user of expiredTodayUsers) {
+    if (!user.userEmail) continue;
+    const alreadySent = (user.trialRemindersSent ?? "").split(",").includes("0");
+    if (alreadySent) continue;
+    const result = await sendTrialReminderEmail({ to: user.userEmail, daysLeft: 0, appUrl });
+    if (result.ok) {
+      const existing = (user.trialRemindersSent ?? "").split(",").filter(Boolean);
+      existing.push("0");
+      await db.update(userPlansTable)
+        .set({ trialRemindersSent: existing.join(","), updatedAt: new Date() })
+        .where(eq(userPlansTable.userId, user.userId));
+      await db.insert(analyticsEventsTable).values({
+        event: "trial_reminder_0d",
+        userId: user.userId,
+        properties: { emailId: result.id, daysLeft: 0 },
+      }).catch(() => {});
+      sent.push(`${user.userId}:0d`);
+    }
+  }
 
   for (const user of trialUsers) {
     if (!user.userEmail) continue;

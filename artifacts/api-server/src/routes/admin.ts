@@ -621,6 +621,145 @@ router.get("/admin/founding-moms/csv", async (req, res): Promise<void> => {
   res.send(csv);
 });
 
+// ── POST /api/admin/extend-trial ─────────────────────────────────────────────
+router.post("/admin/extend-trial", async (req, res): Promise<void> => {
+  if (!isAdminAuth(req)) { res.status(403).json({ error: "Forbidden" }); return; }
+
+  const { userId, days = 7 } = req.body as { userId?: string; days?: number };
+  if (!userId) { res.status(400).json({ error: "userId required" }); return; }
+  if (typeof days !== "number" || days < 1 || days > 365) {
+    res.status(400).json({ error: "days must be 1–365" }); return;
+  }
+
+  const [existing] = await db.select().from(userPlansTable).where(eq(userPlansTable.userId, userId));
+  if (!existing) { res.status(404).json({ error: "User plan not found" }); return; }
+
+  const base = existing.trialEndsAt < new Date() ? new Date() : existing.trialEndsAt;
+  const newTrialEndsAt = new Date(base.getTime() + days * 24 * 60 * 60 * 1000);
+
+  await db.update(userPlansTable)
+    .set({
+      trialEndsAt: newTrialEndsAt,
+      status: "trial",
+      updatedAt: new Date(),
+    })
+    .where(eq(userPlansTable.userId, userId));
+
+  await db.insert(analyticsEventsTable).values({
+    event: "admin_trial_extended",
+    userId,
+    properties: { days, newTrialEndsAt: newTrialEndsAt.toISOString(), extendedBy: "admin" },
+  }).catch(() => {});
+
+  res.json({ ok: true, userId, days, newTrialEndsAt });
+});
+
+// ── POST /api/admin/extend-trial/bulk ─────────────────────────────────────────
+router.post("/admin/extend-trial/bulk", async (req, res): Promise<void> => {
+  if (!isAdminAuth(req)) { res.status(403).json({ error: "Forbidden" }); return; }
+
+  const { cohort, days = 7 } = req.body as { cohort?: "expired" | "ending-7d"; days?: number };
+  if (!cohort || !["expired", "ending-7d"].includes(cohort)) {
+    res.status(400).json({ error: "cohort must be 'expired' or 'ending-7d'" }); return;
+  }
+  if (typeof days !== "number" || days < 1 || days > 365) {
+    res.status(400).json({ error: "days must be 1–365" }); return;
+  }
+
+  const now = new Date();
+  const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  const users = cohort === "expired"
+    ? await db.select().from(userPlansTable).where(eq(userPlansTable.status, "expired"))
+    : await db.select().from(userPlansTable).where(
+        and(eq(userPlansTable.status, "trial"), lte(userPlansTable.trialEndsAt, in7Days))
+      );
+
+  let extended = 0;
+  for (const user of users) {
+    const base = user.trialEndsAt < now ? now : user.trialEndsAt;
+    const newTrialEndsAt = new Date(base.getTime() + days * 24 * 60 * 60 * 1000);
+    await db.update(userPlansTable)
+      .set({ trialEndsAt: newTrialEndsAt, status: "trial", updatedAt: new Date() })
+      .where(eq(userPlansTable.userId, user.userId));
+    await db.insert(analyticsEventsTable).values({
+      event: "admin_trial_extended",
+      userId: user.userId,
+      properties: { days, cohort, newTrialEndsAt: newTrialEndsAt.toISOString(), extendedBy: "admin_bulk" },
+    }).catch(() => {});
+    extended++;
+  }
+
+  res.json({ ok: true, cohort, days, extended });
+});
+
+// ── GET /api/admin/trial-cohorts ─────────────────────────────────────────────
+router.get("/admin/trial-cohorts", async (req, res): Promise<void> => {
+  if (!isAdminAuth(req)) { res.status(403).json({ error: "Forbidden" }); return; }
+
+  const now = new Date();
+  const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  const [expired, endingSoon] = await Promise.all([
+    db.select({
+      userId: userPlansTable.userId,
+      userEmail: userPlansTable.userEmail,
+      trialEndsAt: userPlansTable.trialEndsAt,
+      status: userPlansTable.status,
+      plan: userPlansTable.plan,
+    }).from(userPlansTable)
+      .where(eq(userPlansTable.status, "expired"))
+      .orderBy(desc(userPlansTable.trialEndsAt)),
+
+    db.select({
+      userId: userPlansTable.userId,
+      userEmail: userPlansTable.userEmail,
+      trialEndsAt: userPlansTable.trialEndsAt,
+      status: userPlansTable.status,
+      plan: userPlansTable.plan,
+    }).from(userPlansTable)
+      .where(and(
+        eq(userPlansTable.status, "trial"),
+        lte(userPlansTable.trialEndsAt, in7Days)
+      ))
+      .orderBy(userPlansTable.trialEndsAt),
+  ]);
+
+  res.json({ expired, endingSoon });
+});
+
+// ── GET /api/admin/trial-cohorts/csv ─────────────────────────────────────────
+router.get("/admin/trial-cohorts/csv", async (req, res): Promise<void> => {
+  if (!isAdminAuth(req)) { res.status(403).json({ error: "Forbidden" }); return; }
+
+  const { cohort = "expired" } = req.query as { cohort?: string };
+  const now = new Date();
+  const in7Days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+  const rows = cohort === "ending-7d"
+    ? await db.select().from(userPlansTable)
+        .where(and(eq(userPlansTable.status, "trial"), lte(userPlansTable.trialEndsAt, in7Days)))
+        .orderBy(userPlansTable.trialEndsAt)
+    : await db.select().from(userPlansTable)
+        .where(eq(userPlansTable.status, "expired"))
+        .orderBy(desc(userPlansTable.trialEndsAt));
+
+  const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+  const fmtDate = (d: Date | null) => d ? d.toISOString().replace("T", " ").slice(0, 19) : "";
+
+  const header = ["user_id", "email", "trial_ends_at", "status", "plan", "is_founding_mom", "trial_reminders_sent"];
+  const csvRows = rows.map((r) => [
+    r.userId, r.userEmail ?? "", fmtDate(r.trialEndsAt),
+    r.status, r.plan, r.isFoundingMom ? "yes" : "no", r.trialRemindersSent ?? "",
+  ]);
+
+  const csv = [header, ...csvRows].map((row) => row.map((v) => escape(String(v))).join(",")).join("\n");
+  const dateStr = now.toISOString().split("T")[0];
+  res.setHeader("Content-Type", "text/csv");
+  res.setHeader("Content-Disposition", `attachment; filename="trial-cohort-${cohort}-${dateStr}.csv"`);
+  res.send(csv);
+});
+
 // ── GET /api/admin/feature-adoption ─────────────────────────────────────────
 
 router.get("/admin/feature-adoption", async (req, res): Promise<void> => {

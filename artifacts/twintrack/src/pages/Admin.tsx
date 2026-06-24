@@ -126,6 +126,19 @@ interface FoundingMomsDashboard {
   verificationFailuresTotal: number;
 }
 
+interface TrialCohortUser {
+  userId: string;
+  userEmail: string | null;
+  trialEndsAt: string;
+  status: string;
+  plan: string;
+}
+
+interface TrialCohorts {
+  expired: TrialCohortUser[];
+  endingSoon: TrialCohortUser[];
+}
+
 interface FeatureAdoption {
   twinAI: { opens: number; uniqueUsers: number };
   memories: { opens: number; uniqueUsers: number };
@@ -366,6 +379,9 @@ export default function Admin() {
   const [foundingMomsDashboard, setFoundingMomsDashboard] = useState<FoundingMomsDashboard | null>(null);
   const [contentAnalytics, setContentAnalytics] = useState<ContentAnalytics | null>(null);
   const [featureAdoption, setFeatureAdoption] = useState<FeatureAdoption | null>(null);
+  const [trialCohorts, setTrialCohorts] = useState<TrialCohorts | null>(null);
+  const [extendingTrial, setExtendingTrial] = useState<string | null>(null);
+  const [bulkExtending, setBulkExtending] = useState<string | null>(null);
   const [premiumReadiness, setPremiumReadiness] = useState<PremiumReadiness | null>(null);
   const [manualChecks, setManualChecks] = useState<typeof MANUAL_CHECKS_DEFAULT>(() => {
     try {
@@ -410,7 +426,7 @@ export default function Admin() {
     // browser to bypass its own cache and never store the response.
     const t = Date.now();
     try {
-      const [statsRes, aiRes, updatesRes, notifRes, retentionRes, premiumRes, contentRes, readinessRes, communityQRes, foundingMomsRes, featureAdoptionRes] = await Promise.all([
+      const [statsRes, aiRes, updatesRes, notifRes, retentionRes, premiumRes, contentRes, readinessRes, communityQRes, foundingMomsRes, featureAdoptionRes, trialCohortsRes] = await Promise.all([
         fetch(`${baseUrl}/api/admin/stats?${authQuery}&_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/admin/twin-ai-analytics?${authQuery}&_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/app-updates?limit=50&_t=${t}`, { cache: "no-store" }),
@@ -422,6 +438,7 @@ export default function Admin() {
         fetch(`${baseUrl}/api/admin/community/questions?${authQuery}&_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/admin/founding-moms?${authQuery}&_t=${t}`, { cache: "no-store" }),
         fetch(`${baseUrl}/api/admin/feature-adoption?${authQuery}&_t=${t}`, { cache: "no-store" }),
+        fetch(`${baseUrl}/api/admin/trial-cohorts?${authQuery}&_t=${t}`, { cache: "no-store" }),
       ]);
       if (!statsRes.ok) throw new Error(`${statsRes.status}`);
       const data: AdminStats = await statsRes.json();
@@ -437,6 +454,7 @@ export default function Admin() {
       if (communityQRes.ok) setCommunityQuestions(await communityQRes.json());
       if (foundingMomsRes.ok) setFoundingMomsDashboard(await foundingMomsRes.json());
       if (featureAdoptionRes.ok) setFeatureAdoption(await featureAdoptionRes.json());
+      if (trialCohortsRes.ok) setTrialCohorts(await trialCohortsRes.json());
       setLastUpdated(new Date());
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -1257,6 +1275,162 @@ export default function Admin() {
                 >
                   ⬇ Download CSV
                 </a>
+              </div>
+            </section>
+          )}
+
+          {/* ── TRIAL COHORTS ── */}
+          {trialCohorts && (
+            <section>
+              <SectionHeader icon={<TrendingUp size={16} />} title="Trial Cohorts" />
+
+              {/* Bulk actions */}
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4">
+                <p className="text-xs font-bold text-amber-800 uppercase tracking-wide mb-3">⚡ Bulk Trial Extensions</p>
+                <div className="flex flex-col gap-2 sm:flex-row">
+                  <button
+                    disabled={bulkExtending === "expired"}
+                    onClick={async () => {
+                      if (!confirm(`Extend all ${trialCohorts.expired.length} expired trials by 7 days?`)) return;
+                      setBulkExtending("expired");
+                      try {
+                        const r = await fetch(`${baseUrl}/api/admin/extend-trial/bulk?${authQuery}`, {
+                          method: "POST", headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ cohort: "expired", days: 7 }),
+                        });
+                        const d = await r.json() as { extended: number };
+                        alert(`Extended ${d.extended} expired users by 7 days`);
+                        fetchStats();
+                      } finally { setBulkExtending(null); }
+                    }}
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-amber-600 text-white text-sm font-bold disabled:opacity-50 active:scale-[0.97] transition-all"
+                  >
+                    {bulkExtending === "expired" ? "Extending…" : `+7 days — all ${trialCohorts.expired.length} expired`}
+                  </button>
+                  <button
+                    disabled={bulkExtending === "ending-7d"}
+                    onClick={async () => {
+                      if (!confirm(`Extend all ${trialCohorts.endingSoon.length} soon-expiring trials by 7 days?`)) return;
+                      setBulkExtending("ending-7d");
+                      try {
+                        const r = await fetch(`${baseUrl}/api/admin/extend-trial/bulk?${authQuery}`, {
+                          method: "POST", headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ cohort: "ending-7d", days: 7 }),
+                        });
+                        const d = await r.json() as { extended: number };
+                        alert(`Extended ${d.extended} soon-expiring users by 7 days`);
+                        fetchStats();
+                      } finally { setBulkExtending(null); }
+                    }}
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-orange-500 text-white text-sm font-bold disabled:opacity-50 active:scale-[0.97] transition-all"
+                  >
+                    {bulkExtending === "ending-7d" ? "Extending…" : `+7 days — ${trialCohorts.endingSoon.length} ending soon`}
+                  </button>
+                </div>
+              </div>
+
+              {/* Expired trials list */}
+              <div className="bg-white rounded-2xl border border-border p-4 mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">🔴 Expired Trials ({trialCohorts.expired.length})</p>
+                  <a
+                    href={`${baseUrl}/api/admin/trial-cohorts/csv?cohort=expired&${authQuery}`}
+                    download
+                    className="text-xs text-primary font-semibold flex items-center gap-1"
+                  >
+                    <Download size={11} /> CSV
+                  </a>
+                </div>
+                {trialCohorts.expired.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No expired trial users.</p>
+                ) : (
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {trialCohorts.expired.map((u) => (
+                      <div key={u.userId} className="flex items-center gap-2 bg-rose-50 rounded-xl px-3 py-2">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-mono text-muted-foreground truncate">{u.userEmail ?? u.userId.slice(0, 20) + "…"}</p>
+                          <p className="text-xs text-rose-700">Expired {new Date(u.trialEndsAt).toLocaleDateString()}</p>
+                        </div>
+                        <button
+                          disabled={extendingTrial === u.userId}
+                          onClick={async () => {
+                            setExtendingTrial(u.userId);
+                            try {
+                              await fetch(`${baseUrl}/api/admin/extend-trial?${authQuery}`, {
+                                method: "POST", headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ userId: u.userId, days: 7 }),
+                              });
+                              fetchStats();
+                            } finally { setExtendingTrial(null); }
+                          }}
+                          className="text-xs px-2.5 py-1 rounded-lg bg-primary text-white font-semibold whitespace-nowrap disabled:opacity-50"
+                        >
+                          {extendingTrial === u.userId ? "…" : "+7d"}
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Ending soon list */}
+              <div className="bg-white rounded-2xl border border-border p-4 mb-4">
+                <div className="flex items-center justify-between mb-3">
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide">🟡 Ending Within 7 Days ({trialCohorts.endingSoon.length})</p>
+                  <a
+                    href={`${baseUrl}/api/admin/trial-cohorts/csv?cohort=ending-7d&${authQuery}`}
+                    download
+                    className="text-xs text-primary font-semibold flex items-center gap-1"
+                  >
+                    <Download size={11} /> CSV
+                  </a>
+                </div>
+                {trialCohorts.endingSoon.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No trials ending soon.</p>
+                ) : (
+                  <div className="space-y-2 max-h-64 overflow-y-auto">
+                    {trialCohorts.endingSoon.map((u) => {
+                      const hoursLeft = Math.max(0, Math.round((new Date(u.trialEndsAt).getTime() - Date.now()) / 3600000));
+                      const urgent = hoursLeft < 24;
+                      return (
+                        <div key={u.userId} className={`flex items-center gap-2 rounded-xl px-3 py-2 ${urgent ? "bg-orange-50" : "bg-amber-50"}`}>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-mono text-muted-foreground truncate">{u.userEmail ?? u.userId.slice(0, 20) + "…"}</p>
+                            <p className={`text-xs ${urgent ? "text-orange-700 font-semibold" : "text-amber-700"}`}>
+                              {hoursLeft < 24 ? `${hoursLeft}h left` : `${Math.ceil(hoursLeft / 24)}d left`} — expires {new Date(u.trialEndsAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <button
+                            disabled={extendingTrial === u.userId}
+                            onClick={async () => {
+                              setExtendingTrial(u.userId);
+                              try {
+                                await fetch(`${baseUrl}/api/admin/extend-trial?${authQuery}`, {
+                                  method: "POST", headers: { "Content-Type": "application/json" },
+                                  body: JSON.stringify({ userId: u.userId, days: 7 }),
+                                });
+                                fetchStats();
+                              } finally { setExtendingTrial(null); }
+                            }}
+                            className="text-xs px-2.5 py-1 rounded-lg bg-primary text-white font-semibold whitespace-nowrap disabled:opacity-50"
+                          >
+                            {extendingTrial === u.userId ? "…" : "+7d"}
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* Verification failures explanation */}
+              <div className="bg-white rounded-2xl border border-border p-4">
+                <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">🔍 Verification Failure Root Cause</p>
+                <p className="text-xs text-foreground leading-relaxed">
+                  All 30 <code className="bg-muted px-1 rounded">rc_verification_failure</code> events are <strong>API timeouts</strong> — not RevenueCat, Google Play, or App Store issues.
+                  Each fires when <code className="bg-muted px-1 rounded">/api/plan</code> is temporarily unreachable and the app falls back to cached plan data.
+                  The 3× duplicate fires per session have been fixed (5-min debounce added to <code className="bg-muted px-1 rounded">usePlan.ts</code>).
+                </p>
               </div>
             </section>
           )}

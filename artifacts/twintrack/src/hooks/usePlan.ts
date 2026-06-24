@@ -70,9 +70,13 @@ export function usePlan() {
   const verificationFailed = query.isError && cachedData === null;
 
   const loggedRef = useRef(false);
+  const lastLoggedRef = useRef(0);
   useEffect(() => {
-    if (isUsingCachedPlan && !loggedRef.current) {
+    const now = Date.now();
+    const FIVE_MIN = 5 * 60 * 1000;
+    if (isUsingCachedPlan && !loggedRef.current && (now - lastLoggedRef.current > FIVE_MIN)) {
       loggedRef.current = true;
+      lastLoggedRef.current = now;
       trackPlanEvent("rc_verification_failure", {
         reason: "api_fetch_failed",
         fromCache: true,

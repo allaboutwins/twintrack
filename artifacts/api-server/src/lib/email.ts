@@ -86,13 +86,20 @@ function buildTrialReminderHtml(p: TrialReminderParams): { subject: string; html
     body =
       "Your free trial ends in <strong>3 days</strong>. After that, the special $39/year price disappears and annual pricing becomes $49/year. Lock it in now — it stays $39 forever.";
     urgency = "3 days remaining";
-  } else {
+  } else if (p.daysLeft === 1) {
     subject = "Your Founding Moms offer ends tomorrow 💕";
     headlineEmoji = "💕";
     headline = "Your Founding Moms offer<br/>ends tomorrow";
     body =
       "Your free trial ends <strong>tomorrow</strong>. We'd love to keep you as a Founding Mom — lock in your $39/year rate before it slips away. After tomorrow, annual pricing goes back to $49/year.";
     urgency = "Last day · Founding Moms rate";
+  } else {
+    subject = "Your TwinTrack trial has ended — keep going for $39/year 💕";
+    headlineEmoji = "💝";
+    headline = "Your free trial has ended.<br/>We'd love to keep you.";
+    body =
+      "Your 14-day TwinTrack trial is over. Your sleep, feeding, and diaper tracking stays — but premium features like Twin AI and the Magazine are now locked. Unlock everything for just <strong>$39/year as a Founding Mom</strong>.";
+    urgency = "Trial ended · Founding Moms rate still available";
   }
 
   const benefits = [
