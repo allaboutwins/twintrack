@@ -56,15 +56,31 @@ async function paypalRequest(
   return text ? JSON.parse(text) : {};
 }
 
-// Cache the billing plan ID so we don't recreate it every time
+// Runtime cache (cleared on restart — always backed by env or PayPal list lookup)
 let cachedPlanId: string | null = null;
 
 async function getOrCreateBillingPlan(token: string): Promise<string> {
+  // 1. Pinned via env var — fastest path, set this after first run
+  if (process.env.PAYPAL_BILLING_PLAN_ID) {
+    cachedPlanId = process.env.PAYPAL_BILLING_PLAN_ID;
+    return cachedPlanId;
+  }
+
+  // 2. In-memory cache from this server instance
   if (cachedPlanId) return cachedPlanId;
 
-  const appUrl = process.env.APP_URL ?? "https://twintrack.allaboutwins.com";
+  // 3. Look up existing active plans on PayPal to avoid creating duplicates on restart
+  const existing = await paypalRequest("/v1/billing/plans?page_size=20&status=ACTIVE", "GET", token, undefined) as {
+    plans?: { id: string; name: string }[];
+  };
+  const found = existing.plans?.find((p) => p.name === PLAN_NAME);
+  if (found) {
+    cachedPlanId = found.id;
+    return cachedPlanId;
+  }
 
-  // 1. Create a product (idempotent by name — PayPal deduplicates by product_id if passed)
+  // 4. First-ever run: create product + plan
+  const appUrl = process.env.APP_URL ?? "https://twintrack.allaboutwins.com";
   const product = await paypalRequest("/v1/catalogs/products", "POST", token, {
     name: "TwinTrack Premium",
     description: "Premium access to TwinTrack — the all-in-one app for twin parents.",
@@ -73,7 +89,6 @@ async function getOrCreateBillingPlan(token: string): Promise<string> {
     home_url: appUrl,
   }) as { id: string };
 
-  // 2. Create the billing plan
   const plan = await paypalRequest("/v1/billing/plans", "POST", token, {
     product_id: product.id,
     name: PLAN_NAME,
@@ -205,6 +220,35 @@ router.post("/paypal/activate", async (req: Request, res): Promise<void> => {
 // ── POST /api/paypal/webhook ──────────────────────────────────────────────────
 // Handles PayPal subscription lifecycle webhooks (renewal, cancellation, suspension).
 router.post("/paypal/webhook", async (req, res): Promise<void> => {
+  // Verify PayPal signature if PAYPAL_WEBHOOK_ID is configured
+  const webhookId = process.env.PAYPAL_WEBHOOK_ID;
+  if (webhookId) {
+    try {
+      const token = await getPayPalAccessToken();
+      const verification = await paypalRequest(
+        "/v1/notifications/verify-webhook-signature",
+        "POST",
+        token,
+        {
+          auth_algo: req.headers["paypal-auth-algo"],
+          cert_url: req.headers["paypal-cert-url"],
+          transmission_id: req.headers["paypal-transmission-id"],
+          transmission_sig: req.headers["paypal-transmission-sig"],
+          transmission_time: req.headers["paypal-transmission-time"],
+          webhook_id: webhookId,
+          webhook_event: req.body,
+        }
+      ) as { verification_status: string };
+      if (verification.verification_status !== "SUCCESS") {
+        res.status(400).json({ error: "Invalid PayPal webhook signature" });
+        return;
+      }
+    } catch {
+      res.status(400).json({ error: "Webhook signature check failed" });
+      return;
+    }
+  }
+
   try {
     const event = req.body as {
       event_type: string;
