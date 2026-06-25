@@ -16,6 +16,8 @@ import {
   type UserPlan,
 } from "@workspace/db";
 import { backfillOnboardingRows, type OnboardingRowData } from "../sheets";
+import { clerkClient } from "@clerk/express";
+import { sendPayPalAnnouncementEmail } from "../lib/email.js";
 import type { Request } from "express";
 
 const router: IRouter = Router();
@@ -798,6 +800,74 @@ router.get("/admin/feature-adoption", async (req, res): Promise<void> => {
       byFeature: spotlightByFeature.map((r) => ({ feature: r.key ?? "unknown", count: Number(r.c) })),
     },
   });
+});
+
+// ── POST /admin/paypal-announcement ──────────────────────────────────────────
+// Sends the PayPal launch announcement email to all active trial users.
+// Pass { testEmail } to send a preview to a single address instead.
+router.post("/admin/paypal-announcement", async (req: Request, res): Promise<void> => {
+  if (!isAdminAuth(req)) { res.status(403).json({ error: "Forbidden" }); return; }
+
+  const { testEmail } = req.body as { testEmail?: string };
+  const APP_URL = process.env.APP_URL ?? "https://twintrack.allaboutwins.com";
+
+  try {
+    if (testEmail) {
+      // Preview mode — send to the provided email with sample content
+      const result = await sendPayPalAnnouncementEmail({
+        to: testEmail,
+        trialExtended: true,
+        newTrialEndDate: new Date(Date.now() + 14 * 86400000).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
+        appUrl: APP_URL,
+      });
+      req.log.info({ testEmail, result }, "admin: paypal-announcement preview sent");
+      res.json({ mode: "preview", testEmail, result });
+      return;
+    }
+
+    // Broadcast mode — fetch all active trial users from DB then get emails from Clerk
+    const trialUsers = await db
+      .select({ userId: userPlansTable.userId, trialEndsAt: userPlansTable.trialEndsAt, updatedAt: userPlansTable.updatedAt })
+      .from(userPlansTable)
+      .where(and(eq(userPlansTable.plan, "free"), eq(userPlansTable.status, "trial")));
+
+    const results: { userId: string; email: string; ok: boolean; error?: string }[] = [];
+    const sevenDaysFromNow = new Date(Date.now() + 7 * 86400000);
+
+    for (const row of trialUsers) {
+      try {
+        const clerkUser = await clerkClient.users.getUser(row.userId);
+        const email = clerkUser.emailAddresses[0]?.emailAddress;
+        if (!email) { results.push({ userId: row.userId, email: "(none)", ok: false, error: "no email on Clerk account" }); continue; }
+
+        // Was this trial recently extended? (updated in the last 24h and trialEndsAt was bumped)
+        const recentlyExtended = (Date.now() - new Date(row.updatedAt ?? 0).getTime()) < 86400000;
+
+        const emailResult = await sendPayPalAnnouncementEmail({
+          to: email,
+          trialExtended: recentlyExtended,
+          newTrialEndDate: new Date(row.trialEndsAt ?? sevenDaysFromNow).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
+          appUrl: APP_URL,
+        });
+        results.push({ userId: row.userId, email, ok: emailResult.ok, error: emailResult.error });
+
+        await db.insert(analyticsEventsTable).values({
+          event: "paypal_announcement_email_sent",
+          userId: row.userId,
+          properties: { email, trialExtended: recentlyExtended },
+        }).catch(() => {});
+      } catch (err) {
+        results.push({ userId: row.userId, email: "(error)", ok: false, error: err instanceof Error ? err.message : String(err) });
+      }
+    }
+
+    req.log.info({ sent: results.filter((r) => r.ok).length, failed: results.filter((r) => !r.ok).length }, "admin: paypal-announcement broadcast complete");
+    res.json({ mode: "broadcast", total: trialUsers.length, results });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    req.log.error({ err: msg }, "admin: paypal-announcement failed");
+    res.status(500).json({ error: msg });
+  }
 });
 
 export default router;

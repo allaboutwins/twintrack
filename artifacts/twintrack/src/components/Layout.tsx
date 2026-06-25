@@ -8,6 +8,7 @@ import NotificationCenter from "@/components/NotificationCenter";
 import InstallPrompt from "@/components/InstallPrompt";
 import OfflineBanner from "@/components/OfflineBanner";
 import SubscriptionSafetyBanner from "@/components/SubscriptionSafetyBanner";
+import PayPalAnnouncementBanner from "@/components/PayPalAnnouncementBanner";
 import FoundingMomsButton from "@/components/FoundingMomsButton";
 import { useAppPrefs } from "@/hooks/useAppPrefs";
 import { posthog } from "@/lib/posthog";
@@ -222,6 +223,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </div>
+
+      <PayPalAnnouncementBanner />
 
       {/* Scrollable content area — min-h-0 is required for flex children to shrink below content height */}
       <main className="flex-1 min-h-0 overflow-y-auto">{children}</main>

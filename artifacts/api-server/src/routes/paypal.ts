@@ -171,6 +171,8 @@ router.post("/paypal/activate", async (req: Request, res): Promise<void> => {
     const { subscriptionId } = req.body as { subscriptionId?: string };
     if (!subscriptionId) { res.status(400).json({ error: "subscriptionId required" }); return; }
 
+    req.log.info({ userId, subscriptionId }, "paypal_activate: starting");
+
     const token = await getPayPalAccessToken();
 
     // Poll for up to 20 seconds — PayPal sandbox (and sometimes live) takes a few seconds
@@ -184,8 +186,11 @@ router.post("/paypal/activate", async (req: Request, res): Promise<void> => {
         `/v1/billing/subscriptions/${subscriptionId}`, "GET", token, undefined
       ) as SubResponse;
 
+      req.log.info({ userId, subscriptionId, attempt, paypalStatus: fetched.status }, "paypal_activate: poll");
+
       // Security check on first read — bail immediately if ownership mismatch
       if (attempt === 1 && fetched.custom_id !== userId) {
+        req.log.warn({ userId, subscriptionId, customId: fetched.custom_id }, "paypal_activate: ownership mismatch");
         res.status(403).json({ error: "Subscription does not belong to this user" }); return;
       }
 
@@ -198,9 +203,11 @@ router.post("/paypal/activate", async (req: Request, res): Promise<void> => {
         continue;
       }
       // Any other terminal status — fail immediately
+      req.log.error({ userId, subscriptionId, paypalStatus: fetched.status }, "paypal_activate: terminal non-active status");
       res.status(400).json({ error: `Subscription status is ${fetched.status} — payment not confirmed` }); return;
     }
     if (!sub) {
+      req.log.error({ userId, subscriptionId }, "paypal_activate: polling timed out after max attempts");
       res.status(408).json({ error: "PayPal subscription approval timed out — please contact support" }); return;
     }
 
@@ -219,6 +226,8 @@ router.post("/paypal/activate", async (req: Request, res): Promise<void> => {
       })
       .where(eq(userPlansTable.userId, userId));
 
+    req.log.info({ userId, subscriptionId, planId: sub.plan_id, paypalStatus: sub.status }, "paypal_activate: success — premium activated");
+
     await db.insert(analyticsEventsTable).values({
       event: "paypal_subscription_activated",
       userId,
@@ -234,6 +243,7 @@ router.post("/paypal/activate", async (req: Request, res): Promise<void> => {
     res.json({ ok: true, plan: "premium", status: "active", isFoundingMom: true, billingSource: "paypal" });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
+    req.log.error({ err: msg }, "paypal_activate: unhandled error");
     res.status(500).json({ error: msg });
   }
 });
@@ -285,6 +295,8 @@ router.post("/paypal/webhook", async (req, res): Promise<void> => {
     const userId = resource.custom_id;
     const subscriptionId = resource.id;
 
+    req.log.info({ event_type, userId, subscriptionId }, "paypal_webhook: received");
+
     if (!userId) { res.status(200).json({ received: true }); return; }
 
     const now = new Date();
@@ -295,6 +307,7 @@ router.post("/paypal/webhook", async (req, res): Promise<void> => {
         await db.update(userPlansTable)
           .set({ plan: "premium", status: "active", updatedAt: now })
           .where(eq(userPlansTable.userId, userId));
+        req.log.info({ userId, subscriptionId, event_type }, "paypal_webhook: subscription renewed — plan kept active");
         await db.insert(analyticsEventsTable).values({
           event: "paypal_subscription_renewed",
           userId,
@@ -307,6 +320,7 @@ router.post("/paypal/webhook", async (req, res): Promise<void> => {
         await db.update(userPlansTable)
           .set({ status: "cancelled", updatedAt: now })
           .where(eq(userPlansTable.userId, userId));
+        req.log.warn({ userId, subscriptionId, event_type }, "paypal_webhook: subscription cancelled/suspended");
         await db.insert(analyticsEventsTable).values({
           event: "paypal_subscription_cancelled",
           userId,
@@ -318,17 +332,22 @@ router.post("/paypal/webhook", async (req, res): Promise<void> => {
         await db.update(userPlansTable)
           .set({ plan: "free", status: "expired", updatedAt: now })
           .where(eq(userPlansTable.userId, userId));
+        req.log.warn({ userId, subscriptionId, event_type }, "paypal_webhook: subscription expired — plan downgraded");
         await db.insert(analyticsEventsTable).values({
           event: "paypal_subscription_expired",
           userId,
           properties: { subscriptionId, event_type },
         }).catch(() => {});
         break;
+
+      default:
+        req.log.info({ event_type, userId, subscriptionId }, "paypal_webhook: unhandled event type — no DB action");
     }
 
     res.status(200).json({ received: true });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
+    req.log.error({ err: msg }, "paypal_webhook: unhandled error");
     res.status(500).json({ error: msg });
   }
 });
