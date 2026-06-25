@@ -1,6 +1,7 @@
 import app from "./app";
 import { logger } from "./lib/logger";
 import { startCampaignScheduler } from "./lib/campaign-scheduler.js";
+import { startNotificationScheduler } from "./routes/notifications-scheduler.js";
 
 const rawPort = process.env["PORT"];
 
@@ -24,4 +25,5 @@ app.listen(port, (err) => {
 
   logger.info({ port }, "Server listening");
   startCampaignScheduler();
+  startNotificationScheduler();
 });

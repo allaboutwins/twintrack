@@ -16,6 +16,7 @@ import {
 } from "@workspace/db";
 import { sendPushToUser } from "./push";
 import { sendTrialReminderEmail } from "../lib/email";
+import { logger } from "../lib/logger.js";
 
 const router: IRouter = Router();
 
@@ -315,6 +316,43 @@ async function processTrialReminders(): Promise<string[]> {
   }
 
   return sent;
+}
+
+// ── Internal scheduler (called from server startup) ───────────────────────
+
+async function runScheduledTasks(): Promise<void> {
+  if (isQuietHours()) return;
+  try {
+    const subs = await db.select({ userId: pushSubscriptionsTable.userId }).from(pushSubscriptionsTable);
+    const uniqueUsers = [...new Set(subs.map((s) => s.userId))];
+    await Promise.all(uniqueUsers.map((uid) => processUser(uid).catch(() => null)));
+  } catch (err) {
+    logger.error({ err }, "notification-scheduler: push error");
+  }
+  try {
+    const sent = await processTrialReminders();
+    if (sent.length > 0) {
+      logger.info({ sent }, "notification-scheduler: trial reminders sent");
+    }
+  } catch (err) {
+    logger.error({ err }, "notification-scheduler: trial reminder error");
+  }
+}
+
+export function startNotificationScheduler(): void {
+  const HOUR_MS = 60 * 60 * 1000;
+  const schedule = () => setTimeout(async () => {
+    await runScheduledTasks();
+    schedule();
+  }, HOUR_MS);
+
+  // First run 5 min after startup (let server fully warm up)
+  setTimeout(async () => {
+    await runScheduledTasks();
+    schedule();
+  }, 5 * 60 * 1000);
+
+  logger.info("notification-scheduler: started (hourly, quiet hours 10pm–7am UTC)");
 }
 
 // ── Admin endpoint to manually trigger smart notifications ────────────────

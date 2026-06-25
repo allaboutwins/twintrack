@@ -13,6 +13,7 @@ import {
   videoNotesTable,
   analyticsEventsTable,
   userPlansTable,
+  userHeartbeatsTable,
   type UserPlan,
 } from "@workspace/db";
 import { backfillOnboardingRows, type OnboardingRowData } from "../sheets";
@@ -966,6 +967,126 @@ router.post("/admin/campaign-announcement", async (req: Request, res): Promise<v
     const msg = err instanceof Error ? err.message : String(err);
     req.log.error({ err: msg }, "admin: campaign broadcast failed");
     res.status(500).json({ error: msg });
+  }
+});
+
+// ── Beta backfill ─────────────────────────────────────────────────────────────
+// Users who completed onboarding + have heartbeat activity but no user_plans row.
+// billingSource = 'beta_backfill' tags every inserted row for clean rollback.
+
+async function getBetaCandidates() {
+  const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
+  const cutoff = new Date(Date.now() - THIRTY_DAYS_MS);
+
+  const [existingPlanIds, candidates] = await Promise.all([
+    db.select({ userId: userPlansTable.userId }).from(userPlansTable),
+    db
+      .select({
+        userId: onboardingTable.userId,
+        email: onboardingTable.email,
+        lastSeen: userHeartbeatsTable.lastSeen,
+        signupDate: onboardingTable.createdAt,
+      })
+      .from(onboardingTable)
+      .innerJoin(userHeartbeatsTable, eq(onboardingTable.userId, userHeartbeatsTable.userId))
+      .where(gte(userHeartbeatsTable.lastSeen, cutoff)),
+  ]);
+
+  const inPlanSet = new Set(existingPlanIds.map((r) => r.userId));
+  return candidates.filter((u) => !inPlanSet.has(u.userId));
+}
+
+// GET /admin/beta-backfill-preview — show who will be affected, no writes
+router.get("/admin/beta-backfill-preview", async (req: Request, res): Promise<void> => {
+  if (!isAdminAuth(req)) { res.status(403).json({ error: "Forbidden" }); return; }
+  try {
+    const candidates = await getBetaCandidates();
+    const trialEndsAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    res.json({
+      count: candidates.length,
+      trialLengthDays: 30,
+      trialEndsAt: trialEndsAt.toISOString(),
+      billingSource: "beta_backfill",
+      reversibleWith: "POST /admin/beta-backfill-rollback",
+      users: candidates.map((u) => ({
+        userId: u.userId,
+        email: u.email ?? null,
+        lastSeen: u.lastSeen.toISOString(),
+        originalSignupDate: u.signupDate.toISOString(),
+      })),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+// POST /admin/beta-backfill-execute — create 30-day trials for all beta candidates
+router.post("/admin/beta-backfill-execute", async (req: Request, res): Promise<void> => {
+  if (!isAdminAuth(req)) { res.status(403).json({ error: "Forbidden" }); return; }
+  try {
+    const candidates = await getBetaCandidates();
+    if (candidates.length === 0) {
+      res.json({ inserted: 0, message: "No eligible beta users found — nothing to do." });
+      return;
+    }
+
+    const now = new Date();
+    const trialEndsAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000);
+
+    const inserted = await db
+      .insert(userPlansTable)
+      .values(
+        candidates.map((u) => ({
+          userId: u.userId,
+          userEmail: u.email ?? null,
+          plan: "free" as const,
+          status: "trial" as const,
+          trialStartedAt: now,
+          trialEndsAt,
+          billingSource: "beta_backfill",
+        })),
+      )
+      .onConflictDoNothing()
+      .returning({ userId: userPlansTable.userId });
+
+    await db.insert(analyticsEventsTable).values({
+      event: "beta_backfill_executed",
+      properties: { count: inserted.length, trialEndsAt: trialEndsAt.toISOString() },
+    }).catch(() => {});
+
+    res.json({
+      inserted: inserted.length,
+      trialEndsAt: trialEndsAt.toISOString(),
+      message: `${inserted.length} beta users now have 30-day trials. Rollback: POST /admin/beta-backfill-rollback`,
+      insertedUserIds: inserted.map((r) => r.userId),
+    });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+// POST /admin/beta-backfill-rollback — remove all rows tagged billingSource='beta_backfill'
+router.post("/admin/beta-backfill-rollback", async (req: Request, res): Promise<void> => {
+  if (!isAdminAuth(req)) { res.status(403).json({ error: "Forbidden" }); return; }
+  try {
+    const deleted = await db
+      .delete(userPlansTable)
+      .where(eq(userPlansTable.billingSource, "beta_backfill"))
+      .returning({ userId: userPlansTable.userId });
+
+    await db.insert(analyticsEventsTable).values({
+      event: "beta_backfill_rolled_back",
+      properties: { count: deleted.length },
+    }).catch(() => {});
+
+    res.json({
+      deleted: deleted.length,
+      message: deleted.length > 0
+        ? `Removed ${deleted.length} beta_backfill trial records.`
+        : "Nothing to roll back — no beta_backfill records found.",
+    });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
   }
 });
 
