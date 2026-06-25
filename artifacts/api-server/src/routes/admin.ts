@@ -18,6 +18,7 @@ import {
 import { backfillOnboardingRows, type OnboardingRowData } from "../sheets";
 import { clerkClient } from "@clerk/express";
 import { sendPayPalAnnouncementEmail, type PayPalSubjectVariant, sendCampaignBatch } from "../lib/email.js";
+import { campaignEmailsTable } from "@workspace/db";
 import { getUnsubToken } from "./unsubscribe.js";
 import { emailUnsubscribesTable } from "@workspace/db";
 import type { Request } from "express";
@@ -964,6 +965,44 @@ router.post("/admin/campaign-announcement", async (req: Request, res): Promise<v
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     req.log.error({ err: msg }, "admin: campaign broadcast failed");
+    res.status(500).json({ error: msg });
+  }
+});
+
+// ── Campaign report ───────────────────────────────────────────────────────────
+// GET /admin/campaign-report?adminPassword=<pw>&campaignId=paypal_announcement_june_2026
+router.get("/admin/campaign-report", async (req: Request, res): Promise<void> => {
+  if (!isAdminAuth(req)) { res.status(403).json({ error: "Forbidden" }); return; }
+
+  const campaignId = (req.query.campaignId as string) ?? "paypal_announcement_june_2026";
+
+  try {
+    const [sentRows, pendingRows, failedRows] = await Promise.all([
+      db.select({ props: analyticsEventsTable.properties })
+        .from(analyticsEventsTable)
+        .where(eq(analyticsEventsTable.event, campaignId)),
+      db.select({ email: campaignEmailsTable.email })
+        .from(campaignEmailsTable)
+        .where(and(eq(campaignEmailsTable.campaignId, campaignId), eq(campaignEmailsTable.status, "pending"))),
+      db.select({ email: campaignEmailsTable.email })
+        .from(campaignEmailsTable)
+        .where(and(eq(campaignEmailsTable.campaignId, campaignId), eq(campaignEmailsTable.status, "failed"))),
+    ]);
+
+    const unsubCount = await db.select({ email: emailUnsubscribesTable.email }).from(emailUnsubscribesTable);
+
+    res.json({
+      campaignId,
+      delivered: sentRows.length,
+      pendingUnsent: pendingRows.length,
+      failed: failedRows.length,
+      unsubscribes: unsubCount.length,
+      note: "Opens and clicks are available in the Resend dashboard (resend.com). Webhook integration needed for real-time tracking here.",
+      pendingAddresses: pendingRows.map(r => r.email),
+      failedAddresses: failedRows.map(r => r.email),
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
     res.status(500).json({ error: msg });
   }
 });

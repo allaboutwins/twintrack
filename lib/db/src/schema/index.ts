@@ -19,3 +19,4 @@ export * from "./user-plans";
 export * from "./analytics-events";
 export * from "./bath";
 export * from "./email-unsubscribes";
+export * from "./campaign-emails";
