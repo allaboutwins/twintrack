@@ -40,6 +40,58 @@ async function sendEmail(params: {
   return { ok: true, id: data?.id };
 }
 
+export interface BatchCampaignEntry {
+  email: string;
+  unsubUrl: string;
+}
+
+export interface BatchCampaignResult {
+  email: string;
+  ok: boolean;
+  id?: string;
+  error?: string;
+}
+
+/**
+ * Send campaign announcement emails in batches of 100 (Resend batch API).
+ * One API call per 100 recipients — safely under all rate limits.
+ */
+export async function sendCampaignBatch(
+  entries: BatchCampaignEntry[],
+  appUrl: string,
+): Promise<BatchCampaignResult[]> {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) return entries.map(e => ({ email: e.email, ok: false, error: "RESEND_API_KEY not configured" }));
+  const resend = new Resend(apiKey);
+
+  const subject = "💕 TwinTrack Just Got Easier - PayPal Is Now Available";
+  const results: BatchCampaignResult[] = [];
+
+  const BATCH_SIZE = 100;
+  for (let i = 0; i < entries.length; i += BATCH_SIZE) {
+    const slice = entries.slice(i, i + BATCH_SIZE);
+    const payload = slice.map(({ email, unsubUrl }) => ({
+      from: SENDER,
+      to: email,
+      subject,
+      html: buildCampaignAnnouncementHtml({ to: email, unsubUrl, appUrl }),
+    }));
+
+    const { data, error } = await resend.batch.send(payload);
+    if (error) {
+      slice.forEach(e => results.push({ email: e.email, ok: false, error: error.message }));
+    } else {
+      const ids: Array<{ id: string }> = (data as unknown as { data: Array<{ id: string }> })?.data ?? [];
+      slice.forEach((e, idx) => results.push({ email: e.email, ok: true, id: ids[idx]?.id }));
+    }
+
+    // 600 ms between batches keeps well under 5 req/s
+    if (i + BATCH_SIZE < entries.length) await new Promise(r => setTimeout(r, 600));
+  }
+
+  return results;
+}
+
 export async function sendCaregiverInvite(params: CaregiverInviteParams): Promise<EmailResult> {
   try {
     return await sendEmail({
@@ -267,6 +319,8 @@ function buildCampaignAnnouncementHtml(p: CampaignAnnouncementParams): string {
   <title>TwinTrack Just Got Easier 💕</title>
 </head>
 <body style="margin:0;padding:0;background:#fdf8ff;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#1a1a2e;">
+  <!-- Preheader: shown in inbox list view before the subject line -->
+  <div style="display:none;max-height:0;overflow:hidden;mso-hide:all;">TwinTrack just got easier. PayPal is now available.&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;</div>
   <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#fdf8ff;padding:40px 16px;">
     <tr>
       <td align="center">
@@ -277,7 +331,7 @@ function buildCampaignAnnouncementHtml(p: CampaignAnnouncementParams): string {
           <tr>
             <td style="background:linear-gradient(135deg,#e91e8c 0%,#9c27b0 100%);padding:48px 32px 40px;text-align:center;">
               <div style="margin-bottom:12px;font-size:52px;line-height:1;">💕</div>
-              <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,0.8);">TwinTrack — All About Twins</p>
+              <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,0.8);">All About Twins</p>
               <h1 style="margin:0;font-size:26px;font-weight:800;color:#ffffff;line-height:1.4;">
                 TwinTrack just got easier.<br/>PayPal is now available.
               </h1>

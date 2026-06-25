@@ -17,7 +17,7 @@ import {
 } from "@workspace/db";
 import { backfillOnboardingRows, type OnboardingRowData } from "../sheets";
 import { clerkClient } from "@clerk/express";
-import { sendPayPalAnnouncementEmail, type PayPalSubjectVariant, sendCampaignAnnouncementEmail } from "../lib/email.js";
+import { sendPayPalAnnouncementEmail, type PayPalSubjectVariant, sendCampaignBatch } from "../lib/email.js";
 import { getUnsubToken } from "./unsubscribe.js";
 import { emailUnsubscribesTable } from "@workspace/db";
 import type { Request } from "express";
@@ -898,7 +898,7 @@ router.post("/admin/campaign-announcement", async (req: Request, res): Promise<v
 
       const token = getUnsubToken(testEmail);
       const unsubUrl = `${APP_URL}/api/unsubscribe?email=${encodeURIComponent(testEmail)}&token=${token}`;
-      const result = await sendCampaignAnnouncementEmail({ to: testEmail, unsubUrl, appUrl: APP_URL });
+      const [result] = await sendCampaignBatch([{ email: testEmail, unsubUrl }], APP_URL);
 
       req.log.info({ testEmail, audienceSize: audience.length, result }, "admin: campaign preview sent");
       res.json({
@@ -925,27 +925,37 @@ router.post("/admin/campaign-announcement", async (req: Request, res): Promise<v
 
     req.log.info({ total: audience.length, includeConsentNo }, "admin: campaign broadcast starting");
 
-    const results: { email: string; ok: boolean; id?: string; error?: string }[] = [];
+    // Check analytics_events to skip emails already sent in this campaign
+    const alreadySentRows = await db
+      .select({ email: analyticsEventsTable.properties })
+      .from(analyticsEventsTable)
+      .where(eq(analyticsEventsTable.event, "campaign_announcement_june_2026"));
+    const alreadySentSet = new Set(
+      alreadySentRows.map(r => (r.email as { email?: string })?.email?.toLowerCase()).filter(Boolean)
+    );
 
-    // Send in chunks of 10 to respect rate limits
-    const CHUNK = 10;
-    for (let i = 0; i < audience.length; i += CHUNK) {
-      const chunk = audience.slice(i, i + CHUNK);
-      const chunkResults = await Promise.allSettled(
-        chunk.map(async ({ email }) => {
-          const token = getUnsubToken(email);
-          const unsubUrl = `${APP_URL}/api/unsubscribe?email=${encodeURIComponent(email)}&token=${token}`;
-          const r = await sendCampaignAnnouncementEmail({ to: email, unsubUrl, appUrl: APP_URL });
-          return { email, ...r };
-        })
-      );
-      for (const settled of chunkResults) {
-        if (settled.status === "fulfilled") results.push(settled.value);
-        else results.push({ email: "(error)", ok: false, error: String(settled.reason) });
-      }
-      // Small pause between chunks
-      if (i + CHUNK < audience.length) await new Promise(r => setTimeout(r, 300));
-    }
+    const toSend = audience.filter(e => !alreadySentSet.has(e.email.toLowerCase()));
+    req.log.info({ skippingAlreadySent: alreadySentSet.size, sending: toSend.length }, "admin: campaign dedupe check");
+
+    // Build entries with personalised unsubscribe URLs
+    const batchEntries = toSend.map(({ email }) => ({
+      email,
+      unsubUrl: `${APP_URL}/api/unsubscribe?email=${encodeURIComponent(email)}&token=${getUnsubToken(email)}`,
+    }));
+
+    // Resend batch API: 100 emails per API call — well under rate limits
+    const results = await sendCampaignBatch(batchEntries, APP_URL);
+
+    // Persist a tracking row for every successful send so retries skip them
+    const successfulEmails = results.filter(r => r.ok);
+    await Promise.all(
+      successfulEmails.map(r =>
+        db.insert(analyticsEventsTable).values({
+          event: "campaign_announcement_june_2026",
+          properties: { email: r.email, resendId: r.id },
+        }).catch(() => {})
+      )
+    );
 
     const sent = results.filter(r => r.ok).length;
     const failed = results.filter(r => !r.ok).length;
