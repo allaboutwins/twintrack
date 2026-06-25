@@ -17,7 +17,7 @@ import {
 } from "@workspace/db";
 import { backfillOnboardingRows, type OnboardingRowData } from "../sheets";
 import { clerkClient } from "@clerk/express";
-import { sendPayPalAnnouncementEmail } from "../lib/email.js";
+import { sendPayPalAnnouncementEmail, type PayPalSubjectVariant } from "../lib/email.js";
 import type { Request } from "express";
 
 const router: IRouter = Router();
@@ -808,7 +808,7 @@ router.get("/admin/feature-adoption", async (req, res): Promise<void> => {
 router.post("/admin/paypal-announcement", async (req: Request, res): Promise<void> => {
   if (!isAdminAuth(req)) { res.status(403).json({ error: "Forbidden" }); return; }
 
-  const { testEmail } = req.body as { testEmail?: string };
+  const { testEmail, subjectVariant = "A" } = req.body as { testEmail?: string; subjectVariant?: PayPalSubjectVariant };
   const APP_URL = process.env.APP_URL ?? "https://twintrack.allaboutwins.com";
 
   try {
@@ -819,9 +819,9 @@ router.post("/admin/paypal-announcement", async (req: Request, res): Promise<voi
         trialExtended: true,
         newTrialEndDate: new Date(Date.now() + 14 * 86400000).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
         appUrl: APP_URL,
-      });
-      req.log.info({ testEmail, result }, "admin: paypal-announcement preview sent");
-      res.json({ mode: "preview", testEmail, result });
+      }, subjectVariant);
+      req.log.info({ testEmail, subjectVariant, result }, "admin: paypal-announcement preview sent");
+      res.json({ mode: "preview", testEmail, subjectVariant, result });
       return;
     }
 
@@ -848,7 +848,7 @@ router.post("/admin/paypal-announcement", async (req: Request, res): Promise<voi
           trialExtended: recentlyExtended,
           newTrialEndDate: new Date(row.trialEndsAt ?? sevenDaysFromNow).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
           appUrl: APP_URL,
-        });
+        }, subjectVariant);
         results.push({ userId: row.userId, email, ok: emailResult.ok, error: emailResult.error });
 
         await db.insert(analyticsEventsTable).values({

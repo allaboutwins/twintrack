@@ -211,11 +211,17 @@ export interface PayPalAnnouncementParams {
   appUrl: string;
 }
 
-export async function sendPayPalAnnouncementEmail(params: PayPalAnnouncementParams): Promise<EmailResult> {
+export type PayPalSubjectVariant = "A" | "B";
+
+export async function sendPayPalAnnouncementEmail(params: PayPalAnnouncementParams, variant: PayPalSubjectVariant = "A"): Promise<EmailResult> {
+  const subjects: Record<PayPalSubjectVariant, string> = {
+    A: "💕 Your TwinTrack Trial Has Been Extended + PayPal Is Here",
+    B: "🎉 Good News: More Time to Try TwinTrack",
+  };
   try {
     return await sendEmail({
       to: params.to,
-      subject: "PayPal is now live on TwinTrack — and your trial just got longer 💕",
+      subject: subjects[variant],
       html: buildPayPalAnnouncementHtml(params),
     });
   } catch (err) {
