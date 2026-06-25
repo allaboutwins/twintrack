@@ -229,6 +229,160 @@ export async function sendPayPalAnnouncementEmail(params: PayPalAnnouncementPara
   }
 }
 
+// ── Broadcast campaign email (CSV-based) ─────────────────────────────────────
+
+export interface CampaignAnnouncementParams {
+  to: string;
+  unsubUrl: string;
+  appUrl: string;
+}
+
+export async function sendCampaignAnnouncementEmail(params: CampaignAnnouncementParams): Promise<EmailResult> {
+  try {
+    return await sendEmail({
+      to: params.to,
+      subject: "💕 TwinTrack Just Got Easier - PayPal Is Now Available",
+      html: buildCampaignAnnouncementHtml(params),
+    });
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+function buildCampaignAnnouncementHtml(p: CampaignAnnouncementParams): string {
+  const year = new Date().getFullYear();
+  const features = [
+    "🤖&nbsp; <strong>Twin AI</strong> — answers any twin question, any time",
+    "👨‍👩‍👧‍👦&nbsp; <strong>Caregiver Access</strong> — share tracking with your whole village",
+    "📖&nbsp; <strong>Twins Magazine</strong> — expert articles written for twin parents",
+    "🎓&nbsp; <strong>Twins Academy</strong> — on-demand courses for every stage",
+    "💝&nbsp; <strong>Memory Cards</strong> — beautiful keepsakes & holiday templates",
+  ];
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>TwinTrack Just Got Easier 💕</title>
+</head>
+<body style="margin:0;padding:0;background:#fdf8ff;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#1a1a2e;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#fdf8ff;padding:40px 16px;">
+    <tr>
+      <td align="center">
+        <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+               style="max-width:580px;background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 4px 24px rgba(99,34,110,0.08);">
+
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#e91e8c 0%,#9c27b0 100%);padding:48px 32px 40px;text-align:center;">
+              <div style="margin-bottom:12px;font-size:52px;line-height:1;">💕</div>
+              <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:rgba(255,255,255,0.8);">TwinTrack — All About Twins</p>
+              <h1 style="margin:0;font-size:26px;font-weight:800;color:#ffffff;line-height:1.4;">
+                TwinTrack just got easier.<br/>PayPal is now available.
+              </h1>
+              <p style="margin:16px 0 0;font-size:14px;color:rgba(255,255,255,0.85);line-height:1.6;">
+                The all-in-one app built for twin parents — now even more accessible.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Body -->
+          <tr>
+            <td style="padding:40px 32px 8px;">
+
+              <p style="margin:0 0 28px;font-size:16px;line-height:1.8;color:#374151;">
+                Hi there 💕<br/><br/>
+                We built TwinTrack for twin parents who are doing twice the work with half the sleep.
+                It tracks sleep, feeds, diapers, and routines for <em>both</em> twins at once — and now
+                it's easier than ever to get started.
+              </p>
+
+              <!-- PayPal badge -->
+              <div style="background:#fdf8ff;border:1px solid #f3e8ff;border-radius:18px;padding:20px 26px;margin-bottom:24px;">
+                <p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#9c27b0;">
+                  💳 PayPal is now available
+                </p>
+                <p style="margin:0;font-size:15px;line-height:1.7;color:#374151;">
+                  You can now subscribe to TwinTrack Premium using your <strong>PayPal account</strong> —
+                  fast, familiar, and secure. No new card details required.
+                </p>
+              </div>
+
+              <!-- Founding Moms pricing -->
+              <div style="background:linear-gradient(135deg,#fdf4ff 0%,#fce7f3 100%);border:1.5px solid #f0abfc;border-radius:18px;padding:22px 26px;margin-bottom:28px;text-align:center;">
+                <p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#9c27b0;">
+                  ⏳ Founding Moms pricing — limited time
+                </p>
+                <p style="margin:0 0 10px;font-size:13px;color:#6b7280;text-decoration:line-through;">$49/year regular price</p>
+                <p style="margin:0;font-size:36px;font-weight:900;color:#e91e8c;line-height:1.1;">$39/year</p>
+                <p style="margin:8px 0 0;font-size:13px;color:#9c27b0;font-weight:600;">
+                  Locked in forever — for early supporters only
+                </p>
+              </div>
+
+              <!-- Features -->
+              <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+                     style="background:#fdf8ff;border:1px solid #f3e8ff;border-radius:18px;margin-bottom:30px;">
+                <tr>
+                  <td style="padding:22px 26px;">
+                    <p style="margin:0 0 16px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#9c27b0;">
+                      What Premium unlocks
+                    </p>
+                    ${features.map(f => `<p style="margin:0 0 11px;font-size:14px;color:#374151;line-height:1.6;">${f}</p>`).join("")}
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0 0 28px;font-size:15px;line-height:1.8;color:#374151;">
+                Whether you're a new twin parent or you've been doing this from the start —
+                TwinTrack is here for you. <strong>Core tracking is always free.</strong>
+                Premium is there when you're ready.
+              </p>
+
+              <!-- CTA -->
+              <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:12px;">
+                <tr>
+                  <td align="center">
+                    <a href="${p.appUrl}"
+                       style="display:inline-block;padding:18px 52px;background:linear-gradient(135deg,#e91e8c 0%,#9c27b0 100%);color:#ffffff;font-size:17px;font-weight:700;text-decoration:none;border-radius:50px;letter-spacing:0.3px;box-shadow:0 4px 20px rgba(233,30,140,0.35);">
+                      💕 Open TwinTrack
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+              <p style="margin:0 0 36px;font-size:13px;color:#b8a9c9;text-align:center;">
+                No account yet? <a href="${p.appUrl}" style="color:#c084fc;text-decoration:none;font-weight:600;">Sign up free in 30 seconds</a>
+              </p>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="background:#f9f5ff;padding:22px 32px;border-top:1px solid #f3e8ff;">
+              <p style="margin:0 0 8px;font-size:12px;color:#b8a9c9;text-align:center;line-height:1.8;">
+                &copy; ${year} TwinTrack &middot; All About Twins<br/>
+                <a href="https://allaboutwins.com" style="color:#c084fc;text-decoration:none;">allaboutwins.com</a>
+              </p>
+              <p style="margin:0;font-size:11px;color:#d1c4e9;text-align:center;">
+                You're receiving this because you signed up for TwinTrack or All About Twins updates.<br/>
+                <a href="${p.unsubUrl}" style="color:#c084fc;text-decoration:underline;">Unsubscribe</a>
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
+// ── PayPal trial-user announcement email ─────────────────────────────────────
+
 function buildPayPalAnnouncementHtml(p: PayPalAnnouncementParams): string {
   const year = new Date().getFullYear();
   const benefits = [

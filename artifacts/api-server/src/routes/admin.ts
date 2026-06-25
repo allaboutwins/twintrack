@@ -17,7 +17,9 @@ import {
 } from "@workspace/db";
 import { backfillOnboardingRows, type OnboardingRowData } from "../sheets";
 import { clerkClient } from "@clerk/express";
-import { sendPayPalAnnouncementEmail, type PayPalSubjectVariant } from "../lib/email.js";
+import { sendPayPalAnnouncementEmail, type PayPalSubjectVariant, sendCampaignAnnouncementEmail } from "../lib/email.js";
+import { getUnsubToken } from "./unsubscribe.js";
+import { emailUnsubscribesTable } from "@workspace/db";
 import type { Request } from "express";
 
 const router: IRouter = Router();
@@ -870,4 +872,91 @@ router.post("/admin/paypal-announcement", async (req: Request, res): Promise<voi
   }
 });
 
+// ── Broadcast campaign announcement (CSV-based list) ─────────────────────────
+// POST /admin/campaign-announcement?adminPassword=<pw>
+// Body: { emails: [{email,consent},...], testEmail?: string, includeConsentNo?: boolean }
+router.post("/admin/campaign-announcement", async (req: Request, res): Promise<void> => {
+  if (!isAdminAuth(req)) { res.status(403).json({ error: "Forbidden" }); return; }
+
+  const APP_URL = process.env.APP_URL ?? "https://twintrack.allaboutwins.com";
+
+  interface EmailEntry { email: string; consent: string; }
+  const { emails, testEmail, includeConsentNo = false } =
+    req.body as { emails?: EmailEntry[]; testEmail?: string; includeConsentNo?: boolean };
+
+  if (!emails || !Array.isArray(emails) || emails.length === 0) {
+    res.status(400).json({ error: "emails array is required" }); return;
+  }
+
+  try {
+    // Preview mode — send one test email and return audience stats
+    if (testEmail) {
+      const consentFiltered = includeConsentNo ? emails : emails.filter(e => e.consent === "Yes");
+      const unsubscribed = await db.select({ email: emailUnsubscribesTable.email }).from(emailUnsubscribesTable);
+      const unsubSet = new Set(unsubscribed.map(r => r.email.toLowerCase()));
+      const audience = consentFiltered.filter(e => !unsubSet.has(e.email.toLowerCase()));
+
+      const token = getUnsubToken(testEmail);
+      const unsubUrl = `${APP_URL}/api/unsubscribe?email=${encodeURIComponent(testEmail)}&token=${token}`;
+      const result = await sendCampaignAnnouncementEmail({ to: testEmail, unsubUrl, appUrl: APP_URL });
+
+      req.log.info({ testEmail, audienceSize: audience.length, result }, "admin: campaign preview sent");
+      res.json({
+        mode: "preview",
+        testEmail,
+        audienceReport: {
+          rawInput: emails.length,
+          consentYes: emails.filter(e => e.consent === "Yes").length,
+          consentNo: emails.filter(e => e.consent === "No").length,
+          alreadyUnsubscribed: unsubSet.size,
+          finalAudience: audience.length,
+          willSendTo: includeConsentNo ? "all (including consent=No)" : "consent=Yes only",
+        },
+        previewResult: result,
+      });
+      return;
+    }
+
+    // Broadcast mode
+    const consentFiltered = includeConsentNo ? emails : emails.filter(e => e.consent === "Yes");
+    const unsubscribed = await db.select({ email: emailUnsubscribesTable.email }).from(emailUnsubscribesTable);
+    const unsubSet = new Set(unsubscribed.map(r => r.email.toLowerCase()));
+    const audience = consentFiltered.filter(e => !unsubSet.has(e.email.toLowerCase()));
+
+    req.log.info({ total: audience.length, includeConsentNo }, "admin: campaign broadcast starting");
+
+    const results: { email: string; ok: boolean; id?: string; error?: string }[] = [];
+
+    // Send in chunks of 10 to respect rate limits
+    const CHUNK = 10;
+    for (let i = 0; i < audience.length; i += CHUNK) {
+      const chunk = audience.slice(i, i + CHUNK);
+      const chunkResults = await Promise.allSettled(
+        chunk.map(async ({ email }) => {
+          const token = getUnsubToken(email);
+          const unsubUrl = `${APP_URL}/api/unsubscribe?email=${encodeURIComponent(email)}&token=${token}`;
+          const r = await sendCampaignAnnouncementEmail({ to: email, unsubUrl, appUrl: APP_URL });
+          return { email, ...r };
+        })
+      );
+      for (const settled of chunkResults) {
+        if (settled.status === "fulfilled") results.push(settled.value);
+        else results.push({ email: "(error)", ok: false, error: String(settled.reason) });
+      }
+      // Small pause between chunks
+      if (i + CHUNK < audience.length) await new Promise(r => setTimeout(r, 300));
+    }
+
+    const sent = results.filter(r => r.ok).length;
+    const failed = results.filter(r => !r.ok).length;
+    req.log.info({ sent, failed }, "admin: campaign broadcast complete");
+    res.json({ mode: "broadcast", sent, failed, results });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    req.log.error({ err: msg }, "admin: campaign broadcast failed");
+    res.status(500).json({ error: msg });
+  }
+});
+
 export default router;
+
