@@ -28,7 +28,7 @@ const FEEDING_TYPES = [
   { key: "bottle",        label: "Bottle",  emoji: "🍼", color: "#2e818c" },
   { key: "formula",       label: "Formula", emoji: "🧴", color: "#83b8c0" },
   { key: "solids",        label: "Solids",  emoji: "🥣", color: "#b58c5a" },
-  { key: "pumping",       label: "Pumping", emoji: "🫙", color: "#9b59b6" },
+  { key: "pumping",       label: "Pumping", emoji: "🥛", color: "#9b59b6" },
   { key: "medication",    label: "Medicine",emoji: "💊", color: "#e74c3c" },
 ] as const;
 

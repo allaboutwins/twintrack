@@ -1,0 +1,207 @@
+TwinTrack — Admin Analytics + Notification Improvements 📊💕
+
+Please prioritize the following improvements.
+
+---
+
+1. NOTIFICATION CENTER / HOME PAGE UPDATES
+
+Current issue:
+
+The 🍒 Notification Center and the 3 updates shown on the Home page are not automatically reflecting the latest app changes.
+
+Please verify:
+
+* newest updates always appear first
+* Home page always shows the latest 3 updates
+* Notification Center shows the full update history
+* updates are automatically pulled from the Update Center database
+* no manual code changes should be required
+
+Goal:
+
+Whenever we publish an update in Admin:
+
+* Home page automatically updates
+* Notification Center automatically updates
+
+---
+
+2. ADMIN EXPORT BUTTON
+
+Please add:
+
+📥 Export Analytics
+
+inside Admin Dashboard.
+
+One-click export.
+
+Formats:
+
+* CSV
+* XLSX (preferred)
+
+Goal:
+
+Allow me to download all metrics and analyse them externally.
+
+Export should include important matrices as:
+
+Users
+
+* total users
+* active users
+* onboarding completion
+
+Premium
+
+* trials
+* conversions
+* subscriptions
+
+Engagement
+
+* Twin AI
+* Memories
+* Polls
+* Community
+* Academy
+* Magazines
+
+Notifications
+
+* sent
+* opened
+
+Email
+
+* emails sent
+* open rates
+* clicks
+
+---
+
+3. ADMIN DASHBOARD TREND CHARTS
+
+Current numbers are difficult to interpret quickly.
+
+Please add visual charts.
+
+Time ranges:
+
+* 7 days
+* 30 days
+* 90 days
+* all time
+
+Key charts:
+
+📈 User Growth
+
+* signups
+* active users
+
+📈 Premium Funnel
+
+* trials
+* upgrades
+* subscriptions
+
+📈 Feature Usage
+
+* Twin AI
+* Memories
+* Magazines
+* Academy
+* Community
+* Caregiver
+
+📈 Email Engagement
+
+* sent
+* opens
+* clicks
+
+📈 Notifications
+
+* sent
+* opened
+
+---
+
+4. GREEN / RED GROWTH INDICATORS
+
+For all important metrics:
+
+Show:
+
+🟢 +12%
+
+or
+
+🔴 -8%
+
+compared to:
+
+* previous week
+* previous month
+
+Examples:
+
+Users:
++18%
+
+Twin AI:
++42%
+
+Memories:
+-7%
+
+Academy:
++13%
+
+Magazine opens:
++21%
+
+Goal:
+
+Allow me to instantly identify:
+
+🟢 growing metrics
+
+🔴 declining metrics
+
+without manually analysing raw numbers.
+
+---
+
+5. EXECUTIVE DASHBOARD (HIGH VALUE)
+
+At the top of Admin create:
+
+📊 Business Health
+
+Cards:
+
+* Active Users
+* New Users
+* Premium Conversions
+* Trial Users
+* Twin AI Usage
+* Memory Shares
+* Academy Clicks
+* Magazine Opens
+
+All with:
+
+* current value
+* green/red change %
+
+This should become the first screen I see when opening Admin.
+
+Goal:
+
+Understand the health of TwinTrack in under 30 seconds.
+
+💕

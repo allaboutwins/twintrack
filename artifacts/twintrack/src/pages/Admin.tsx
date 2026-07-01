@@ -325,6 +325,65 @@ function CopyBtn({ text }: { text: string }) {
   );
 }
 
+function exportAnalyticsCSV(data: {
+  stats: AdminStats | null;
+  liveUsers: { activeThisMonth: number; activeThisWeek: number; online: unknown[]; total: number } | null;
+  premiumAnalytics: PremiumAnalytics | null;
+  twinAiAnalytics: TwinAiAnalytics | null;
+  featureAdoption: FeatureAdoption | null;
+  contentAnalytics: ContentAnalytics | null;
+  foundingMomsDashboard: FoundingMomsDashboard | null;
+  notificationStats: NotificationStats | null;
+}) {
+  const { stats, liveUsers, premiumAnalytics, twinAiAnalytics, featureAdoption, contentAnalytics, foundingMomsDashboard, notificationStats } = data;
+  const rows: string[][] = [
+    ["Category", "Metric", "Value"],
+    ["Users", "Total with twins", String(stats?.users.uniqueUsersWithTwins ?? "")],
+    ["Users", "Onboarding completed", String(stats?.users.onboardingCompleted ?? "")],
+    ["Users", "Emails captured", String(stats?.users.emailsCaptured ?? "")],
+    ["Users", "Newsletter subscribers", String(stats?.users.newsletterSubscribers ?? "")],
+    ["Users", "New this month (30d)", String(stats?.users.growth?.thisMonthSignups ?? "")],
+    ["Users", "New this week", String(stats?.users.growth?.thisWeekSignups ?? "")],
+    ["Users", "Active this month (30d)", String(liveUsers?.activeThisMonth ?? "")],
+    ["Users", "Active this week", String(liveUsers?.activeThisWeek ?? "")],
+    ["Users", "Online now", String(liveUsers?.online?.length ?? "")],
+    ["Premium", "Active trials", String(premiumAnalytics?.trials.active ?? "")],
+    ["Premium", "Trials this month", String(premiumAnalytics?.trials.startsThisMonth ?? "")],
+    ["Premium", "Paid premium users", String(premiumAnalytics?.conversions.premium ?? "")],
+    ["Premium", "Founding Moms", String(premiumAnalytics?.foundingMoms ?? "")],
+    ["Premium", "Trial conversion rate (%)", String(premiumAnalytics?.conversions.trialConversionRate ?? "")],
+    ["Premium", "MRR ($)", String(foundingMomsDashboard?.mrr?.toFixed(2) ?? "")],
+    ["Premium", "ARR ($)", String(foundingMomsDashboard?.arr?.toFixed(2) ?? "")],
+    ["Premium", "Monthly plans", String(foundingMomsDashboard?.monthlyPurchases ?? "")],
+    ["Premium", "Annual plans", String(foundingMomsDashboard?.annualPurchases ?? "")],
+    ["Engagement", "Twin AI messages", String(twinAiAnalytics?.totalMessages ?? "")],
+    ["Engagement", "Twin AI unique users", String(twinAiAnalytics?.uniqueUsers ?? "")],
+    ["Engagement", "Memories opens", String(featureAdoption?.memories.opens ?? "")],
+    ["Engagement", "Memories unique users", String(featureAdoption?.memories.uniqueUsers ?? "")],
+    ["Engagement", "Community questions", String(featureAdoption?.community.questions ?? "")],
+    ["Content", "Magazine opens", String(contentAnalytics?.magazine.totalOpens ?? "")],
+    ["Content", "Magazine unique users", String(contentAnalytics?.magazine.uniqueUsers ?? "")],
+    ["Content", "Academy clicks", String(contentAnalytics?.academy.totalClicks ?? "")],
+    ["Content", "Academy unique users", String(contentAnalytics?.academy.uniqueUsers ?? "")],
+    ["Push", "Total subscribers", String(notificationStats?.totalSubscribers ?? "")],
+    ["Push", "Total sent", String(notificationStats?.totalSent ?? "")],
+    ["Push", "Total opened", String(notificationStats?.totalOpened ?? "")],
+    ["Push", "Open rate (%)", String(notificationStats?.openRate ?? "")],
+    ["Activity", "Sleep entries", String(stats?.activity.sleepEntries ?? "")],
+    ["Activity", "Feeding entries", String(stats?.activity.feedingEntries ?? "")],
+    ["Activity", "Diaper entries", String(stats?.activity.diaperEntries ?? "")],
+    ["Activity", "Milestones", String(stats?.activity.milestones ?? "")],
+  ];
+  const csv = rows.map(r => r.map(v => `"${v.replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `twintrack-analytics-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
 function exportEmailsCSV(emails: EmailEntry[]) {
   const header = "Email,Newsletter Consent,Joined";
   const rows = emails.map((e) => `${e.email},${e.newsletterConsent ? "Yes" : "No"},${new Date(e.createdAt).toLocaleDateString()}`);
@@ -400,6 +459,8 @@ export default function Admin() {
   const [testEmailTo, setTestEmailTo] = useState("");
   const [testEmailDays, setTestEmailDays] = useState<1 | 3 | 7>(7);
   const [testEmailStatus, setTestEmailStatus] = useState<"idle" | "sending" | "ok" | "error">("idle");
+  const [testRecapStatus, setTestRecapStatus] = useState<"idle" | "sending" | "ok" | "error">("idle");
+  const [recapSendStatus, setRecapSendStatus] = useState<"idle" | "sending" | "ok" | "error">("idle");
   const [appUpdatesList, setAppUpdatesList] = useState<AppUpdateItem[]>([]);
   const [showUpdateForm, setShowUpdateForm] = useState(false);
   const [updateTitle, setUpdateTitle] = useState("");
@@ -653,6 +714,13 @@ export default function Admin() {
               <RefreshCw size={13} className={loading ? "animate-spin" : ""} />Refresh
             </button>
             <button
+              onClick={() => exportAnalyticsCSV({ stats, liveUsers, premiumAnalytics, twinAiAnalytics, featureAdoption, contentAnalytics, foundingMomsDashboard, notificationStats })}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-green-50 text-green-700 border border-green-200 text-xs font-semibold hover:bg-green-100 transition-all"
+              title="Download all metrics as CSV"
+            >
+              <Download size={13} />Export
+            </button>
+            <button
               onClick={async () => {
                 if ("serviceWorker" in navigator) {
                   const regs = await navigator.serviceWorker.getRegistrations();
@@ -679,6 +747,57 @@ export default function Admin() {
         </div>
       ) : stats ? (
         <div className="max-w-3xl mx-auto px-4 pt-6 space-y-6">
+
+          {/* ── BUSINESS HEALTH ── */}
+          <section>
+            <SectionHeader icon={<BarChart size={16} />} title="📊 Business Health" />
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <StatCard
+                label="Active users"
+                value={liveUsers?.activeThisMonth ?? "—"}
+                sub="this month (30d)"
+                accent
+              />
+              <StatCard
+                label="New signups"
+                value={stats.users.growth?.thisMonthSignups ?? "—"}
+                sub="this month (30d)"
+                change={stats.users.growth ? pctChange(stats.users.growth.thisMonthSignups, stats.users.growth.prevMonthSignups) : undefined}
+                changeLabel="vs last month"
+              />
+              <StatCard
+                label="Paid premium"
+                value={premiumAnalytics?.conversions.premium ?? "—"}
+                sub="active subscribers"
+                accent
+              />
+              <StatCard
+                label="Active trials"
+                value={premiumAnalytics?.trials.active ?? "—"}
+                sub="in trial now"
+              />
+              <StatCard
+                label="Twin AI messages"
+                value={twinAiAnalytics?.totalMessages ?? "—"}
+                sub={`${twinAiAnalytics?.uniqueUsers ?? "—"} unique users`}
+              />
+              <StatCard
+                label="Memories"
+                value={featureAdoption?.memories.uniqueUsers ?? "—"}
+                sub={`${featureAdoption?.memories.opens ?? "—"} total opens`}
+              />
+              <StatCard
+                label="Academy clicks"
+                value={contentAnalytics?.academy.totalClicks ?? "—"}
+                sub={`${contentAnalytics?.academy.uniqueUsers ?? "—"} unique users`}
+              />
+              <StatCard
+                label="Magazine opens"
+                value={contentAnalytics?.magazine.totalOpens ?? "—"}
+                sub={`${contentAnalytics?.magazine.uniqueUsers ?? "—"} unique users`}
+              />
+            </div>
+          </section>
 
           {/* ── LIVE USERS ── */}
           <section>
@@ -1190,6 +1309,59 @@ export default function Admin() {
                     className="px-4 py-2 rounded-xl bg-amber-600 text-white text-xs font-bold disabled:opacity-40 transition-all active:scale-[0.97]"
                   >
                     {testEmailStatus === "sending" ? "…" : testEmailStatus === "ok" ? "✓ Sent!" : testEmailStatus === "error" ? "✗ Error" : "Send"}
+                  </button>
+                </div>
+              </div>
+
+              {/* Monthly recap email */}
+              <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 space-y-3">
+                <p className="text-xs font-bold text-pink-800 uppercase tracking-wide">💌 Monthly Recap Email</p>
+                <p className="text-xs text-pink-700">Sends personalized monthly activity recaps to all active users who haven't received one this month.</p>
+                <div className="flex gap-2">
+                  <input
+                    type="email"
+                    value={testEmailTo}
+                    onChange={(e) => setTestEmailTo(e.target.value)}
+                    placeholder="test@email.com (preview)"
+                    className="flex-1 px-3 py-2 text-sm rounded-xl border border-pink-300 bg-white outline-none focus:border-pink-500"
+                  />
+                  <button
+                    disabled={!testEmailTo.includes("@") || testRecapStatus === "sending"}
+                    onClick={async () => {
+                      setTestRecapStatus("sending");
+                      try {
+                        const r = await fetch(`${baseUrl}/api/admin/test-monthly-recap?${authQuery}`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ to: testEmailTo }),
+                        });
+                        setTestRecapStatus(r.ok ? "ok" : "error");
+                        setTimeout(() => setTestRecapStatus("idle"), 3000);
+                      } catch { setTestRecapStatus("error"); setTimeout(() => setTestRecapStatus("idle"), 3000); }
+                    }}
+                    className="px-3 py-2 rounded-xl bg-pink-500 text-white text-xs font-bold disabled:opacity-40 transition-all active:scale-[0.97] whitespace-nowrap"
+                  >
+                    {testRecapStatus === "sending" ? "…" : testRecapStatus === "ok" ? "✓ Sent!" : testRecapStatus === "error" ? "✗ Error" : "Preview"}
+                  </button>
+                  <button
+                    disabled={recapSendStatus === "sending"}
+                    onClick={async () => {
+                      if (!confirm("Send monthly recaps to all eligible users now?")) return;
+                      setRecapSendStatus("sending");
+                      try {
+                        const r = await fetch(`${baseUrl}/api/admin/send-monthly-recaps?${authQuery}`, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                        });
+                        const d = await r.json() as { sent?: number };
+                        setRecapSendStatus(r.ok ? "ok" : "error");
+                        if (r.ok) alert(`✓ Sent ${d.sent ?? 0} monthly recap emails`);
+                        setTimeout(() => setRecapSendStatus("idle"), 3000);
+                      } catch { setRecapSendStatus("error"); setTimeout(() => setRecapSendStatus("idle"), 3000); }
+                    }}
+                    className="px-3 py-2 rounded-xl bg-primary text-white text-xs font-bold disabled:opacity-40 transition-all active:scale-[0.97] whitespace-nowrap"
+                  >
+                    {recapSendStatus === "sending" ? "…" : recapSendStatus === "ok" ? "✓ Done!" : recapSendStatus === "error" ? "✗ Error" : "Send All"}
                   </button>
                 </div>
               </div>

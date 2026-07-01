@@ -83,7 +83,7 @@ const TYPE_EMOJI: Record<string, string> = {
   feeding: "🍼",
   sleep: "😴",
   diaper: "💧",
-  pumping: "🫙",
+  pumping: "🥛",
   medication: "💊",
   milestone: "⭐",
   insight: "💡",

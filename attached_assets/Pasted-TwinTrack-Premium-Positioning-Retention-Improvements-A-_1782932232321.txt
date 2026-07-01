@@ -1,0 +1,190 @@
+TwinTrack — Premium Positioning + Retention Improvements 💕🚀
+
+A few additional improvements based on product strategy and user psychology.
+
+---
+
+1. PUMPING BUTTON
+
+Please replace the current pumping emoji:
+
+🫙
+
+with:
+
+🥛 Pumping
+
+Reason:
+
+* clearer meaning
+* better visibility on desktop
+* less confusion than breastfeeding or bottle-feeding icons
+
+Please use:
+
+🥛 Pumping
+
+consistently across the app.
+
+---
+
+2. MONTHLY ACTIVE USER EMAILS (HIGH PRIORITY)
+
+Please begin planning a monthly email for ACTIVE TwinTrack users.
+
+Goal:
+
+* increase engagement
+* increase retention
+* encourage feature discovery
+* strengthen emotional connection
+
+IMPORTANT:
+
+This should NOT feel like a sales email.
+
+Tone:
+
+* warm
+* supportive
+* helpful
+
+Example structure:
+
+💕 Your TwinTrack Monthly Recap
+
+This month:
+
+* feeds logged
+* sleep sessions tracked
+* diapers logged
+* memories captured
+* milestones celebrated
+
+Then introduce feature discovery naturally:
+
+Many TwinTrack families also used:
+
+✓ Twin AI - Write a common question asked by twin parents
+
+✓ Caregiver Access - Send an invitation to your partner / babysitter etc.
+
+✓ Twins Academy - Learn the best tips for a better twins sleep  
+
+✓ Full Magazine Library - Did you read the latest Twins Magazine 
+
+✓ Premium Memory Cards 
+
+✓ New community features - Latest polls answered / questions Asked 
+
+The goal is:
+
+👉 "I didn't know TwinTrack could do that."
+
+NOT:
+
+👉 "Buy now."
+
+---
+
+3. PREMIUM PRICING DISPLAY
+
+Please review the Premium pricing presentation.
+
+Current:
+
+* $39/year
+* $49/year
+
+The annual totals create more purchase friction.
+
+Instead, prominently display:
+
+💕 Founding Moms
+
+Only $3.25/month
+
+(Billed annually at $39/year)
+
+---
+
+Premium Annual
+
+Only $4.08/month
+
+(Billed annually at $49/year)
+
+---
+
+Premium Monthly
+
+$5.99/month
+
+---
+
+4. PREMIUM PAGE POSITIONING
+
+Please lead with the monthly equivalent pricing.
+
+Reason:
+
+Twin moms naturally compare:
+
+* monthly costs
+* subscriptions
+* coffee purchases
+
+More easily than annual totals.
+
+Example messaging:
+
+💕 Founding Moms
+
+Only $3.25/month
+
+Less than a coffee each month ☕
+
+Keep:
+
+(Billed annually at $39/year)
+
+as smaller supporting text underneath.
+
+---
+
+5. FUTURE EMAIL ANALYTICS
+
+Please track:
+
+* monthly_recap_sent
+* monthly_recap_opened
+* monthly_recap_clicked
+* feature_link_clicked
+* academy_clicked_from_email
+* magazine_clicked_from_email
+* twin_ai_clicked_from_email
+* caregiver_clicked_from_email
+
+Goal:
+
+Understand which features create the most curiosity and engagement.
+
+---
+
+VISION
+
+The monthly email should feel like:
+
+"Look how far you've come this month 💕"
+
+while gently helping moms discover more value inside TwinTrack.
+
+This increases:
+
+* retention
+* trust
+* engagement
+
+before asking for a Premium upgrade.
+
+💕

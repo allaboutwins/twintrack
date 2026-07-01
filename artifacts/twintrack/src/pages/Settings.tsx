@@ -575,7 +575,7 @@ export default function Settings() {
             {([
               { key: "feedingReminders", label: "Feeding reminders", desc: "Smart alerts based on last feed time", emoji: "🍼" },
               { key: "sleepReminders", label: "Sleep reminders", desc: "Nap window suggestions by age", emoji: "😴" },
-              { key: "pumpingReminders", label: "Pumping reminders", desc: "Regular pump schedule alerts", emoji: "🫙" },
+              { key: "pumpingReminders", label: "Pumping reminders", desc: "Regular pump schedule alerts", emoji: "🥛" },
               { key: "medicationReminders", label: "Medication reminders", desc: "Vitamin and medication alerts", emoji: "💊" },
               { key: "milestoneReminders", label: "Milestone tips", desc: "Age-appropriate development updates", emoji: "⭐" },
               { key: "twinAiTips", label: "Twin AI insights", desc: "Personalised tips from Twin AI", emoji: "✨" },

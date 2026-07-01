@@ -677,3 +677,149 @@ function buildCaregiverInviteHtml(p: CaregiverInviteParams): string {
 </body>
 </html>`;
 }
+
+// ── Monthly recap email ───────────────────────────────────────────────────────
+
+export interface MonthlyRecapParams {
+  to: string;
+  firstName: string;
+  month: string;
+  stats: {
+    feedCount: number;
+    sleepSessions: number;
+    diaperChanges: number;
+    memoriesAdded: number;
+  };
+  features: Array<{ icon: string; title: string; desc: string; url: string }>;
+  appUrl: string;
+}
+
+export async function sendMonthlyRecapEmail(params: MonthlyRecapParams): Promise<EmailResult> {
+  try {
+    const { subject, html } = buildMonthlyRecapHtml(params);
+    return await sendEmail({ to: params.to, subject, html });
+  } catch (err) {
+    return { ok: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+function buildMonthlyRecapHtml(p: MonthlyRecapParams): { subject: string; html: string } {
+  const year = new Date().getFullYear();
+  const subject = `💕 Your TwinTrack ${p.month} Recap`;
+  const name = p.firstName || "Twin Mama";
+
+  const statRows = [
+    { emoji: "🍼", label: "Feeding logs", value: p.stats.feedCount.toLocaleString() },
+    { emoji: "😴", label: "Sleep sessions", value: p.stats.sleepSessions.toLocaleString() },
+    { emoji: "💧", label: "Diaper changes", value: p.stats.diaperChanges.toLocaleString() },
+    { emoji: "💕", label: "Memories captured", value: p.stats.memoriesAdded.toLocaleString() },
+  ];
+
+  const totalLogs = p.stats.feedCount + p.stats.sleepSessions + p.stats.diaperChanges;
+
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>${subject}</title>
+</head>
+<body style="margin:0;padding:0;background:#fdf8ff;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:#1a1a2e;">
+  <div style="display:none;max-height:0;overflow:hidden;">Look how far you've come this month 💕&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;</div>
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#fdf8ff;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+             style="max-width:560px;background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 4px 24px rgba(99,34,110,0.08);">
+
+        <tr>
+          <td style="background:linear-gradient(135deg,#e91e8c 0%,#9c27b0 100%);padding:44px 32px 36px;text-align:center;">
+            <div style="margin-bottom:12px;font-size:48px;line-height:1;">💕</div>
+            <p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.75);">TwinTrack Monthly Recap</p>
+            <h1 style="margin:0;font-size:24px;font-weight:800;color:#ffffff;line-height:1.4;">
+              ${p.month}<br/><span style="font-size:18px;font-weight:600;">Your twin journey, by the numbers</span>
+            </h1>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:32px 32px 8px;">
+            <p style="margin:0 0 24px;font-size:16px;line-height:1.75;color:#374151;">
+              Hi ${name} 💕<br/><br/>
+              Another month of incredible twin parenting done. You logged <strong>${totalLogs.toLocaleString()} entries</strong> across feeding, sleep, and diapers this month — that kind of care and consistency is remarkable.
+            </p>
+
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+                   style="background:#fdf8ff;border:1.5px solid #f3e8ff;border-radius:18px;margin-bottom:28px;">
+              <tr><td style="padding:22px 24px;">
+                <p style="margin:0 0 16px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#9c27b0;">This month in numbers</p>
+                <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                  ${statRows.map(s => `
+                  <tr>
+                    <td style="padding:8px 0;border-bottom:1px solid #f3e8ff;">
+                      <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                        <tr>
+                          <td style="font-size:20px;width:32px;">${s.emoji}</td>
+                          <td style="font-size:14px;color:#374151;padding-left:8px;">${s.label}</td>
+                          <td align="right" style="font-size:18px;font-weight:800;color:#e91e8c;">${s.value}</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>`).join("")}
+                </table>
+              </td></tr>
+            </table>
+
+            ${p.features.length > 0 ? `
+            <p style="margin:0 0 16px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#9c27b0;">Many TwinTrack families also use…</p>
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:28px;">
+              ${p.features.map(f => `
+              <tr>
+                <td style="padding:10px 0;border-bottom:1px solid #f9f0ff;">
+                  <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+                    <tr>
+                      <td style="font-size:22px;width:36px;vertical-align:top;">${f.icon}</td>
+                      <td style="padding-left:10px;vertical-align:top;">
+                        <p style="margin:0 0 2px;font-size:14px;font-weight:700;color:#1a1a2e;">${f.title}</p>
+                        <p style="margin:0;font-size:13px;color:#6b7280;line-height:1.5;">${f.desc}</p>
+                      </td>
+                      <td align="right" style="vertical-align:middle;padding-left:8px;">
+                        <a href="${p.appUrl}${f.url}" style="font-size:11px;font-weight:700;color:#e91e8c;text-decoration:none;white-space:nowrap;">Explore →</a>
+                      </td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>`).join("")}
+            </table>` : ""}
+
+            <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:24px;">
+              <tr><td align="center">
+                <a href="${p.appUrl}"
+                   style="display:inline-block;padding:17px 44px;background:linear-gradient(135deg,#e91e8c 0%,#9c27b0 100%);color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;border-radius:50px;letter-spacing:0.3px;box-shadow:0 4px 16px rgba(233,30,140,0.35);">
+                  💕 Open TwinTrack
+                </a>
+              </td></tr>
+            </table>
+
+            <p style="margin:0 0 32px;font-size:14px;color:#9ca3af;line-height:1.75;text-align:center;">
+              You're doing an amazing job. We're rooting for you every single day. 💕
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="background:#f9f5ff;padding:20px 32px;text-align:center;border-top:1px solid #f3e8ff;">
+            <p style="margin:0;font-size:12px;color:#b8a9c9;line-height:1.8;">
+              &copy; ${year} TwinTrack &middot; All About Twins<br/>
+              <a href="https://allaboutwins.com" style="color:#c084fc;text-decoration:none;">allaboutwins.com</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>`;
+
+  return { subject, html };
+}

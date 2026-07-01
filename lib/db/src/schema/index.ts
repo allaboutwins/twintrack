@@ -21,3 +21,4 @@ export * from "./bath";
 export * from "./email-unsubscribes";
 export * from "./campaign-emails";
 export * from "./pumping";
+export * from "./email-recap";

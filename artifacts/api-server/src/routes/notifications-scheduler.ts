@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, gte, lte, and, sql } from "drizzle-orm";
+import { eq, desc, gte, lte, and, sql, count, isNotNull, inArray } from "drizzle-orm";
 import {
   db,
   pushSubscriptionsTable,
@@ -14,9 +14,12 @@ import {
   userPlansTable,
   analyticsEventsTable,
   pumpRemindersTable,
+  onboardingTable,
+  milestonesTable,
+  monthlyRecapLogsTable,
 } from "@workspace/db";
 import { sendPushToUser } from "./push";
-import { sendTrialReminderEmail } from "../lib/email";
+import { sendTrialReminderEmail, sendMonthlyRecapEmail } from "../lib/email";
 import { logger } from "../lib/logger.js";
 
 const router: IRouter = Router();
@@ -49,8 +52,8 @@ const STREAK_MESSAGES = [
 ];
 
 const PUMP_MESSAGES = [
-  { title: "Pump time 🫙", body: "Your body works so hard. Time for a quick pump session — you're doing incredible." },
-  { title: "Time to pump 🫙", body: "Another pump session keeps your supply strong. You're amazing for sticking with it." },
+  { title: "Pump time 🥛", body: "Your body works so hard. Time for a quick pump session — you're doing incredible." },
+  { title: "Time to pump 🥛", body: "Another pump session keeps your supply strong. You're amazing for sticking with it." },
   { title: "Pump reminder 🍼", body: "Your schedule says it's pump time. Even a short session counts — you're doing brilliantly." },
 ];
 
@@ -456,6 +459,151 @@ router.get("/push/cron-trigger", async (req, res): Promise<void> => {
     sent: results.flatMap((r) => r.sent).length,
     trialRemindersSent: trialRemindersSent.length,
   });
+});
+
+// ── Monthly recap email processing ────────────────────────────────────────
+
+const RECAP_FEATURES = [
+  { icon: "🤖", title: "Twin AI", desc: "Ask any twin parenting question, get a warm expert answer", url: "/ai" },
+  { icon: "📖", title: "Twins Magazine", desc: "Browse expert twin parenting articles & real family stories", url: "/learn" },
+  { icon: "🎓", title: "Twins Academy", desc: "Expert courses on sleep, feeding, NICU life, and more", url: "/learn" },
+  { icon: "💝", title: "Memory Cards", desc: "Beautiful milestone cards to capture every first moment", url: "/milestones" },
+  { icon: "👨‍👩‍👧‍👦", title: "Caregiver Access", desc: "Share tracking with your partner, nanny, or family", url: "/settings" },
+  { icon: "🛁", title: "Bath Tracker", desc: "Track bath time alongside sleep, feeding, and diapers", url: "/bath" },
+  { icon: "🌙", title: "Routines", desc: "Morning, bedtime, and outing checklists for the whole family", url: "/routines" },
+];
+
+async function processMonthlyRecaps(): Promise<{ sent: number; skipped: number }> {
+  const now = new Date();
+  const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+  const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
+  const appUrl = process.env.APP_URL ?? "https://twintrack.allaboutwins.com";
+  const monthName = now.toLocaleString("en-US", { month: "long", year: "numeric" });
+
+  const [usersWithEmail, alreadySentRows] = await Promise.all([
+    db
+      .select({ userId: onboardingTable.userId, email: onboardingTable.email })
+      .from(onboardingTable)
+      .where(isNotNull(onboardingTable.email)),
+    db
+      .select({ userId: monthlyRecapLogsTable.userId })
+      .from(monthlyRecapLogsTable)
+      .where(eq(monthlyRecapLogsTable.month, month)),
+  ]);
+
+  const sentSet = new Set(alreadySentRows.map((r) => r.userId));
+  const pending = usersWithEmail.filter((u) => u.email && !sentSet.has(u.userId));
+
+  let sent = 0;
+  let skipped = 0;
+
+  for (const user of pending.slice(0, 200)) {
+    try {
+      const userTwins = await db
+        .select({ id: twinsTable.id })
+        .from(twinsTable)
+        .where(eq(twinsTable.userId, user.userId));
+
+      const twinIds = userTwins.map((t) => t.id);
+      if (twinIds.length === 0) { skipped++; continue; }
+
+      const [feedRows, sleepRows, diaperRows, memoryRows] = await Promise.all([
+        db.select({ c: count() }).from(feedingEntriesTable)
+          .where(and(inArray(feedingEntriesTable.twinId, twinIds), gte(feedingEntriesTable.time, monthStart), lte(feedingEntriesTable.time, monthEnd))),
+        db.select({ c: count() }).from(sleepEntriesTable)
+          .where(and(inArray(sleepEntriesTable.twinId, twinIds), gte(sleepEntriesTable.startTime, monthStart), lte(sleepEntriesTable.startTime, monthEnd))),
+        db.select({ c: count() }).from(diaperEntriesTable)
+          .where(and(inArray(diaperEntriesTable.twinId, twinIds), gte(diaperEntriesTable.createdAt, monthStart), lte(diaperEntriesTable.createdAt, monthEnd))),
+        db.select({ c: count() }).from(milestonesTable)
+          .where(and(eq(milestonesTable.userId, user.userId), gte(milestonesTable.createdAt, monthStart), lte(milestonesTable.createdAt, monthEnd))),
+      ]);
+
+      const feedCount = Number(feedRows[0]?.c ?? 0);
+      const sleepCount = Number(sleepRows[0]?.c ?? 0);
+      const diaperCount = Number(diaperRows[0]?.c ?? 0);
+      const memoryCount = Number(memoryRows[0]?.c ?? 0);
+
+      if (feedCount + sleepCount + diaperCount < 3) { skipped++; continue; }
+
+      const shuffled = [...RECAP_FEATURES].sort(() => Math.random() - 0.5).slice(0, 3);
+      const result = await sendMonthlyRecapEmail({
+        to: user.email!,
+        firstName: "",
+        month: monthName,
+        stats: { feedCount, sleepSessions: sleepCount, diaperChanges: diaperCount, memoriesAdded: memoryCount },
+        features: shuffled,
+        appUrl,
+      });
+
+      if (result.ok) {
+        await db.insert(monthlyRecapLogsTable).values({
+          userId: user.userId,
+          month,
+          statsJson: JSON.stringify({ feedCount, sleepCount, diaperCount, memoryCount }),
+        });
+        sent++;
+      } else {
+        skipped++;
+      }
+    } catch (err) {
+      logger.error({ err, userId: user.userId }, "Monthly recap failed");
+      skipped++;
+    }
+  }
+
+  logger.info({ month, sent, skipped }, "Monthly recap batch complete");
+  return { sent, skipped };
+}
+
+// ── POST /api/admin/test-monthly-recap ────────────────────────────────────
+router.post("/admin/test-monthly-recap", async (req, res): Promise<void> => {
+  const userId = req.query.userId as string | undefined;
+  const adminPassword = req.query.adminPassword as string | undefined;
+  const adminIds = (process.env.ADMIN_USER_IDS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const envPw = process.env.ADMIN_PASSWORD;
+  const ok =
+    (userId && adminIds.includes(userId)) ||
+    (envPw && adminPassword && adminPassword === envPw);
+
+  if (!ok) { res.status(403).json({ error: "Forbidden" }); return; }
+
+  const { to } = req.body as { to?: string };
+  if (!to || !to.includes("@")) { res.status(400).json({ error: "to (email address) is required" }); return; }
+
+  const appUrl = process.env.APP_URL ?? "https://twintrack.allaboutwins.com";
+  const now = new Date();
+  const monthName = now.toLocaleString("en-US", { month: "long", year: "numeric" });
+  const shuffled = [...RECAP_FEATURES].sort(() => Math.random() - 0.5).slice(0, 3);
+
+  const result = await sendMonthlyRecapEmail({
+    to,
+    firstName: "",
+    month: monthName,
+    stats: { feedCount: 42, sleepSessions: 31, diaperChanges: 68, memoriesAdded: 3 },
+    features: shuffled,
+    appUrl,
+  });
+
+  req.log.info({ event: "test_monthly_recap", to, ok: result.ok }, "Test monthly recap sent");
+  res.json({ ok: result.ok, id: result.id, error: result.error ?? null });
+});
+
+// ── POST /api/admin/send-monthly-recaps ───────────────────────────────────
+router.post("/admin/send-monthly-recaps", async (req, res): Promise<void> => {
+  const userId = req.query.userId as string | undefined;
+  const adminPassword = req.query.adminPassword as string | undefined;
+  const adminIds = (process.env.ADMIN_USER_IDS ?? "").split(",").map((s) => s.trim()).filter(Boolean);
+  const envPw = process.env.ADMIN_PASSWORD;
+  const ok =
+    (userId && adminIds.includes(userId)) ||
+    (envPw && adminPassword && adminPassword === envPw);
+
+  if (!ok) { res.status(403).json({ error: "Forbidden" }); return; }
+
+  const { sent, skipped } = await processMonthlyRecaps();
+  req.log.info({ event: "send_monthly_recaps", sent, skipped }, "Monthly recaps dispatched from admin");
+  res.json({ ok: true, sent, skipped });
 });
 
 // ── POST /api/admin/test-trial-email ─────────────────────────────────────

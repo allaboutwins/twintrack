@@ -236,8 +236,9 @@ export default function UpgradeScreen({ open, onClose, feature = "general", sour
                           <p className="text-xs text-muted-foreground mt-0.5">Lock in forever · Trial-only offer</p>
                         </div>
                         <div className="text-right flex-shrink-0 ml-2">
-                          <p className="font-bold text-foreground">{pricing.founding.label}</p>
-                          <p className="text-[10px] text-muted-foreground line-through">{pricing.annual.label}</p>
+                          <p className="text-base font-extrabold text-primary leading-tight">Only $3.25/mo</p>
+                          <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">Billed at $39/year</p>
+                          <p className="text-[10px] text-muted-foreground line-through leading-tight">{pricing.annual.label}</p>
                         </div>
                       </div>
                     </button>
@@ -256,16 +257,19 @@ export default function UpgradeScreen({ open, onClose, feature = "general", sour
                       <div className="flex items-center justify-between">
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-bold text-foreground">Annual</span>
+                            <span className="text-sm font-bold text-foreground">Premium Annual</span>
                             {!showFoundingPrice && (
                               <span className="text-[10px] font-bold bg-green-100 text-green-700 rounded-full px-2 py-0.5">
                                 SAVE {annualSavings}%
                               </span>
                             )}
                           </div>
-                          <p className="text-xs text-muted-foreground mt-0.5">Billed once a year</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Less than a coffee each month ☕</p>
                         </div>
-                        <p className="font-bold text-foreground flex-shrink-0 ml-2">{pricing.annual.label}</p>
+                        <div className="text-right flex-shrink-0 ml-2">
+                          <p className="text-base font-extrabold text-foreground leading-tight">Only $4.08/mo</p>
+                          <p className="text-[10px] text-muted-foreground leading-tight mt-0.5">Billed at $49/year</p>
+                        </div>
                       </div>
                     </button>
                   )}
@@ -282,10 +286,12 @@ export default function UpgradeScreen({ open, onClose, feature = "general", sour
                     >
                       <div className="flex items-center justify-between">
                         <div>
-                          <span className="text-sm font-bold text-foreground">Monthly</span>
+                          <span className="text-sm font-bold text-foreground">Premium Monthly</span>
                           <p className="text-xs text-muted-foreground mt-0.5">Cancel anytime</p>
                         </div>
-                        <p className="font-bold text-foreground flex-shrink-0 ml-2">{pricing.monthly.label}</p>
+                        <div className="text-right flex-shrink-0 ml-2">
+                          <p className="text-base font-extrabold text-foreground leading-tight">$5.99/mo</p>
+                        </div>
                       </div>
                     </button>
                   )}
