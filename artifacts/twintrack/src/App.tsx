@@ -24,6 +24,7 @@ import Sleep from "@/pages/Sleep";
 import Feeding from "@/pages/Feeding";
 import Diapers from "@/pages/Diapers";
 import Bath from "@/pages/Bath";
+import Pumping from "@/pages/Pumping";
 import Routines from "@/pages/Routines";
 import Learn from "@/pages/Learn";
 import Milestones from "@/pages/Milestones";
@@ -543,6 +544,11 @@ function ClerkProviderWithRoutes() {
               <Route path="/bath">
                 <RouteErrorBoundary route="bath">
                   <ProtectedRoute component={Bath} />
+                </RouteErrorBoundary>
+              </Route>
+              <Route path="/pumping">
+                <RouteErrorBoundary route="pumping">
+                  <ProtectedRoute component={Pumping} />
                 </RouteErrorBoundary>
               </Route>
               <Route path="/routines">

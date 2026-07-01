@@ -14,6 +14,7 @@ import Layout, { TwinTabs, PageHeader } from "@/components/Layout";
 import { Trash2, Pencil, X, Check, ArrowLeftRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Skeleton } from "@/components/ui/skeleton";
+import { enqueue } from "@/lib/offlineQueue";
 
 const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -187,9 +188,15 @@ export default function Diapers() {
     if (!twinId) return;
     setJustLogged(type);
     setTimeout(() => setJustLogged(null), 1200);
+    const time = new Date().toISOString();
     createEntry.mutate(
-      { data: { twinId, type, time: new Date().toISOString() } },
-      { onSuccess: invalidate },
+      { data: { twinId, type, time } },
+      {
+        onSuccess: invalidate,
+        onError: () => {
+          if (!navigator.onLine) enqueue({ endpoint: "/api/diapers", method: "POST", body: { twinId, type, time }, label: "Diaper log" });
+        },
+      },
     );
   }
 
@@ -231,7 +238,15 @@ export default function Diapers() {
 
   return (
     <Layout>
-      <PageHeader title="Diaper Tracker" subtitle="Quick log for each change" />
+      <PageHeader
+        title="Diaper Tracker"
+        subtitle="Quick log for each change"
+        right={
+          <a href="stats?section=diapers" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-muted">
+            📊 Stats
+          </a>
+        }
+      />
 
       {twins.length > 0 && (
         <TwinTabs twins={twins} activeTwinId={twinId} onSelect={setActiveTwinId} />

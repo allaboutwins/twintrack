@@ -19,6 +19,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import Layout, { TwinTabs, PageHeader } from "@/components/Layout";
 import { Trash2, Pencil, X, Check, Plus, ChevronDown, ChevronUp, Play, Pause, Square, Clock, Droplets, ArrowLeftRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { enqueue } from "@/lib/offlineQueue";
 
 // ── Constants ─────────────────────────────────────────────────────────────
 
@@ -41,7 +42,26 @@ const COMMON_FOODS = [
   "Broccoli", "Carrot", "Peas", "Mango", "Peach",
   "Egg", "Chicken", "Salmon", "Tofu", "Lentils",
   "Oatmeal", "Rice", "Yogurt", "Cheese", "Blueberry",
+  "Pumpkin", "Zucchini", "Kiwi", "Spinach",
+  "Strawberry", "Watermelon", "Butternut Squash", "Green Beans",
+  "Turkey", "Beef", "Tuna", "Peanut Butter", "Sunflower Butter",
 ];
+
+const ALLERGEN_FOODS = new Set([
+  "Egg", "Salmon", "Tuna", "Yogurt", "Cheese",
+  "Peanut Butter", "Tree Nuts", "Wheat", "Soy", "Sesame",
+  "Shrimp", "Cow's Milk",
+]);
+
+const FOODS_BY_CATEGORY: Record<string, string[]> = {
+  fruits:     ["Apple", "Banana", "Pear", "Mango", "Peach", "Blueberry", "Strawberry", "Kiwi", "Watermelon"],
+  vegetables: ["Avocado", "Sweet Potato", "Broccoli", "Carrot", "Peas", "Pumpkin", "Zucchini", "Spinach", "Butternut Squash", "Green Beans"],
+  proteins:   ["Chicken", "Turkey", "Beef", "Salmon", "Tuna", "Tofu", "Lentils", "Egg", "Peanut Butter", "Sunflower Butter"],
+  dairy:      ["Yogurt", "Cheese", "Cow's Milk"],
+  grains:     ["Oatmeal", "Rice", "Wheat", "Barley"],
+  allergens:  ["Egg", "Peanut Butter", "Tree Nuts", "Salmon", "Tuna", "Wheat", "Soy", "Sesame", "Shrimp", "Cow's Milk", "Yogurt", "Cheese"],
+  other:      ["Hummus", "Tahini", "Olive Oil"],
+};
 
 const FOOD_CATEGORIES = [
   { key: "fruits",     label: "Fruits",     emoji: "🍎" },
@@ -49,6 +69,7 @@ const FOOD_CATEGORIES = [
   { key: "proteins",   label: "Proteins",   emoji: "🥩" },
   { key: "dairy",      label: "Dairy",      emoji: "🧀" },
   { key: "grains",     label: "Grains",     emoji: "🌾" },
+  { key: "allergens",  label: "Allergens",  emoji: "⚠️" },
   { key: "other",      label: "Other",      emoji: "🍽️" },
 ];
 
@@ -434,6 +455,13 @@ function LogFeedingSheet({ feedingType, onClose, onLog, isPending }: LogSheetPro
         {/* Pumping — side + amount + duration */}
         {feedingType === "pumping" && (
           <>
+            <div className="bg-purple-50 border border-purple-100 rounded-xl px-4 py-3 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-semibold text-purple-800">Pumping Hub</p>
+                <p className="text-xs text-purple-600 mt-0.5">Timer, daily totals &amp; reminders</p>
+              </div>
+              <a href="pumping" className="px-3 py-1.5 bg-purple-600 text-white text-xs font-semibold rounded-xl flex-shrink-0">Open →</a>
+            </div>
             <div>
               <p className="text-xs font-semibold text-muted-foreground mb-2 uppercase tracking-wide">Side</p>
               <div className="grid grid-cols-3 gap-2">
@@ -556,11 +584,12 @@ function LogFeedingSheet({ feedingType, onClose, onLog, isPending }: LogSheetPro
                 <button
                   key={food}
                   onClick={() => setFoodName(food)}
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all flex items-center gap-1 ${
                     foodName === food ? "text-white" : "bg-muted/60 text-muted-foreground"
                   }`}
                   style={foodName === food ? { backgroundColor: ft.color } : {}}
                 >
+                  {ALLERGEN_FOODS.has(food) && <span title="Common allergen">⚠️</span>}
                   {food}
                 </button>
               ))}
@@ -894,14 +923,15 @@ function AddFoodSheet({
             autoFocus
           />
           <div className="flex flex-wrap gap-1.5">
-            {COMMON_FOODS.slice(0, 12).map((food) => (
+            {(category && FOODS_BY_CATEGORY[category] ? FOODS_BY_CATEGORY[category] : COMMON_FOODS.slice(0, 12)).map((food) => (
               <button
                 key={food}
                 onClick={() => setFoodName(food)}
-                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all ${
+                className={`px-2.5 py-1 rounded-full text-xs font-medium transition-all flex items-center gap-1 ${
                   foodName === food ? "bg-[#b58c5a] text-white" : "bg-muted/60 text-muted-foreground"
                 }`}
               >
+                {ALLERGEN_FOODS.has(food) && <span title="Common allergen">⚠️</span>}
                 {food}
               </button>
             ))}
@@ -1053,20 +1083,24 @@ export default function Feeding() {
     notes?: string | null;
   }) {
     if (!twinId) return;
+    const body = {
+      twinId,
+      feedingType: type,
+      time: details.time ?? new Date().toISOString(),
+      side: details.side ?? null,
+      durationMinutes: details.durationMinutes ?? null,
+      amountMl: details.amountMl ?? null,
+      foodName: details.foodName ?? null,
+      notes: details.notes ?? null,
+    };
     createEntry.mutate(
+      { data: body },
       {
-        data: {
-          twinId,
-          feedingType: type,
-          time: details.time ?? new Date().toISOString(),
-          side: details.side ?? null,
-          durationMinutes: details.durationMinutes ?? null,
-          amountMl: details.amountMl ?? null,
-          foodName: details.foodName ?? null,
-          notes: details.notes ?? null,
+        onSuccess: () => { invalidateFeeding(); setLogSheetType(null); },
+        onError: () => {
+          if (!navigator.onLine) enqueue({ endpoint: "/api/feeding", method: "POST", body, label: "Feeding log" });
         },
       },
-      { onSuccess: () => { invalidateFeeding(); setLogSheetType(null); } },
     );
   }
 
@@ -1127,7 +1161,15 @@ export default function Feeding() {
 
   return (
     <Layout>
-      <PageHeader title="Feeding Tracker" subtitle="Log every feeding for each twin" />
+      <PageHeader
+        title="Feeding Tracker"
+        subtitle="Log every feeding for each twin"
+        right={
+          <a href="stats?section=feeding" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-muted">
+            📊 Stats
+          </a>
+        }
+      />
 
       {twins.length > 0 && (
         <TwinTabs twins={twins} activeTwinId={twinId} onSelect={setActiveTwinId} />

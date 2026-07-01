@@ -1,20 +1,40 @@
 import { useState, useEffect } from "react";
 import { Wifi, WifiOff } from "lucide-react";
+import { replayQueue, queueLength } from "@/lib/offlineQueue";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function OfflineBanner() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [justReconnected, setJustReconnected] = useState(false);
+  const [syncedCount, setSyncedCount] = useState(0);
+  const qc = useQueryClient();
 
   useEffect(() => {
     function handleOnline() {
       setIsOnline(true);
       setJustReconnected(true);
-      const t = setTimeout(() => setJustReconnected(false), 3000);
+
+      const pending = queueLength();
+      if (pending > 0) {
+        const base = window.location.origin;
+        replayQueue(base).then((n) => {
+          if (n > 0) {
+            setSyncedCount(n);
+            qc.invalidateQueries();
+          }
+        });
+      }
+
+      const t = setTimeout(() => {
+        setJustReconnected(false);
+        setSyncedCount(0);
+      }, 3500);
       return () => clearTimeout(t);
     }
     function handleOffline() {
       setIsOnline(false);
       setJustReconnected(false);
+      setSyncedCount(0);
     }
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
@@ -22,7 +42,7 @@ export default function OfflineBanner() {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, []);
+  }, [qc]);
 
   const visible = !isOnline || justReconnected;
 
@@ -54,12 +74,16 @@ export default function OfflineBanner() {
         {justReconnected ? (
           <>
             <Wifi size={13} />
-            <span>Back online — syncing your data…</span>
+            <span>
+              {syncedCount > 0
+                ? `Back online — ${syncedCount} log${syncedCount === 1 ? "" : "s"} synced 💕`
+                : "Back online — syncing your data…"}
+            </span>
           </>
         ) : (
           <>
             <WifiOff size={13} />
-            <span>No connection — TwinTrack works offline too 💕</span>
+            <span>No connection — logs saved offline, will sync when back 💕</span>
           </>
         )}
       </div>

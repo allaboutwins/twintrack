@@ -15,3 +15,6 @@
 - [PWA install prompt disabled](pwa-disabled.md) — InstallPrompt.tsx returns null; native App Store/Play is primary path; do NOT re-enable without checking App Store submission status.
 - [RevenueCat setup](revenuecat-setup.md) — v2 key required (not legacy v1); project proj09a461ed; seed script skips test_store (not valid in v2 API); VITE_PREMIUM_ENABLED=false until launch.
 - [Native API base URL](native-api-base-url.md) — VITE_API_URL must be set in Codemagic; setBaseUrl() called in main.tsx on startup; InAppBrowserGate skips on isNativePlatform() to avoid wv) UA false match.
+- [Offline queue](offline-queue.md) — offlineQueue.ts in twintrack/src/lib/; enqueue() called in onError when !navigator.onLine; OfflineBanner replays queue + invalidates all queries on reconnect.
+- [Pumping Hub](pumping-hub.md) — pump_entries + pump_reminders tables; /api/pump/* routes; /pumping page (purple theme, timer/manual/daily totals/reminders); processPumpReminders() in notifications-scheduler.ts.
+- [Multi-child support](multi-child-support.md) — twins beyond A/B stored with label "Child N"; Settings.tsx extraTwins + extraForms + addChild() (max 6); birthSet + childType columns on twins table.

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useLocation } from "wouter";
 import logoAat from "../assets/logo-aat.png";
-import { Home, Moon, Utensils, GraduationCap, Settings, MessageCircle, X, Sparkles, BarChart2, Heart } from "lucide-react";
+import { Home, Moon, Utensils, GraduationCap, Settings, MessageCircle, X, Sparkles, Baby, Heart } from "lucide-react";
 import { useUser } from "@clerk/react";
 import { useSubmitFeedback } from "@workspace/api-client-react";
 import NotificationCenter from "@/components/NotificationCenter";
@@ -141,8 +141,8 @@ const ALL_TABS = [
   { path: "/dashboard", icon: Home, label: "Home" },
   { path: "/sleep", icon: Moon, label: "Sleep" },
   { path: "/feeding", icon: Utensils, label: "Feed" },
+  { path: "/diapers", icon: Baby, label: "Diapers" },
   { path: "/milestones", icon: Heart, label: "Memories" },
-  { path: "/stats", icon: BarChart2, label: "Stats" },
   { path: "/twin-ai", icon: Sparkles, label: "Twin AI", highlight: true, pref: "showTwinAI" as const },
   { path: "/learn", icon: GraduationCap, label: "Learn" },
 ];

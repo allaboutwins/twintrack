@@ -281,7 +281,7 @@ function StatRow({
   );
 }
 
-function TwinStatCard({ stat, period, days }: { stat: TwinStat; period: Period; days: string[] }) {
+function TwinStatCard({ stat, period, days, focusSection }: { stat: TwinStat; period: Period; days: string[]; focusSection?: string }) {
   const { twin, sleep, feeding, diapers, meta } = stat;
   const isMultiDay = period !== "day";
   const color = twin.colorTheme;
@@ -322,7 +322,8 @@ function TwinStatCard({ stat, period, days }: { stat: TwinStat; period: Period; 
       <div className="px-4 py-4 space-y-4 divide-y divide-border/60">
 
         {/* Sleep section */}
-        <div className="space-y-3">
+        {(!focusSection || focusSection === 'sleep') && (
+        <div id="stats-sleep" className="space-y-3">
           {hasSleep ? (
             <>
               <StatRow
@@ -356,9 +357,11 @@ function TwinStatCard({ stat, period, days }: { stat: TwinStat; period: Period; 
             </div>
           )}
         </div>
+        )}
 
         {/* Feeding section */}
-        <div className="pt-4 space-y-3">
+        {(!focusSection || focusSection === 'feeding') && (
+        <div id="stats-feeding" className="pt-4 space-y-3">
           {hasFeeding ? (
             <>
               <StatRow
@@ -403,9 +406,11 @@ function TwinStatCard({ stat, period, days }: { stat: TwinStat; period: Period; 
             </div>
           )}
         </div>
+        )}
 
         {/* Diapers section */}
-        <div className="pt-4 space-y-3">
+        {(!focusSection || focusSection === 'diapers') && (
+        <div id="stats-diapers" className="pt-4 space-y-3">
           {hasDiapers ? (
             <>
               <StatRow
@@ -445,6 +450,7 @@ function TwinStatCard({ stat, period, days }: { stat: TwinStat; period: Period; 
             </div>
           )}
         </div>
+        )}
 
       </div>
     </div>
@@ -513,6 +519,9 @@ export default function Stats() {
   const [endDate, setEndDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [data, setData] = useState<StatsData | null>(null);
   const [loading, setLoading] = useState(false);
+  const [focusSection] = useState<string | undefined>(
+    () => new URLSearchParams(window.location.search).get('section') ?? undefined,
+  );
   const baseUrl = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
 
   const fetchStats = useCallback(async () => {
@@ -560,7 +569,10 @@ export default function Stats() {
 
   return (
     <Layout>
-      <PageHeader title="Stats" subtitle="Your twins' progress at a glance" />
+      <PageHeader
+        title={focusSection === 'sleep' ? 'Sleep Stats' : focusSection === 'feeding' ? 'Feeding Stats' : focusSection === 'diapers' ? 'Diaper Stats' : 'Stats'}
+        subtitle="Your twins' progress at a glance"
+      />
 
       <div className="px-4 pb-6 space-y-4">
         {/* Period tabs */}
@@ -655,7 +667,7 @@ export default function Stats() {
 
             {/* Per-twin detail cards */}
             {data.twins.map((stat) => (
-              <TwinStatCard key={stat.twin.id} stat={stat} period={period} days={data.days} />
+              <TwinStatCard key={stat.twin.id} stat={stat} period={period} days={data.days} focusSection={focusSection} />
             ))}
 
             <p className="text-center text-[10px] text-muted-foreground pt-1 pb-2">

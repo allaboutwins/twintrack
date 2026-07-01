@@ -29,6 +29,7 @@ import revenuecatWebhookRouter from "./revenuecat-webhook";
 import paypalRouter from "./paypal";
 import bathRouter from "./bath";
 import unsubscribeRouter from "./unsubscribe";
+import pumpingRouter from "./pumping";
 
 const router: IRouter = Router();
 
@@ -62,5 +63,6 @@ router.use(revenuecatWebhookRouter);
 router.use(paypalRouter);
 router.use("/bath", bathRouter);
 router.use(unsubscribeRouter);
+router.use(pumpingRouter);
 
 export default router;

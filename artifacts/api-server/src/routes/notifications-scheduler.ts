@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, gte, and, sql } from "drizzle-orm";
+import { eq, desc, gte, lte, and, sql } from "drizzle-orm";
 import {
   db,
   pushSubscriptionsTable,
@@ -13,6 +13,7 @@ import {
   pollResponsesTable,
   userPlansTable,
   analyticsEventsTable,
+  pumpRemindersTable,
 } from "@workspace/db";
 import { sendPushToUser } from "./push";
 import { sendTrialReminderEmail } from "../lib/email";
@@ -45,6 +46,12 @@ const DAILY_LOG_MESSAGES = [
 const STREAK_MESSAGES = [
   (n: number) => ({ title: `${n}-day streak! 🔥`, body: `You've logged every day for ${n} days. That kind of care and consistency is remarkable. You're an amazing parent.` }),
   (n: number) => ({ title: `${n} days strong 🔥`, body: `You've logged every single day for ${n} days. Your dedication to your twins is genuinely inspiring. Keep it up!` }),
+];
+
+const PUMP_MESSAGES = [
+  { title: "Pump time 🫙", body: "Your body works so hard. Time for a quick pump session — you're doing incredible." },
+  { title: "Time to pump 🫙", body: "Another pump session keeps your supply strong. You're amazing for sticking with it." },
+  { title: "Pump reminder 🍼", body: "Your schedule says it's pump time. Even a short session counts — you're doing brilliantly." },
 ];
 
 const WEEKLY_MESSAGES = [
@@ -242,6 +249,39 @@ async function processUser(userId: string): Promise<{ userId: string; sent: stri
 
 // ── Trial reminder email sender ────────────────────────────────────────────
 
+async function processPumpReminders(): Promise<string[]> {
+  const sent: string[] = [];
+  if (isQuietHours()) return sent;
+
+  const now = new Date();
+  const dueReminders = await db
+    .select()
+    .from(pumpRemindersTable)
+    .where(and(
+      eq(pumpRemindersTable.isEnabled, true),
+      lte(pumpRemindersTable.nextReminderAt, now),
+    ));
+
+  for (const reminder of dueReminders) {
+    try {
+      const msg = PUMP_MESSAGES[Math.floor(Math.random() * PUMP_MESSAGES.length)];
+      await sendPushToUser(reminder.userId, { ...msg, type: "pump-reminder", icon: "/icon-192.png", url: "/pumping" });
+      await db
+        .update(pumpRemindersTable)
+        .set({
+          nextReminderAt: new Date(Date.now() + reminder.intervalHours * 3600000),
+          updatedAt: new Date(),
+        })
+        .where(eq(pumpRemindersTable.id, reminder.id));
+      sent.push(`pump:${reminder.userId}`);
+    } catch (err) {
+      logger.error({ err, userId: reminder.userId }, "pump-reminder: send failed");
+    }
+  }
+
+  return sent;
+}
+
 async function processTrialReminders(): Promise<string[]> {
   const sent: string[] = [];
   const now = new Date();
@@ -336,6 +376,14 @@ async function runScheduledTasks(): Promise<void> {
     }
   } catch (err) {
     logger.error({ err }, "notification-scheduler: trial reminder error");
+  }
+  try {
+    const sent = await processPumpReminders();
+    if (sent.length > 0) {
+      logger.info({ sent }, "notification-scheduler: pump reminders sent");
+    }
+  } catch (err) {
+    logger.error({ err }, "notification-scheduler: pump reminder error");
   }
 }
 

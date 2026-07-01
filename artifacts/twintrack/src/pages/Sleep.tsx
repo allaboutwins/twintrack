@@ -15,6 +15,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import Layout, { TwinTabs, PageHeader } from "@/components/Layout";
 import { Moon, Play, Square, Plus, Trash2, Pencil, X, Check, ArrowLeftRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { enqueue } from "@/lib/offlineQueue";
 
 const TZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
@@ -223,9 +224,15 @@ export default function Sleep() {
 
   function startSleep(type: "nap" | "night") {
     if (!twinId) return;
+    const startTime = new Date().toISOString();
     createEntry.mutate(
-      { data: { twinId, type, startTime: new Date().toISOString() } },
-      { onSuccess: invalidate },
+      { data: { twinId, type, startTime } },
+      {
+        onSuccess: invalidate,
+        onError: () => {
+          if (!navigator.onLine) enqueue({ endpoint: "/api/sleep", method: "POST", body: { twinId, type, startTime }, label: "Sleep start" });
+        },
+      },
     );
   }
 
@@ -265,8 +272,10 @@ export default function Sleep() {
     if (!duration) return;
     const end = new Date();
     const start = new Date(end.getTime() - duration * 60000);
+    const startTime = start.toISOString();
+    const endTime = end.toISOString();
     createEntry.mutate(
-      { data: { twinId, type: addType, startTime: start.toISOString(), endTime: end.toISOString(), durationMinutes: duration } },
+      { data: { twinId, type: addType, startTime, endTime, durationMinutes: duration } },
       {
         onSuccess: () => {
           invalidate();
@@ -274,6 +283,9 @@ export default function Sleep() {
           setQuickDuration(null);
           setCustomHours("");
           setCustomMinutes("");
+        },
+        onError: () => {
+          if (!navigator.onLine) enqueue({ endpoint: "/api/sleep", method: "POST", body: { twinId, type: addType, startTime, endTime, durationMinutes: duration }, label: "Sleep entry" });
         },
       },
     );
@@ -312,7 +324,15 @@ export default function Sleep() {
 
   return (
     <Layout>
-      <PageHeader title="Sleep Tracker" subtitle="Track naps and night sleep" />
+      <PageHeader
+        title="Sleep Tracker"
+        subtitle="Track naps and night sleep"
+        right={
+          <a href="stats?section=sleep" className="text-xs font-medium text-muted-foreground hover:text-primary transition-colors px-2 py-1 rounded-lg hover:bg-muted">
+            📊 Stats
+          </a>
+        }
+      />
 
       {twins.length > 0 && (
         <TwinTabs

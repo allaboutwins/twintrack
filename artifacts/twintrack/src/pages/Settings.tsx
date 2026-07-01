@@ -9,7 +9,7 @@ import {
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import Layout, { PageHeader } from "@/components/Layout";
-import { Save, LogOut, Video, ChevronRight, Trash2, AlertTriangle, Bell, BellOff, Smartphone, Sparkles, UserPlus, Users, X, Copy, Check, Lock } from "lucide-react";
+import { Save, LogOut, Video, ChevronRight, Trash2, AlertTriangle, Bell, BellOff, Smartphone, Sparkles, UserPlus, Users, X, Copy, Check, Lock, Plus } from "lucide-react";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 import { useNotificationPrefs } from "@/hooks/useNotificationPrefs";
 import { useAppPrefs } from "@/hooks/useAppPrefs";
@@ -61,6 +61,8 @@ export default function Settings() {
   const [formB, setFormB] = useState<TwinFormData>({ ...defaultForm, colorTheme: "#2e818c" });
   const [savedA, setSavedA] = useState(false);
   const [savedB, setSavedB] = useState(false);
+  const [extraForms, setExtraForms] = useState<Record<number, TwinFormData>>({});
+  const [extraSaved, setExtraSaved] = useState<Record<number, boolean>>({});
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
@@ -133,6 +135,7 @@ export default function Settings() {
 
   const twinA = twins.find((t) => t.label === "Twin A");
   const twinB = twins.find((t) => t.label === "Twin B");
+  const extraTwins = twins.filter((t) => t.label !== "Twin A" && t.label !== "Twin B");
 
   useEffect(() => {
     if (twinA) {
@@ -151,10 +154,43 @@ export default function Settings() {
         colorTheme: twinB.colorTheme,
       });
     }
+    for (const t of extraTwins) {
+      setExtraForms((prev) => ({
+        ...prev,
+        [t.id]: prev[t.id] ?? { name: t.name, gender: t.gender ?? "", birthdate: t.birthdate ?? "", colorTheme: t.colorTheme },
+      }));
+    }
   }, [twins.length]);
 
   function invalidate() {
     qc.invalidateQueries({ queryKey: getListTwinsQueryKey({ userId: user?.id ?? "" }) });
+  }
+
+  function addChild() {
+    if (!user?.id || twins.length >= 6) return;
+    const CHILD_COLORS = ["#9b59b6", "#e67e22", "#27ae60", "#e74c3c"];
+    const nextLabel = `Child ${twins.length + 1}`;
+    const color = CHILD_COLORS[(twins.length - 2) % CHILD_COLORS.length];
+    createTwin.mutate(
+      { data: { userId: user.id, label: nextLabel, name: nextLabel, colorTheme: color } },
+      { onSuccess: () => invalidate() },
+    );
+  }
+
+  function saveExtraTwin(twin: { id: number; label: string }) {
+    if (!user?.id) return;
+    const form = extraForms[twin.id];
+    if (!form) return;
+    updateTwin.mutate(
+      { id: twin.id, data: { name: form.name || null, gender: form.gender || null, birthdate: form.birthdate || null, colorTheme: form.colorTheme } },
+      {
+        onSuccess: () => {
+          invalidate();
+          setExtraSaved((prev) => ({ ...prev, [twin.id]: true }));
+          setTimeout(() => setExtraSaved((prev) => ({ ...prev, [twin.id]: false })), 2000);
+        },
+      },
+    );
   }
 
   function saveTwin(label: "Twin A" | "Twin B", form: TwinFormData, existing?: typeof twinA) {
@@ -586,6 +622,31 @@ export default function Settings() {
           saved={savedB}
           isPending={createTwin.isPending || updateTwin.isPending}
         />
+
+        {/* Extra children (triplets, quads, etc.) */}
+        {extraTwins.map((t) => (
+          <TwinProfileForm
+            key={t.id}
+            label={t.label}
+            form={extraForms[t.id] ?? { name: t.name, gender: t.gender ?? "", birthdate: t.birthdate ?? "", colorTheme: t.colorTheme }}
+            onChange={(f) => setExtraForms((prev) => ({ ...prev, [t.id]: f }))}
+            onSave={() => saveExtraTwin(t)}
+            saved={extraSaved[t.id] ?? false}
+            isPending={updateTwin.isPending}
+          />
+        ))}
+
+        {/* Add another child (triplets / quads support, max 6) */}
+        {twins.length < 6 && (
+          <button
+            onClick={addChild}
+            disabled={createTwin.isPending}
+            className="w-full py-3.5 rounded-2xl border-2 border-dashed border-border text-sm font-semibold text-muted-foreground hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2 bg-white"
+          >
+            <Plus size={16} />
+            Add another child
+          </button>
+        )}
 
         {/* Delete Account */}
         <div className="bg-white rounded-2xl border border-red-100 overflow-hidden">
