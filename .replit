@@ -44,3 +44,15 @@ VITE_REVENUECAT_IOS_API_KEY = "appl_spJzpJipDcGAVtiRGqTjXFWUEzq"
 VITE_REVENUECAT_ANDROID_API_KEY = "goog_cWFQbvEiYwoYmMCRpuDHlKrZFku"
 PAYPAL_WEBHOOK_ID = "0WD335275H194884P"
 PAYPAL_ENV = "live"
+
+[[ports]]
+localPort = 8080
+externalPort = 8080
+
+[[ports]]
+localPort = 8081
+externalPort = 80
+
+[[ports]]
+localPort = 19107
+externalPort = 3000
