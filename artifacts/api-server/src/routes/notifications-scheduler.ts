@@ -289,7 +289,7 @@ async function processPumpReminders(): Promise<string[]> {
 async function processTrialReminders(): Promise<string[]> {
   const sent: string[] = [];
   const now = new Date();
-  const appUrl = process.env.APP_URL ?? "https://twintrack.allaboutwins.com";
+  const appUrl = process.env.APP_URL ?? "https://app.allaboutwins.com";
 
   // Also pick up users whose trial expired within the last 24h for the day-0 email
   const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
@@ -481,10 +481,12 @@ router.get("/push/cron-trigger", async (req, res): Promise<void> => {
 // ── Monthly recap email processing ────────────────────────────────────────
 
 const RECAP_FEATURES = [
-  { icon: "🤖", title: "Twin AI", desc: "Ask any twin parenting question, get a warm expert answer", url: "/ai" },
+  { icon: "🤖", title: "Twin AI", desc: "Ask any twin parenting question, get a warm expert answer", url: "/twin-ai" },
   { icon: "📖", title: "Twins Magazine", desc: "Browse expert twin parenting articles & real family stories", url: "/learn" },
-  { icon: "🎓", title: "Twins Academy", desc: "Expert courses on sleep, feeding, NICU life, and more", url: "/learn" },
+  { icon: "🎓", title: "Twins Academy", desc: "Expert courses on sleep, feeding, NICU life, and more", url: "/learn?tab=academy" },
   { icon: "💝", title: "Memory Cards", desc: "Beautiful milestone cards to capture every first moment", url: "/milestones" },
+  { icon: "🌐", title: "Community", desc: "Ask questions & connect with other twin moms who get it", url: "/learn?tab=community" },
+  { icon: "📊", title: "Polls", desc: "Vote in weekly twin parenting polls and see what other moms think", url: "/learn?tab=community" },
   { icon: "👨‍👩‍👧‍👦", title: "Caregiver Access", desc: "Share tracking with your partner, nanny, or family", url: "/settings" },
   { icon: "🛁", title: "Bath Tracker", desc: "Track bath time alongside sleep, feeding, and diapers", url: "/bath" },
   { icon: "🌙", title: "Routines", desc: "Morning, bedtime, and outing checklists for the whole family", url: "/routines" },
@@ -495,7 +497,7 @@ async function processMonthlyRecaps(): Promise<{ sent: number; skipped: number }
   const month = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
   const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
   const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59);
-  const appUrl = process.env.APP_URL ?? "https://twintrack.allaboutwins.com";
+  const appUrl = process.env.APP_URL ?? "https://app.allaboutwins.com";
   const monthName = now.toLocaleString("en-US", { month: "long", year: "numeric" });
 
   const [usersWithEmail, alreadySentRows] = await Promise.all([
@@ -588,7 +590,7 @@ router.post("/admin/test-monthly-recap", async (req, res): Promise<void> => {
   const { to } = req.body as { to?: string };
   if (!to || !to.includes("@")) { res.status(400).json({ error: "to (email address) is required" }); return; }
 
-  const appUrl = process.env.APP_URL ?? "https://twintrack.allaboutwins.com";
+  const appUrl = process.env.APP_URL ?? "https://app.allaboutwins.com";
   const now = new Date();
   const monthName = now.toLocaleString("en-US", { month: "long", year: "numeric" });
   const shuffled = [...RECAP_FEATURES].sort(() => Math.random() - 0.5).slice(0, 3);
@@ -639,7 +641,7 @@ router.post("/admin/test-trial-email", async (req, res): Promise<void> => {
   if (!to || !to.includes("@")) { res.status(400).json({ error: "to (email address) is required" }); return; }
   if (![1, 3, 7].includes(days ?? 0)) { res.status(400).json({ error: "days must be 1, 3, or 7" }); return; }
 
-  const appUrl = process.env.APP_URL ?? "https://twintrack.allaboutwins.com";
+  const appUrl = process.env.APP_URL ?? "https://app.allaboutwins.com";
   const result = await sendTrialReminderEmail({ to, daysLeft: days!, appUrl });
 
   req.log.info({ event: "test_trial_email", to, days, ok: result.ok }, "Test trial email sent");

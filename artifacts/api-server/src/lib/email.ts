@@ -129,28 +129,28 @@ function buildTrialReminderHtml(p: TrialReminderParams): { subject: string; html
     headlineEmoji = "💕";
     headline = "You're officially one of our<br/>Founding Twin Moms";
     body =
-      "You have <strong>7 days left</strong> in your free TwinTrack trial. Unlock Premium now and keep the special <strong>$3.25/month Founding Moms price forever</strong> (billed $39/year, less than a Starbucks coffee ☕) — before it disappears.";
+      "You have <strong>7 days left</strong> in your free TwinTrack trial. Unlock Premium now and keep the special <strong>$3.25/month Founding Moms price forever</strong> — before it disappears.";
     urgency = "7 days remaining";
   } else if (p.daysLeft === 3) {
     subject = "Only 3 days left to secure your Founding Moms rate 💕";
     headlineEmoji = "⏳";
     headline = "Only 3 days left to secure<br/>your Founding Moms rate";
     body =
-      "Your free trial ends in <strong>3 days</strong>. After that, the special $3.25/month price disappears and annual pricing becomes $4.08/month. Lock it in now — it stays $3.25/month forever.";
+      "Your free trial ends in <strong>3 days</strong>. Lock in your special <strong>$3.25/month Founding Moms rate</strong> now — it stays $3.25/month forever.";
     urgency = "3 days remaining";
   } else if (p.daysLeft === 1) {
     subject = "Your Founding Moms offer ends tomorrow 💕";
     headlineEmoji = "💕";
     headline = "Your Founding Moms offer<br/>ends tomorrow";
     body =
-      "Your free trial ends <strong>tomorrow</strong>. We'd love to keep you as a Founding Mom — lock in your $3.25/month rate (billed $39/year) before it slips away. After tomorrow, annual pricing goes back to $4.08/month.";
+      "Your free trial ends <strong>tomorrow</strong>. We'd love to keep you as a Founding Mom — lock in your <strong>$3.25/month rate</strong> before it slips away.";
     urgency = "Last day · Founding Moms rate";
   } else {
     subject = "Your TwinTrack trial has ended — keep going for $3.25/month 💕";
     headlineEmoji = "💝";
     headline = "Your free trial has ended.<br/>We'd love to keep you.";
     body =
-      "Your 14-day TwinTrack trial is over. Your sleep, feeding, and diaper tracking stays — but premium features like Twin AI and the Magazine are now locked. Unlock everything for just <strong>$3.25/month as a Founding Mom</strong> — less than a Starbucks coffee ☕, billed $39/year.";
+      "Your 14-day TwinTrack trial is over. Your sleep, feeding, and diaper tracking stays — but premium features like Twin AI and the Magazine are now locked. Unlock everything for just <strong>$3.25/month as a Founding Mom</strong>.";
     urgency = "Trial ended · Founding Moms rate still available";
   }
 
@@ -206,9 +206,9 @@ function buildTrialReminderHtml(p: TrialReminderParams): { subject: string; html
               <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:16px;">
                 <tr>
                   <td style="background:#fdf8ff;border:1px solid #f3e8ff;border-radius:16px;padding:18px 24px;text-align:center;">
-                    <p style="margin:0 0 4px;font-size:13px;color:#9ca3af;text-decoration:line-through;">$4.08/month regular price</p>
-                    <p style="margin:0;font-size:28px;font-weight:800;color:#e91e8c;">$3.25/month</p>
-                    <p style="margin:4px 0 0;font-size:12px;color:#9c27b0;font-weight:600;">Billed $39/year · Less than a Starbucks coffee ☕ · Locked in forever</p>
+                    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#9c27b0;">💕 Founding Moms Premium</p>
+                    <p style="margin:0;font-size:28px;font-weight:800;color:#e91e8c;">Only $3.25/month</p>
+                    <p style="margin:4px 0 0;font-size:12px;color:#9c27b0;font-weight:600;">Less than a Starbucks coffee each month ☕</p>
                   </td>
                 </tr>
               </table>

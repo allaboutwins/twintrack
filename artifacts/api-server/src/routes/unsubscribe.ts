@@ -57,7 +57,7 @@ function buildPage(message: string, success: boolean, email: string): string {
     ${success
       ? `<p>${email ? `<strong>${email}</strong> has been` : "You've been"} removed from our mailing list. You won't receive any more campaign emails from us.</p>`
       : `<p>${message}</p>`}
-    <a href="https://twintrack.allaboutwins.com">Return to TwinTrack</a>
+    <a href="https://app.allaboutwins.com">Return to TwinTrack</a>
   </div>
 </body>
 </html>`;

@@ -30,6 +30,18 @@ router.get("/community/questions", async (_req, res): Promise<void> => {
   res.json(withAnswers);
 });
 
+// GET /community/questions/latest — newest published question (lightweight, for Home)
+router.get("/community/questions/latest", async (_req, res): Promise<void> => {
+  const [question] = await db
+    .select()
+    .from(communityQuestions)
+    .where(eq(communityQuestions.status, "published"))
+    .orderBy(desc(communityQuestions.createdAt))
+    .limit(1);
+
+  res.json(question ?? null);
+});
+
 // POST /community/questions — submit a question (requires approval)
 router.post("/community/questions", async (req, res): Promise<void> => {
   const parsed = z

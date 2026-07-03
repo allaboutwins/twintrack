@@ -80,7 +80,7 @@ async function getOrCreateBillingPlan(token: string): Promise<string> {
   }
 
   // 4. First-ever run: create product + plan
-  const appUrl = process.env.APP_URL ?? "https://twintrack.allaboutwins.com";
+  const appUrl = process.env.APP_URL ?? "https://app.allaboutwins.com";
   const product = await paypalRequest("/v1/catalogs/products", "POST", token, {
     name: "TwinTrack Premium",
     description: "Premium access to TwinTrack — the all-in-one app for twin parents.",
@@ -126,7 +126,7 @@ router.post("/paypal/create-subscription", async (req: Request, res): Promise<vo
     // Use the browser's actual origin so PayPal redirects back to wherever the
     // user is (dev preview or production). Falls back to APP_URL if no Origin
     // header is present (e.g. server-side or non-browser calls).
-    const productionUrl = process.env.APP_URL ?? "https://twintrack.allaboutwins.com";
+    const productionUrl = process.env.APP_URL ?? "https://app.allaboutwins.com";
     const requestOrigin = req.headers.origin as string | undefined;
     const appUrl = requestOrigin ?? productionUrl;
     const token = await getPayPalAccessToken();

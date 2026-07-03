@@ -15,7 +15,7 @@ import { sendCampaignBatch } from "./email.js";
 import { getUnsubToken } from "../routes/unsubscribe.js";
 import { logger } from "./logger.js";
 
-const APP_URL = process.env.APP_URL ?? "https://twintrack.allaboutwins.com";
+const APP_URL = process.env.APP_URL ?? "https://app.allaboutwins.com";
 const CAMPAIGN_ID = "paypal_announcement_june_2026";
 
 /** ms until next 01:05 UTC (5 min past midnight to let Resend reset fully) */

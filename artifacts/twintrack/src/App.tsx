@@ -138,7 +138,7 @@ function RevenueCatInitializer() {
 
 /**
  * On native Capacitor builds, API calls are cross-origin (capacitor://localhost
- * → https://twintrack.allaboutwins.com) so the Clerk session cookie is never
+ * → https://app.allaboutwins.com) so the Clerk session cookie is never
  * sent. This component registers Clerk's getToken() as the Bearer-token getter
  * so every customFetch request carries an Authorization header instead.
  * On web the getter is never set and the existing cookie-based auth is used.

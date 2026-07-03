@@ -813,7 +813,7 @@ router.post("/admin/paypal-announcement", async (req: Request, res): Promise<voi
   if (!isAdminAuth(req)) { res.status(403).json({ error: "Forbidden" }); return; }
 
   const { testEmail, subjectVariant = "A" } = req.body as { testEmail?: string; subjectVariant?: PayPalSubjectVariant };
-  const APP_URL = process.env.APP_URL ?? "https://twintrack.allaboutwins.com";
+  const APP_URL = process.env.APP_URL ?? "https://app.allaboutwins.com";
 
   try {
     if (testEmail) {
@@ -880,7 +880,7 @@ router.post("/admin/paypal-announcement", async (req: Request, res): Promise<voi
 router.post("/admin/campaign-announcement", async (req: Request, res): Promise<void> => {
   if (!isAdminAuth(req)) { res.status(403).json({ error: "Forbidden" }); return; }
 
-  const APP_URL = process.env.APP_URL ?? "https://twintrack.allaboutwins.com";
+  const APP_URL = process.env.APP_URL ?? "https://app.allaboutwins.com";
 
   interface EmailEntry { email: string; consent: string; }
   const { emails, testEmail, includeConsentNo = false } =

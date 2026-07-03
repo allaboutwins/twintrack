@@ -12,9 +12,9 @@ import {
   getGetActivePollQueryKey,
   useRespondToPoll,
 } from "@workspace/api-client-react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import Layout, { PageHeader } from "@/components/Layout";
-import { Moon, Utensils, Baby, ChevronRight, Star, Heart, BarChart2, Sparkles, X, Flame, Trophy, Bell } from "lucide-react";
+import { Moon, Utensils, Baby, ChevronRight, Star, Heart, BarChart2, Sparkles, X, Flame, Trophy, Bell, MessageCircle } from "lucide-react";
 import { posthog } from "@/lib/posthog";
 
 import { Skeleton } from "@/components/ui/skeleton";
@@ -509,6 +509,9 @@ export default function Dashboard() {
           </div>
         )}
 
+        {/* Community Question — surfaces the newest approved question */}
+        {!noTwins && !isLoading && <CommunityQuestionCard />}
+
         {/* Poll widget */}
         {!noTwins && !isLoading && user?.id && (
           <PollWidget userId={user.id} />
@@ -828,6 +831,52 @@ function PollWidget({ userId }: { userId: string }) {
         </button>
       </div>
     </div>
+  );
+}
+
+interface LatestCommunityQuestion {
+  id: string;
+  question: string;
+  authorName?: string | null;
+  createdAt: string;
+}
+
+function CommunityQuestionCard() {
+  const [, setLocation] = useLocation();
+  const { data: question } = useQuery<LatestCommunityQuestion | null>({
+    queryKey: ["community-question-latest"],
+    queryFn: async () => {
+      const res = await fetch("/api/community/questions/latest");
+      if (!res.ok) throw new Error("Failed to load community question");
+      return res.json();
+    },
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 5 * 60 * 1000,
+    refetchOnWindowFocus: true,
+  });
+
+  if (!question) return null;
+
+  return (
+    <button
+      onClick={() => { posthog?.capture("community_question_card_clicked", { questionId: question.id }); setLocation("/learn?tab=community"); }}
+      className="w-full bg-gradient-to-br from-sky-50 to-cyan-50 rounded-2xl border border-sky-200/60 p-4 text-left hover:border-sky-300 active:scale-[0.99] transition-all"
+      data-testid="community-question-card"
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <MessageCircle size={15} className="text-sky-600 flex-shrink-0" />
+        <p className="text-[10px] font-bold text-sky-700 uppercase tracking-wide">From the Twin Mom Community</p>
+      </div>
+      <p className="text-sm font-semibold text-foreground leading-snug mb-1">{question.question}</p>
+      <div className="flex items-center justify-between mt-2">
+        <p className="text-xs text-muted-foreground">
+          {question.authorName ? `Asked by ${question.authorName}` : "A twin mom asked"}
+        </p>
+        <span className="text-xs text-sky-700 font-semibold flex items-center gap-0.5">
+          Join the conversation <ChevronRight size={11} />
+        </span>
+      </div>
+    </button>
   );
 }
 
