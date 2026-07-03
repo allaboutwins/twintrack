@@ -22,3 +22,4 @@ export * from "./email-unsubscribes";
 export * from "./campaign-emails";
 export * from "./pumping";
 export * from "./email-recap";
+export * from "./trial-reminder-logs";

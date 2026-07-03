@@ -1,0 +1,165 @@
+TwinTrack — Magazine + Premium Messaging + Notification Fixes 💕🚀
+
+Please implement the following updates:
+
+---
+
+1. JULY/AUGUST TWINS MAGAZINE UPDATE 📚
+
+Please replace the current featured magazine with the new issue.
+
+Magazine URL:
+https://tinyurl.com/4wr4d2w2
+
+I will attach:
+
+* Magazine Cover image
+* "What's Inside" preview image(s)
+
+Please:
+
+* update the magazine card
+* update the featured magazine section
+* ensure the new issue opens correctly
+* create a new nov/dec 2026 with the  photo "Coming Soon" linking to: https://allaboutwins.com/product/twins-magazine-october-2026
+
+Goal:
+Always showcase the newest Twins Magazine issue.
+
+---
+
+2. REPLACE PAYPAL BANNER
+
+Please remove the current PayPal banner completely.
+
+Replace it with a magazine promotion banner.
+
+Suggested headline:
+
+🔥 Fresh From The Oven: New Twins Magazine Issue
+
+Alternative:
+
+📚 The New Twins Magazine Has Arrived
+
+Alternative:
+
+💕 New Twins Magazine — Read It Now
+
+CTA:
+
+Read The New Issue →
+
+Goal:
+Promote valuable content on the homepage instead of payments.
+
+---
+
+3. FOUNDING MOMS EMAILS — UPDATE PRICING MESSAGE
+
+The automated trial emails still reference:
+
+"$39/year"
+
+Please update ALL:
+
+* 7 days remaining
+* 3 days remaining
+* 1 day remaining
+* any Founding Moms upgrade emails
+
+New positioning:
+
+💕 Founding Moms Premium
+
+Only $3.25/month
+
+Less than a Starbucks coffee each month ☕
+
+Keep messaging:
+
+* warm
+* supportive
+* appreciative
+
+Never aggressive.
+
+---
+
+4. DUPLICATE EMAIL BUG
+
+My test email:
+
+[contact@allaboutwins.com](mailto:contact@allaboutwins.com)
+
+received the 7-day reminder email 3 times.
+
+Please investigate:
+
+* duplicate send logic
+* monthly_recap_logs table
+* trial reminder logs
+* cron execution
+* idempotency checks
+
+Goal:
+
+A user should receive each reminder only once.
+
+Examples:
+
+* one 7-day email
+* one 3-day email
+* one 1-day email
+
+Never duplicates.
+
+---
+
+5. NOTIFICATION CENTER / CHERRIES BUG 🍒
+
+Current issue:
+
+The Notification Center and Home page updates are not showing the latest app updates.
+
+Also:
+
+When I dismiss the 3 Home page notifications, they reappear every time I log in.
+
+Please investigate:
+
+* localStorage persistence
+* dismissed notification tracking
+* update feed query caching
+* update ordering
+* latest update retrieval
+
+Requirements:
+
+Home page:
+
+* show latest 3 updates only
+* dismissed updates stay dismissed
+
+Cherry Notification Center:
+
+* show complete update history
+* newest first
+* always pull latest published updates
+
+Goal:
+
+Updates should feel fresh and relevant, not repetitive.
+
+---
+
+PRIORITY ORDER
+
+1. Fix duplicate reminder emails
+2. Fix notification persistence
+3. Fix update feed freshness
+4. Update Founding Moms pricing messaging
+5. Update Twins Magazine issue
+6. Replace PayPal banner
+
+💕

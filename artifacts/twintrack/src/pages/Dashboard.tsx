@@ -173,7 +173,8 @@ export default function Dashboard() {
   });
 
   useEffect(() => {
-    fetch("/api/app-updates?limit=3")
+    const baseUrl = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
+    fetch(`${baseUrl}/api/app-updates?limit=3&_t=${Date.now()}`, { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => { if (Array.isArray(data)) setLatestUpdates(data); })
       .catch(() => {});
@@ -388,9 +389,6 @@ export default function Dashboard() {
         {!noTwins && !isLoading && hasGoodDay && streak < 3 && (
           <GoodDayCard feedings={totalFeedings} diapers={totalDiapers} sleepMins={totalSleepMins} />
         )}
-
-        {/* What's New */}
-        {!noTwins && !isLoading && <WhatsNewCard />}
 
         {/* Feature Spotlight */}
         {!noTwins && !isLoading && <FeatureSpotlightCard />}
@@ -742,72 +740,6 @@ function FeatureSpotlightCard() {
         <p className="font-semibold text-sm text-foreground leading-snug">{spotlight.title}</p>
         <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed line-clamp-2">{spotlight.desc}</p>
         <p className={`text-[11px] font-semibold mt-1.5 ${spotlight.labelColor}`}>{spotlight.label} →</p>
-      </div>
-    </div>
-  );
-}
-
-const UPDATES_SEEN_KEY = "tt_updates_seen";
-
-interface AppUpdateItem {
-  id: number;
-  emoji: string;
-  title: string;
-  description: string;
-  publishedAt: string;
-}
-
-function WhatsNewCard() {
-  const [dismissed, setDismissed] = useState(false);
-  const [updates, setUpdates] = useState<AppUpdateItem[]>([]);
-  const baseUrl = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
-
-  useEffect(() => {
-    fetch(`${baseUrl}/api/app-updates?limit=3`)
-      .then((r) => (r.ok ? r.json() : []))
-      .then((data: AppUpdateItem[]) => {
-        setUpdates(data);
-        const lastSeen = localStorage.getItem(UPDATES_SEEN_KEY);
-        if (lastSeen && !data.some((u) => new Date(u.publishedAt) > new Date(lastSeen))) {
-          setDismissed(true);
-        }
-      })
-      .catch(() => {});
-  }, [baseUrl]);
-
-  function dismiss() {
-    setDismissed(true);
-    try { localStorage.setItem(UPDATES_SEEN_KEY, new Date().toISOString()); } catch { /* noop */ }
-  }
-
-  if (dismissed || updates.length === 0) return null;
-
-  return (
-    <div className="bg-gradient-to-br from-violet-50 to-pink-50 border border-violet-200/60 rounded-2xl p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Sparkles size={15} className="text-violet-500" />
-          <p className="text-xs font-bold text-violet-600 uppercase tracking-wide">What's New</p>
-        </div>
-        <button
-          onClick={dismiss}
-          className="p-1 rounded-lg text-muted-foreground hover:text-foreground transition-colors"
-          aria-label="Dismiss"
-          data-testid="whats-new-dismiss"
-        >
-          <X size={14} />
-        </button>
-      </div>
-      <div className="space-y-2.5">
-        {updates.map((u) => (
-          <div key={u.id} className="flex items-start gap-3">
-            <span className="text-base flex-shrink-0 mt-0.5">{u.emoji}</span>
-            <div>
-              <p className="text-sm font-semibold text-foreground leading-snug">{u.title}</p>
-              <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{u.description}</p>
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );

@@ -17,6 +17,7 @@ import {
   onboardingTable,
   milestonesTable,
   monthlyRecapLogsTable,
+  trialReminderLogsTable,
 } from "@workspace/db";
 import { sendPushToUser } from "./push";
 import { sendTrialReminderEmail, sendMonthlyRecapEmail } from "../lib/email";
@@ -302,12 +303,21 @@ async function processTrialReminders(): Promise<string[]> {
   // Day-0 expiry email for users whose trial just ended
   for (const user of expiredTodayUsers) {
     if (!user.userEmail) continue;
-    const alreadySent = (user.trialRemindersSent ?? "").split(",").includes("0");
-    if (alreadySent) continue;
+
+    // Atomically claim this milestone via a unique-constrained insert — this
+    // is the source of truth for idempotency (immune to concurrent runs from
+    // the internal hourly timer + external cron trigger overlapping).
+    const claimed = await db
+      .insert(trialReminderLogsTable)
+      .values({ userId: user.userId, milestone: "0" })
+      .onConflictDoNothing()
+      .returning();
+    if (claimed.length === 0) continue;
+
     const result = await sendTrialReminderEmail({ to: user.userEmail, daysLeft: 0, appUrl });
     if (result.ok) {
       const existing = (user.trialRemindersSent ?? "").split(",").filter(Boolean);
-      existing.push("0");
+      if (!existing.includes("0")) existing.push("0");
       await db.update(userPlansTable)
         .set({ trialRemindersSent: existing.join(","), updatedAt: new Date() })
         .where(eq(userPlansTable.userId, user.userId));
@@ -328,8 +338,15 @@ async function processTrialReminders(): Promise<string[]> {
 
     if (![7, 3, 1].includes(daysLeft)) continue;
 
-    const alreadySent = (user.trialRemindersSent ?? "").split(",").includes(String(daysLeft));
-    if (alreadySent) continue;
+    // Atomic claim — see comment above. The unique (userId, milestone)
+    // constraint guarantees only one caller ever wins the race, so the
+    // email can never be double-sent even if this function runs concurrently.
+    const claimed = await db
+      .insert(trialReminderLogsTable)
+      .values({ userId: user.userId, milestone: String(daysLeft) })
+      .onConflictDoNothing()
+      .returning();
+    if (claimed.length === 0) continue;
 
     const result = await sendTrialReminderEmail({
       to: user.userEmail,
@@ -339,7 +356,7 @@ async function processTrialReminders(): Promise<string[]> {
 
     if (result.ok) {
       const existing = (user.trialRemindersSent ?? "").split(",").filter(Boolean);
-      existing.push(String(daysLeft));
+      if (!existing.includes(String(daysLeft))) existing.push(String(daysLeft));
       await db
         .update(userPlansTable)
         .set({ trialRemindersSent: existing.join(","), updatedAt: new Date() })

@@ -129,28 +129,28 @@ function buildTrialReminderHtml(p: TrialReminderParams): { subject: string; html
     headlineEmoji = "💕";
     headline = "You're officially one of our<br/>Founding Twin Moms";
     body =
-      "You have <strong>7 days left</strong> in your free TwinTrack trial. Unlock Premium now and keep the special <strong>$39/year Founding Moms price forever</strong> — before it disappears.";
+      "You have <strong>7 days left</strong> in your free TwinTrack trial. Unlock Premium now and keep the special <strong>$3.25/month Founding Moms price forever</strong> (billed $39/year, less than a Starbucks coffee ☕) — before it disappears.";
     urgency = "7 days remaining";
   } else if (p.daysLeft === 3) {
     subject = "Only 3 days left to secure your Founding Moms rate 💕";
     headlineEmoji = "⏳";
     headline = "Only 3 days left to secure<br/>your Founding Moms rate";
     body =
-      "Your free trial ends in <strong>3 days</strong>. After that, the special $39/year price disappears and annual pricing becomes $49/year. Lock it in now — it stays $39 forever.";
+      "Your free trial ends in <strong>3 days</strong>. After that, the special $3.25/month price disappears and annual pricing becomes $4.08/month. Lock it in now — it stays $3.25/month forever.";
     urgency = "3 days remaining";
   } else if (p.daysLeft === 1) {
     subject = "Your Founding Moms offer ends tomorrow 💕";
     headlineEmoji = "💕";
     headline = "Your Founding Moms offer<br/>ends tomorrow";
     body =
-      "Your free trial ends <strong>tomorrow</strong>. We'd love to keep you as a Founding Mom — lock in your $39/year rate before it slips away. After tomorrow, annual pricing goes back to $49/year.";
+      "Your free trial ends <strong>tomorrow</strong>. We'd love to keep you as a Founding Mom — lock in your $3.25/month rate (billed $39/year) before it slips away. After tomorrow, annual pricing goes back to $4.08/month.";
     urgency = "Last day · Founding Moms rate";
   } else {
-    subject = "Your TwinTrack trial has ended — keep going for $39/year 💕";
+    subject = "Your TwinTrack trial has ended — keep going for $3.25/month 💕";
     headlineEmoji = "💝";
     headline = "Your free trial has ended.<br/>We'd love to keep you.";
     body =
-      "Your 14-day TwinTrack trial is over. Your sleep, feeding, and diaper tracking stays — but premium features like Twin AI and the Magazine are now locked. Unlock everything for just <strong>$39/year as a Founding Mom</strong>.";
+      "Your 14-day TwinTrack trial is over. Your sleep, feeding, and diaper tracking stays — but premium features like Twin AI and the Magazine are now locked. Unlock everything for just <strong>$3.25/month as a Founding Mom</strong> — less than a Starbucks coffee ☕, billed $39/year.";
     urgency = "Trial ended · Founding Moms rate still available";
   }
 
@@ -206,9 +206,9 @@ function buildTrialReminderHtml(p: TrialReminderParams): { subject: string; html
               <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:16px;">
                 <tr>
                   <td style="background:#fdf8ff;border:1px solid #f3e8ff;border-radius:16px;padding:18px 24px;text-align:center;">
-                    <p style="margin:0 0 4px;font-size:13px;color:#9ca3af;text-decoration:line-through;">$49/year regular price</p>
-                    <p style="margin:0;font-size:28px;font-weight:800;color:#e91e8c;">$39/year</p>
-                    <p style="margin:4px 0 0;font-size:12px;color:#9c27b0;font-weight:600;">Founding Moms price · Locked in forever</p>
+                    <p style="margin:0 0 4px;font-size:13px;color:#9ca3af;text-decoration:line-through;">$4.08/month regular price</p>
+                    <p style="margin:0;font-size:28px;font-weight:800;color:#e91e8c;">$3.25/month</p>
+                    <p style="margin:4px 0 0;font-size:12px;color:#9c27b0;font-weight:600;">Billed $39/year · Less than a Starbucks coffee ☕ · Locked in forever</p>
                   </td>
                 </tr>
               </table>
@@ -368,10 +368,10 @@ function buildCampaignAnnouncementHtml(p: CampaignAnnouncementParams): string {
                 <p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#9c27b0;">
                   ⏳ Founding Moms pricing — limited time
                 </p>
-                <p style="margin:0 0 10px;font-size:13px;color:#6b7280;text-decoration:line-through;">$49/year regular price</p>
-                <p style="margin:0;font-size:36px;font-weight:900;color:#e91e8c;line-height:1.1;">$39/year</p>
+                <p style="margin:0 0 10px;font-size:13px;color:#6b7280;text-decoration:line-through;">$4.08/month regular price</p>
+                <p style="margin:0;font-size:36px;font-weight:900;color:#e91e8c;line-height:1.1;">$3.25/month</p>
                 <p style="margin:8px 0 0;font-size:13px;color:#9c27b0;font-weight:600;">
-                  Locked in forever — for early supporters only
+                  Billed $39/year · Less than a Starbucks coffee ☕ · Locked in forever
                 </p>
               </div>
 
@@ -499,7 +499,7 @@ function buildPayPalAnnouncementHtml(p: PayPalAnnouncementParams): string {
               ${extensionBlock}
 
               <p style="margin:0 0 22px;font-size:15px;line-height:1.75;color:#374151;">
-                When you're ready, lock in the <strong style="color:#e91e8c;">Founding Moms price of $39/year</strong> — this special rate is only available for a limited time. Once it's gone, annual pricing goes back to $49/year.
+                When you're ready, lock in the <strong style="color:#e91e8c;">Founding Moms price of $3.25/month</strong> (billed $39/year — less than a Starbucks coffee ☕) — this special rate is only available for a limited time. Once it's gone, pricing goes back to $4.08/month.
               </p>
 
               <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
@@ -515,9 +515,9 @@ function buildPayPalAnnouncementHtml(p: PayPalAnnouncementParams): string {
               <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:16px;">
                 <tr>
                   <td style="background:#fdf8ff;border:1px solid #f3e8ff;border-radius:16px;padding:18px 24px;text-align:center;">
-                    <p style="margin:0 0 4px;font-size:13px;color:#9ca3af;text-decoration:line-through;">$49/year regular price</p>
-                    <p style="margin:0;font-size:28px;font-weight:800;color:#e91e8c;">$39/year</p>
-                    <p style="margin:4px 0 0;font-size:12px;color:#9c27b0;font-weight:600;">Founding Moms price · Locked in forever</p>
+                    <p style="margin:0 0 4px;font-size:13px;color:#9ca3af;text-decoration:line-through;">$4.08/month regular price</p>
+                    <p style="margin:0;font-size:28px;font-weight:800;color:#e91e8c;">$3.25/month</p>
+                    <p style="margin:4px 0 0;font-size:12px;color:#9c27b0;font-weight:600;">Billed $39/year · Less than a Starbucks coffee ☕ · Locked in forever</p>
                   </td>
                 </tr>
               </table>

@@ -357,7 +357,7 @@ export default function Settings() {
               >
                 💕 Unlock Caregiver Access
               </button>
-              <p className="text-xs text-muted-foreground">Free for 14 days, then $5.99/month or $39/year</p>
+              <p className="text-xs text-muted-foreground">Free for 14 days, then $5.99/month or $3.25/month billed $39/year</p>
             </div>
           ) : (
           <div className="px-5 py-4 space-y-4">

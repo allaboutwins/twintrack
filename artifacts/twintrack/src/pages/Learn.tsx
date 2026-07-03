@@ -27,6 +27,7 @@ import coverJul25 from "@assets/Twins_Magazine_Jul._2025_1778767835833.jpg";
 import coverNov25 from "@assets/Twins_Magazine_Nov._25__1778767835833.png";
 import coverJan26 from "@assets/Twins_Magazine_Jan._26__1778767835834.png";
 import coverApr26 from "@assets/Twins_Magazine_Apr._26_1778767835833.png";
+import coverJul26 from "@assets/Twins_Magazine_Jul._26__1783071518676.png";
 import coverComingSoon from "@assets/Twins_Magazine_Coming_Soon_1780305570036.png";
 
 // Magazine inside/index images
@@ -40,6 +41,7 @@ import insideJul25 from "@assets/Twins_Magazine_Jul._2025_-_Inside_1778767835833
 import insideNov25 from "@assets/Twins_Magazine_Nov._25_-_What's_Inside_1778767835834.png";
 import insideJan26 from "@assets/Twins_Magazine_Jan._26_Index_1778767835834.png";
 import insideApr26 from "@assets/Twins_Magazine_Apr._26_Index_1778767835834.png";
+import insideJul26 from "@assets/Twins_Magazine_Jul._26_Inside__1783071518676.png";
 
 const SOCIAL_LINKS = [
   { name: "Instagram", handle: "@allaboutwins", url: "https://www.instagram.com/allaboutwins", color: "#fff", Icon: FaInstagram, bg: "#E1306C" },
@@ -75,7 +77,8 @@ const MAGAZINES = [
   { id: 8,  issue: "Nov / Dec 2025", season: "Fall 2025",    url: "https://allaboutwins.com/wp-content/uploads/woocommerce_uploads/2025/06/Twins-Magazine-Nov.-25--bzyubk.pdf",         cover: coverNov25,       inside: insideNov25 },
   { id: 9,  issue: "Jan / Feb 2026", season: "Winter 2026",  url: "https://allaboutwins.com/wp-content/uploads/2025/10/Twins-Magazine-January-2026.pdf",                                cover: coverJan26,       inside: insideJan26 },
   { id: 10, issue: "Apr / May 2026", season: "Spring 2026",  url: "https://allaboutwins.com/wp-content/uploads/woocommerce_uploads/2025/12/Twins-Magazine-Apr.-26-gbqgbx.pdf",          cover: coverApr26,       inside: insideApr26 },
-  { id: 11, issue: "Jul / Aug 2026", season: "Summer 2026",  url: "https://allaboutwins.com/product/twins-magazine-july-2026",                                                           cover: coverComingSoon,  inside: null },
+  { id: 11, issue: "Jul / Aug 2026", season: "Summer 2026",  url: "https://tinyurl.com/4wr4d2w2",                                                                                           cover: coverJul26,       inside: insideJul26 },
+  { id: 12, issue: "Nov / Dec 2026", season: "Fall 2026",    url: "https://allaboutwins.com/product/twins-magazine-october-2026",                                                          cover: coverComingSoon,  inside: null,  comingSoon: true },
 ] as const;
 
 
@@ -129,7 +132,7 @@ function MagazinePreviewModal({ mag, onClose }: { mag: Magazine; onClose: () => 
             data-testid={`read-magazine-${mag.id}`}
           >
             <BookOpen size={16} />
-            Read Full Issue
+            {"comingSoon" in mag && mag.comingSoon ? "Get Notified" : "Read Full Issue"}
             <ExternalLink size={13} className="opacity-75" />
           </a>
         </div>
@@ -178,6 +181,11 @@ function MagazineLibrary() {
                     <p className="text-white text-[10px] font-bold leading-tight">{mag.issue}</p>
                     <p className="text-white/70 text-[9px] uppercase tracking-wide">{mag.season}</p>
                   </div>
+                  {"comingSoon" in mag && mag.comingSoon && (
+                    <div className="absolute top-2 left-2 bg-primary/90 backdrop-blur-sm rounded-full px-2 py-0.5">
+                      <p className="text-white text-[8px] font-bold uppercase tracking-wide">Coming Soon</p>
+                    </div>
+                  )}
                 </>
               ) : (
                 /* Fallback gradient for issues without a cover yet */

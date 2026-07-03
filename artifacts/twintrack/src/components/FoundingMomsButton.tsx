@@ -82,10 +82,8 @@ export default function FoundingMomsButton() {
                     <p className="text-white/70 text-[10px]">days left</p>
                   </div>
                   <div className="bg-white/20 rounded-xl py-2.5 px-2">
-                    <p className="text-white font-bold text-lg">
-                      {pricing?.founding?.label.replace("/year", "") ?? "$39"}
-                    </p>
-                    <p className="text-white/70 text-[10px]">founding/year</p>
+                    <p className="text-white font-bold text-lg">$3.25</p>
+                    <p className="text-white/70 text-[10px]">founding/mo</p>
                   </div>
                   <div className="bg-white/20 rounded-xl py-2.5 px-2">
                     <p className="text-white font-bold text-lg">
@@ -104,7 +102,7 @@ export default function FoundingMomsButton() {
                     <p className="text-3xl mb-2">💕</p>
                     <p className="font-bold text-foreground">You're a Founding Mom</p>
                     <p className="text-sm text-muted-foreground mt-1 leading-relaxed">
-                      You're one of the first twin moms to support TwinTrack. Your $39/year rate is locked in forever.
+                      You're one of the first twin moms to support TwinTrack. Your $3.25/month rate (billed $39/year) is locked in forever.
                     </p>
                   </div>
                   <div className="space-y-2.5">
@@ -156,7 +154,7 @@ export default function FoundingMomsButton() {
                         💕 Founding Moms offer expires when your trial ends
                       </p>
                       <p className="text-xs text-amber-700 mt-1">
-                        Lock in $39/year forever — regular price is $49/year after your trial.
+                        Lock in $3.25/month (billed $39/year, less than a Starbucks coffee ☕) forever — regular price is $4.08/month after your trial.
                       </p>
                     </div>
                   )}

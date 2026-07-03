@@ -18,3 +18,5 @@
 - [Offline queue](offline-queue.md) — offlineQueue.ts in twintrack/src/lib/; enqueue() called in onError when !navigator.onLine; OfflineBanner replays queue + invalidates all queries on reconnect.
 - [Pumping Hub](pumping-hub.md) — pump_entries + pump_reminders tables; /api/pump/* routes; /pumping page (purple theme, timer/manual/daily totals/reminders); processPumpReminders() in notifications-scheduler.ts.
 - [Multi-child support](multi-child-support.md) — twins beyond A/B stored with label "Child N"; Settings.tsx extraTwins + extraForms + addChild() (max 6); birthSet + childType columns on twins table.
+- [Trial reminder idempotency](trial-reminder-idempotency.md) — use a unique-constrained claim table + onConflictDoNothing before sending, never trust a check-then-write column for dedup.
+- [Dashboard duplicate widgets](dashboard-duplicate-widgets.md) — same endpoint + different localStorage dismiss keys in two components causes "un-dismissable" notification bugs; grep for existing usage before adding new widgets.

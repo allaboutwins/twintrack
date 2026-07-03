@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { X } from "lucide-react";
 import { usePlan } from "@/hooks/usePlan";
 
-const DISMISSED_KEY = "tt_paypal_banner_v1";
+const DISMISSED_KEY = "tt_magazine_banner_v1";
 
-export default function PayPalAnnouncementBanner() {
+export default function MagazinePromoBanner() {
   const { plan } = usePlan();
+  const [, setLocation] = useLocation();
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
@@ -23,12 +25,19 @@ export default function PayPalAnnouncementBanner() {
 
   return (
     <div className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-pink-500 to-violet-600 text-white text-sm">
-      <span className="text-base leading-none flex-shrink-0">💳</span>
-      <p className="flex-1 font-medium leading-snug">
-        PayPal now available —{" "}
-        <span className="font-bold">lock in Founding Moms $39/year</span>{" "}
-        before this offer ends.
-      </p>
+      <span className="text-base leading-none flex-shrink-0">📖</span>
+      <button
+        type="button"
+        onClick={() => {
+          setLocation("/learn");
+          dismiss();
+        }}
+        className="flex-1 text-left font-medium leading-snug"
+      >
+        The new <span className="font-bold">Jul/Aug 2026 Twins Magazine</span> is here — real
+        stories from twin parents just like you.{" "}
+        <span className="font-bold underline underline-offset-2">Read The New Issue →</span>
+      </button>
       <button
         onClick={dismiss}
         aria-label="Dismiss announcement"
