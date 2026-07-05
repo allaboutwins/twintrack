@@ -230,6 +230,18 @@ workflows:
             -Pandroid.injected.signing.key.alias=$CM_KEY_ALIAS \
             -Pandroid.injected.signing.key.password=$CM_KEY_PASSWORD
 
+      # TEMPORARY DEBUG STEP — remove once GCLOUD_SERVICE_ACCOUNT_CREDENTIALS is confirmed loaded.
+      # Only prints the character length, never the credential contents.
+      - name: Debug — verify GCLOUD_SERVICE_ACCOUNT_CREDENTIALS is loaded
+        script: |
+          echo "GCLOUD length:"
+          echo ${#GCLOUD_SERVICE_ACCOUNT_CREDENTIALS}
+          if [ -z "$GCLOUD_SERVICE_ACCOUNT_CREDENTIALS" ]; then
+            echo "❌ GCLOUD_SERVICE_ACCOUNT_CREDENTIALS is EMPTY at build runtime — the google_play group is not being loaded, or the variable inside it is empty/misnamed."
+          else
+            echo "✅ GCLOUD_SERVICE_ACCOUNT_CREDENTIALS is present at build runtime."
+          fi
+
     artifacts:
       - artifacts/twintrack/android/app/build/outputs/**/*.aab
       - artifacts/twintrack/android/app/build/outputs/**/mapping.txt
