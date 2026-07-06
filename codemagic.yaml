@@ -37,7 +37,7 @@ workflows:
       - name: Install pnpm
         script: |
           corepack enable
-          corepack prepare pnpm@latest --activate
+          corepack prepare pnpm@9.12.3 --activate
 
       - name: Install workspace dependencies
         script: pnpm install --frozen-lockfile
@@ -121,7 +121,7 @@ workflows:
       - name: Install pnpm
         script: |
           corepack enable
-          corepack prepare pnpm@latest --activate
+          corepack prepare pnpm@9.12.3 --activate
 
       - name: Install workspace dependencies
         script: pnpm install --frozen-lockfile
@@ -190,7 +190,7 @@ workflows:
       - name: Install pnpm
         script: |
           corepack enable
-          corepack prepare pnpm@latest --activate
+          corepack prepare pnpm@9.12.3 --activate
 
       - name: Install workspace dependencies
         script: pnpm install --frozen-lockfile
