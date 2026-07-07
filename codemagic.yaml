@@ -171,7 +171,7 @@ workflows:
       groups:
         - google_play
       node: 20.19.2
-      java: 17
+      java: 21
       vars:
         PACKAGE_NAME: com.allaboutwins.twintrack
         # Secret env vars — add these in Codemagic dashboard → your app → Environment variables:
@@ -199,10 +199,15 @@ workflows:
         script: |
           pnpm --filter @workspace/twintrack run build
 
-      - name: Add Android platform (first build — safe to re-run)
+      - name: Add Android platform (if not already in repo)
         script: |
           cd artifacts/twintrack
-          npx cap add android 2>/dev/null && echo "✅ Android platform added" || echo "ℹ️  Android platform already present"
+          if [ ! -d "android" ]; then
+            npx cap add android
+            echo "✅ Android platform added"
+          else
+            echo "ℹ️  Android platform already present in repo, skipping cap add"
+          fi
 
       - name: Sync Capacitor (copy web assets into Android project)
         script: |

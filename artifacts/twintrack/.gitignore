@@ -1,0 +1,19 @@
+# Android build artifacts — do NOT commit these
+android/.gradle/
+android/local.properties
+android/app/build/
+android/build/
+android/capacitor-cordova-android-plugins/build/
+
+# Web assets injected by cap sync — regenerated on every build from dist/public
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+
+# iOS build artifacts
+ios/App/Pods/
+ios/App/App.xcworkspace/
+ios/.xcode.env.local
+
+# Vite build output (generated during build)
+dist/
