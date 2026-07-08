@@ -15,7 +15,7 @@ workflows:
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.allaboutwins.twintrack
-      node: 20.19.2
+      node: 22
       vars:
         BUNDLE_ID: com.allaboutwins.twintrack
         XCODE_WORKSPACE: artifacts/twintrack/ios/App/App.xcworkspace
@@ -111,7 +111,7 @@ workflows:
       ios_signing:
         distribution_type: development
         bundle_identifier: com.allaboutwins.twintrack
-      node: 20.19.2
+      node: 22
       vars:
         BUNDLE_ID: com.allaboutwins.twintrack
         XCODE_WORKSPACE: artifacts/twintrack/ios/App/App.xcworkspace
@@ -170,7 +170,7 @@ workflows:
     environment:
       groups:
         - google_play
-      node: 20.19.2
+      node: 22
       java: 21
       vars:
         PACKAGE_NAME: com.allaboutwins.twintrack
