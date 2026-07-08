@@ -170,15 +170,17 @@ workflows:
     environment:
       groups:
         - google_play
+      android_signing:
+        - twintrack_upload_key   # Reference name created in Codemagic → Team settings → Code signing identities → Android
       node: 22
       java: 21
       vars:
         PACKAGE_NAME: com.allaboutwins.twintrack
+        # Android signing is handled automatically via the `android_signing` reference above —
+        # Codemagic decodes the managed keystore and injects CM_KEYSTORE_PATH, CM_KEYSTORE_PASSWORD,
+        # CM_KEY_ALIAS, CM_KEY_PASSWORD at build time. No manual CM_KEYSTORE base64 variable needed.
+        #
         # Secret env vars — add these in Codemagic dashboard → your app → Environment variables:
-        #   CM_KEYSTORE                        — base64-encoded .jks keystore (Codemagic generates this for you)
-        #   CM_KEYSTORE_PASSWORD               — keystore password you chose
-        #   CM_KEY_ALIAS                       — key alias (e.g. "twintrack")
-        #   CM_KEY_PASSWORD                    — key password you chose
         #   GCLOUD_SERVICE_ACCOUNT_CREDENTIALS — Google Play service account JSON (single line)
         #   VITE_API_URL                       — production server URL, e.g. https://twintrack.replit.app
         #                                        (REQUIRED for native — without it every API call fails)
@@ -227,16 +229,12 @@ workflows:
           print(f'versionCode set to {vcode}')
           "
 
-      - name: Decode keystore
-        script: |
-          printf '%s' "$CM_KEYSTORE" | base64 --decode > /tmp/twintrack.keystore
-          echo "✅ Keystore ready"
-
       - name: Build signed release AAB
         script: |
           cd artifacts/twintrack/android
+          echo "Using Codemagic-managed keystore at: $CM_KEYSTORE_PATH"
           ./gradlew bundleRelease \
-            -Pandroid.injected.signing.store.file=/tmp/twintrack.keystore \
+            -Pandroid.injected.signing.store.file=$CM_KEYSTORE_PATH \
             -Pandroid.injected.signing.store.password=$CM_KEYSTORE_PASSWORD \
             -Pandroid.injected.signing.key.alias=$CM_KEY_ALIAS \
             -Pandroid.injected.signing.key.password=$CM_KEY_PASSWORD
