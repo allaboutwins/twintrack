@@ -230,6 +230,8 @@ interface CommunityQuestion {
   status: string;
   isAdminAdded: boolean | null;
   createdAt: string;
+  answerCount?: number;
+  totalLikes?: number;
 }
 
 interface LiveUsersData {
@@ -1997,6 +1999,13 @@ export default function Admin() {
                           )}
                           {q.authorName && (
                             <span className="text-[10px] text-muted-foreground">{q.authorName}</span>
+                          )}
+                          {((q.answerCount ?? 0) > 0 || (q.totalLikes ?? 0) > 0) && (
+                            <span className="text-[10px] text-muted-foreground">
+                              {(q.answerCount ?? 0) > 0 && `💬 ${q.answerCount ?? 0}`}
+                              {(q.answerCount ?? 0) > 0 && (q.totalLikes ?? 0) > 0 && " · "}
+                              {(q.totalLikes ?? 0) > 0 && `👍 ${q.totalLikes ?? 0}`}
+                            </span>
                           )}
                         </div>
                       </div>

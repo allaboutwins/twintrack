@@ -10,13 +10,23 @@ interface InviteInfo {
 }
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, "");
+const INVITE_TOKEN_KEY = "tt_pending_invite_token";
 
 export default function InviteAccept() {
   const { isSignedIn, isLoaded, user } = useUser();
   const [, setLocation] = useLocation();
 
+  // Read token from URL first, fall back to sessionStorage (survives Clerk OAuth redirects
+  // where the query param can be lost after the provider redirects back to the app).
   const token = (() => {
-    try { return new URLSearchParams(window.location.search).get("token") ?? ""; }
+    try {
+      const fromUrl = new URLSearchParams(window.location.search).get("token") ?? "";
+      if (fromUrl) {
+        sessionStorage.setItem(INVITE_TOKEN_KEY, fromUrl);
+        return fromUrl;
+      }
+      return sessionStorage.getItem(INVITE_TOKEN_KEY) ?? "";
+    }
     catch { return ""; }
   })();
 
@@ -47,6 +57,7 @@ export default function InviteAccept() {
     })
       .then(async (res) => {
         if (res.ok) {
+          sessionStorage.removeItem(INVITE_TOKEN_KEY);
           setStep("done");
           setTimeout(() => setLocation("/dashboard"), 1800);
         } else {

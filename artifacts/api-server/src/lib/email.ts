@@ -115,54 +115,9 @@ export async function sendTrialReminderEmail(params: TrialReminderParams): Promi
 
 // ── Trial reminder email ────────────────────────────────────────────────────
 
-function buildTrialReminderHtml(p: TrialReminderParams): { subject: string; html: string } {
+function emailWrapper(subject: string, headerEmoji: string, headerLabel: string, headline: string, bodyHtml: string, appUrl: string): string {
   const year = new Date().getFullYear();
-
-  let subject: string;
-  let headlineEmoji: string;
-  let headline: string;
-  let body: string;
-  let urgency: string;
-
-  if (p.daysLeft === 7) {
-    subject = "You're officially one of our Founding Twin Moms 💕";
-    headlineEmoji = "💕";
-    headline = "You're officially one of our<br/>Founding Twin Moms";
-    body =
-      "You have <strong>7 days left</strong> in your free TwinTrack trial. Unlock Premium now and keep the special <strong>$3.25/month Founding Moms price forever</strong> — before it disappears.";
-    urgency = "7 days remaining";
-  } else if (p.daysLeft === 3) {
-    subject = "Only 3 days left to secure your Founding Moms rate 💕";
-    headlineEmoji = "⏳";
-    headline = "Only 3 days left to secure<br/>your Founding Moms rate";
-    body =
-      "Your free trial ends in <strong>3 days</strong>. Lock in your special <strong>$3.25/month Founding Moms rate</strong> now — it stays $3.25/month forever.";
-    urgency = "3 days remaining";
-  } else if (p.daysLeft === 1) {
-    subject = "Your Founding Moms offer ends tomorrow 💕";
-    headlineEmoji = "💕";
-    headline = "Your Founding Moms offer<br/>ends tomorrow";
-    body =
-      "Your free trial ends <strong>tomorrow</strong>. We'd love to keep you as a Founding Mom — lock in your <strong>$3.25/month rate</strong> before it slips away.";
-    urgency = "Last day · Founding Moms rate";
-  } else {
-    subject = "Your TwinTrack trial has ended — keep going for $3.25/month 💕";
-    headlineEmoji = "💝";
-    headline = "Your free trial has ended.<br/>We'd love to keep you.";
-    body =
-      "Your 14-day TwinTrack trial is over. Your sleep, feeding, and diaper tracking stays — but premium features like Twin AI and the Magazine are now locked. Unlock everything for just <strong>$3.25/month as a Founding Mom</strong>.";
-    urgency = "Trial ended · Founding Moms rate still available";
-  }
-
-  const benefits = [
-    "✨&nbsp; Unlimited Twin AI questions",
-    "👨‍👩‍👧‍👦&nbsp; Caregiver access for your whole family",
-    "📖&nbsp; Full Twins Magazine library",
-    "🎓&nbsp; Twins Academy expert courses",
-    "💝&nbsp; Premium memory cards & holiday templates",
-  ];
-
-  const html = `<!DOCTYPE html>
+  return `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
@@ -175,66 +130,27 @@ function buildTrialReminderHtml(p: TrialReminderParams): { subject: string; html
       <td align="center">
         <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
                style="max-width:560px;background:#ffffff;border-radius:24px;overflow:hidden;box-shadow:0 4px 24px rgba(99,34,110,0.08);">
-
           <tr>
             <td style="background:linear-gradient(135deg,#e91e8c 0%,#9c27b0 100%);padding:44px 32px 36px;text-align:center;">
-              <div style="margin-bottom:14px;font-size:48px;line-height:1;">${headlineEmoji}</div>
-              <p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.75);">TwinTrack — Founding Moms</p>
+              <div style="margin-bottom:14px;font-size:48px;line-height:1;">${headerEmoji}</div>
+              <p style="margin:0 0 6px;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:rgba(255,255,255,0.75);">${headerLabel}</p>
               <h1 style="margin:0;font-size:24px;font-weight:800;color:#ffffff;line-height:1.4;">${headline}</h1>
-              <div style="margin-top:16px;display:inline-block;background:rgba(255,255,255,0.2);border-radius:50px;padding:6px 18px;">
-                <p style="margin:0;font-size:12px;font-weight:700;color:#ffffff;">${urgency}</p>
-              </div>
             </td>
           </tr>
-
           <tr>
-            <td style="padding:36px 32px 8px;">
-              <p style="margin:0 0 24px;font-size:16px;line-height:1.75;color:#374151;">${body}</p>
-
-              <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
-                     style="background:#fdf8ff;border:1px solid #f3e8ff;border-radius:16px;margin-bottom:28px;">
-                <tr>
-                  <td style="padding:22px 24px;">
-                    <p style="margin:0 0 14px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#9c27b0;">
-                      What you unlock with Premium
-                    </p>
-                    ${benefits.map((f) => `<p style="margin:0 0 10px;font-size:14px;color:#374151;line-height:1.5;">${f}</p>`).join("")}
-                  </td>
-                </tr>
-              </table>
-
-              <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:16px;">
-                <tr>
-                  <td style="background:#fdf8ff;border:1px solid #f3e8ff;border-radius:16px;padding:18px 24px;text-align:center;">
-                    <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#9c27b0;">💕 Founding Moms Premium</p>
-                    <p style="margin:0;font-size:28px;font-weight:800;color:#e91e8c;">Only $3.25/month</p>
-                    <p style="margin:4px 0 0;font-size:12px;color:#9c27b0;font-weight:600;">Less than a Starbucks coffee each month ☕</p>
-                  </td>
-                </tr>
-              </table>
-
-              <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-bottom:20px;">
+            <td style="padding:36px 32px 28px;">
+              ${bodyHtml}
+              <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="margin-top:28px;">
                 <tr>
                   <td align="center">
-                    <a href="${p.appUrl}"
-                       style="display:inline-block;padding:17px 44px;background:linear-gradient(135deg,#e91e8c 0%,#9c27b0 100%);color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;border-radius:50px;letter-spacing:0.3px;box-shadow:0 4px 16px rgba(233,30,140,0.35);">
-                      💕 Open TwinTrack
+                    <a href="${appUrl}" style="display:inline-block;padding:17px 44px;background:linear-gradient(135deg,#e91e8c 0%,#9c27b0 100%);color:#ffffff;font-size:16px;font-weight:700;text-decoration:none;border-radius:50px;letter-spacing:0.3px;box-shadow:0 4px 16px rgba(233,30,140,0.35);">
+                      \u{1F495} Open TwinTrack
                     </a>
                   </td>
                 </tr>
               </table>
-
-              <p style="margin:0 0 32px;font-size:13px;color:#9ca3af;line-height:1.7;text-align:center;">
-                After your trial, core tracking (sleep, feeding, diapers, stats) remains free forever.
-              </p>
-
-              <hr style="border:none;border-top:1px solid #f3e8ff;margin:0 0 24px;"/>
-              <p style="margin:0 0 32px;font-size:13px;color:#9ca3af;line-height:1.7;text-align:center;">
-                No pressure, ever. We just want to be the app you can't imagine parenting twins without. 💕
-              </p>
             </td>
           </tr>
-
           <tr>
             <td style="background:#f9f5ff;padding:20px 32px;text-align:center;border-top:1px solid #f3e8ff;">
               <p style="margin:0;font-size:12px;color:#b8a9c9;line-height:1.8;">
@@ -243,16 +159,160 @@ function buildTrialReminderHtml(p: TrialReminderParams): { subject: string; html
               </p>
             </td>
           </tr>
-
         </table>
       </td>
     </tr>
   </table>
 </body>
 </html>`;
-
-  return { subject, html };
 }
+
+function buildTrialReminderHtml(p: TrialReminderParams): { subject: string; html: string } {
+
+  // \u2500\u2500 Day 7 \u2014 Twin AI feature discovery \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  if (p.daysLeft === 7) {
+    const subject = "The 5 questions twin moms ask Twin AI most \u{1F495}";
+    const questions7 = [
+      "How do I get my twins on the same nap schedule?",
+      "My twins keep waking each other up \u2014 what should I do?",
+      "How much formula should my twins be drinking?",
+      "How do I survive twin sleep deprivation?",
+      "What is the best bedtime routine for twins?",
+    ];
+    const bodyHtml = `
+      <p style="margin:0 0 20px;font-size:16px;line-height:1.75;color:#374151;">Hi Mama \u{1F495}</p>
+      <p style="margin:0 0 20px;font-size:15px;line-height:1.75;color:#374151;">
+        Twin moms have already been asking Twin AI some amazing questions.<br/><br/>
+        Here are the 5 most common:
+      </p>
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+             style="background:#fdf8ff;border:1px solid #f3e8ff;border-radius:16px;margin-bottom:24px;">
+        <tr>
+          <td style="padding:22px 24px;">
+            ${questions7.map((q: string, i: number) => `<p style="margin:0 0 12px;font-size:14px;color:#374151;line-height:1.6;"><strong>${i + 1}.</strong> ${q}</p>`).join("")}
+          </td>
+        </tr>
+      </table>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.75;color:#374151;">
+        Instead of searching through Facebook groups or Google, you can simply ask Twin AI directly and get support in seconds.
+      </p>
+      <p style="margin:0;font-size:15px;line-height:1.75;color:#374151;">
+        \u2728 Try asking Twin AI your own question today. You might be surprised how helpful it can be.
+      </p>
+      <p style="margin:20px 0 0;font-size:15px;color:#374151;">You're doing an amazing job \u{1F495}<br/><br/>The TwinTrack Team</p>`;
+    return { subject, html: emailWrapper(subject, "\u{1F4AC}", "TwinTrack \u2014 Twin AI", "The 5 questions twin moms ask Twin AI most", bodyHtml, p.appUrl) };
+  }
+
+  // \u2500\u2500 Day 3 \u2014 Feature discovery \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  if (p.daysLeft === 3) {
+    const subject = "Most twin moms never discover these features \u{1F440}";
+    const features3 = [
+      "\u{1F4AC} <strong>Ask Twin AI</strong> \u2014 get answers to any twin question, instantly",
+      "\u{1F4F8} <strong>Create beautiful Memory Cards</strong> \u2014 milestone keepsakes in one tap",
+      "\u{1F46A} <strong>Invite a caregiver</strong> \u2014 dad, grandma, or nanny stays in sync",
+      "\u{1F4DA} <strong>Read the latest Twins Magazine</strong> \u2014 expert articles for twin parents",
+      "\u{1F393} <strong>Explore Twins Academy</strong> \u2014 on-demand expert courses",
+      "\u{1F495} <strong>Join Community Questions and Polls</strong> \u2014 real twin parents, real answers",
+    ];
+    const bodyHtml = `
+      <p style="margin:0 0 20px;font-size:16px;line-height:1.75;color:#374151;">Hi Mama \u{1F495}</p>
+      <p style="margin:0 0 20px;font-size:15px;line-height:1.75;color:#374151;">
+        Many parents start using TwinTrack for feeds, diapers and sleep.<br/><br/>
+        But some of the most-loved features are often missed.
+      </p>
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+             style="background:#fdf8ff;border:1px solid #f3e8ff;border-radius:16px;margin-bottom:24px;">
+        <tr>
+          <td style="padding:22px 24px;">
+            ${features3.map((f: string) => `<p style="margin:0 0 12px;font-size:14px;color:#374151;line-height:1.6;">${f}</p>`).join("")}
+          </td>
+        </tr>
+      </table>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.75;color:#374151;">
+        Take a few minutes today to explore one feature you've never used before.
+      </p>
+      <p style="margin:0;font-size:15px;line-height:1.75;color:#374151;">
+        You may discover a new favorite.
+      </p>
+      <p style="margin:20px 0 0;font-size:15px;color:#374151;">The TwinTrack Team</p>`;
+    return { subject, html: emailWrapper(subject, "\u{1F440}", "TwinTrack \u2014 Features", "Most twin moms never discover these features", bodyHtml, p.appUrl) };
+  }
+
+  // \u2500\u2500 Day 1 \u2014 Soft Founding Moms close \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  if (p.daysLeft === 1) {
+    const subject = "Before your Founding Moms access ends \u{1F495}";
+    const features1 = [
+      "\u2728 Unlimited Twin AI",
+      "\u{1F4DA} Full Twins Magazine Library",
+      "\u{1F393} Twins Academy",
+      "\u{1F46A} Caregiver Access",
+      "\u{1F4F8} Premium Memory Cards",
+    ];
+    const bodyHtml = `
+      <p style="margin:0 0 20px;font-size:16px;line-height:1.75;color:#374151;">Hi Mama \u{1F495}</p>
+      <p style="margin:0 0 20px;font-size:15px;line-height:1.75;color:#374151;">
+        Before your Founding Moms trial ends, we wanted to make sure you've experienced everything TwinTrack has to offer.
+      </p>
+      <p style="margin:0 0 14px;font-size:15px;line-height:1.75;color:#374151;">
+        Most active moms tell us their favorite Premium features are:
+      </p>
+      <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+             style="background:#fdf8ff;border:1px solid #f3e8ff;border-radius:16px;margin-bottom:24px;">
+        <tr>
+          <td style="padding:22px 24px;">
+            ${features1.map((f: string) => `<p style="margin:0 0 10px;font-size:14px;color:#374151;line-height:1.6;">${f}</p>`).join("")}
+          </td>
+        </tr>
+      </table>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.75;color:#374151;">
+        If TwinTrack has helped make life with twins a little easier, we'd love for you to continue the journey with us.
+      </p>
+      <p style="margin:0 0 16px;font-size:15px;line-height:1.75;color:#374151;">
+        And if you're one of our early Founding Moms, you can still lock in the special annual pricing while it's available.
+      </p>
+      <p style="margin:0;font-size:15px;line-height:1.75;color:#374151;">
+        Thank you for helping us build TwinTrack together \u{1F495}
+      </p>
+      <p style="margin:16px 0 0;font-size:15px;color:#374151;">The TwinTrack Team</p>`;
+    return { subject, html: emailWrapper(subject, "\u{1F495}", "TwinTrack \u2014 Founding Moms", "Before your Founding Moms access ends", bodyHtml, p.appUrl) };
+  }
+
+  // \u2500\u2500 Day 0 \u2014 Trial ended \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500
+  const subject = "Your TwinTrack trial has ended \u2014 keep going for $3.25/month \u{1F495}";
+  const features0 = [
+    "\u2728&nbsp; Unlimited Twin AI questions",
+    "\u{1F46A}&nbsp; Caregiver access for your whole family",
+    "\u{1F4D6}&nbsp; Full Twins Magazine library",
+    "\u{1F393}&nbsp; Twins Academy expert courses",
+    "\u{1F49D}&nbsp; Premium memory cards &amp; holiday templates",
+  ];
+  const bodyHtml0 = `
+    <p style="margin:0 0 20px;font-size:16px;line-height:1.75;color:#374151;">Hi Mama \u{1F495}</p>
+    <p style="margin:0 0 20px;font-size:15px;line-height:1.75;color:#374151;">
+      Your 14-day TwinTrack trial is over. Your sleep, feeding, and diaper tracking stays free forever \u2014
+      but Premium features like Twin AI and the Magazine are now locked.
+    </p>
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation"
+           style="background:#fdf8ff;border:1px solid #f3e8ff;border-radius:16px;margin-bottom:24px;">
+      <tr>
+        <td style="padding:22px 24px;">
+          <p style="margin:0 0 14px;font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:#9c27b0;">What you unlock with Premium</p>
+          ${features0.map((f: string) => `<p style="margin:0 0 10px;font-size:14px;color:#374151;line-height:1.5;">${f}</p>`).join("")}
+        </td>
+      </tr>
+    </table>
+    <table width="100%" cellpadding="0" cellspacing="0" role="presentation">
+      <tr>
+        <td style="background:#fdf8ff;border:1px solid #f3e8ff;border-radius:16px;padding:18px 24px;text-align:center;">
+          <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:#9c27b0;">\u{1F495} Founding Moms Premium</p>
+          <p style="margin:0;font-size:28px;font-weight:800;color:#e91e8c;">Only $3.25/month</p>
+          <p style="margin:4px 0 0;font-size:12px;color:#9c27b0;font-weight:600;">Less than a Starbucks coffee each month \u2615</p>
+        </td>
+      </tr>
+    </table>`;
+  return { subject, html: emailWrapper(subject, "\u{1F49D}", "TwinTrack \u2014 Founding Moms", "Your free trial has ended.<br/>We\u2019d love to keep you.", bodyHtml0, p.appUrl) };
+}
+
 
 // ── PayPal announcement email ────────────────────────────────────────────────
 

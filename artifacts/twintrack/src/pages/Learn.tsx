@@ -552,43 +552,7 @@ function CommunityQuestionsSection({ userId }: { userId: string }) {
         </button>
       </div>
 
-      {/* Ask form */}
-      {showAskForm && (
-        <div className="bg-white rounded-2xl border border-primary/20 p-4 space-y-3">
-          {!questionSubmitted ? (
-            <>
-              <p className="text-xs text-muted-foreground leading-relaxed">
-                Share a question with the TwinTrack community. Questions are reviewed before publishing.
-              </p>
-              <textarea
-                value={myQuestion}
-                onChange={(e) => setMyQuestion(e.target.value)}
-                placeholder="e.g. How do I sync my twins' nap schedules?"
-                rows={3}
-                className="w-full px-4 py-3 rounded-xl bg-muted text-sm outline-none focus:ring-2 ring-primary/30 resize-none"
-              />
-              <button
-                onClick={submitQuestion}
-                disabled={submittingQuestion || !myQuestion.trim()}
-                className="w-full py-2.5 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
-              >
-                <Send size={13} />
-                {submittingQuestion ? "Sending..." : "Submit Question"}
-              </button>
-            </>
-          ) : (
-            <div className="text-center py-2 space-y-1">
-              <p className="text-2xl">💕</p>
-              <p className="font-bold text-foreground text-sm">Thank you for your question!</p>
-              <p className="text-xs text-muted-foreground">
-                Based on feedback from TwinTrack families, we'll review and publish it soon.
-              </p>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Questions list */}
+      {/* Questions list — shown first so community content is immediately visible */}
       {loading ? (
         <div className="space-y-3">
           <Skeleton className="h-20 rounded-2xl" />
@@ -677,6 +641,56 @@ function CommunityQuestionsSection({ userId }: { userId: string }) {
           </div>
         ))
       )}
+
+      {/* Ask a question — shown after community content so users read first */}
+      <div className="bg-white rounded-2xl border border-primary/20 overflow-hidden">
+        <button
+          onClick={() => { setShowAskForm((v) => !v); setQuestionSubmitted(false); }}
+          className="w-full px-4 py-3.5 flex items-center justify-between text-left"
+        >
+          <div className="flex items-center gap-2">
+            <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <Send size={12} className="text-primary" />
+            </div>
+            <span className="text-sm font-semibold text-primary">Ask the community a question</span>
+          </div>
+          {showAskForm ? <ChevronUp size={15} className="text-muted-foreground" /> : <ChevronDown size={15} className="text-muted-foreground" />}
+        </button>
+        {showAskForm && (
+          <div className="border-t border-border/50 p-4 space-y-3">
+            {!questionSubmitted ? (
+              <>
+                <p className="text-xs text-muted-foreground leading-relaxed">
+                  Share a question with the TwinTrack community. Questions are reviewed before publishing.
+                </p>
+                <textarea
+                  value={myQuestion}
+                  onChange={(e) => setMyQuestion(e.target.value)}
+                  placeholder="e.g. How do I sync my twins' nap schedules?"
+                  rows={3}
+                  className="w-full px-4 py-3 rounded-xl bg-muted text-sm outline-none focus:ring-2 ring-primary/30 resize-none"
+                />
+                <button
+                  onClick={submitQuestion}
+                  disabled={submittingQuestion || !myQuestion.trim()}
+                  className="w-full py-2.5 rounded-xl bg-primary text-white text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2 active:scale-[0.98] transition-all"
+                >
+                  <Send size={13} />
+                  {submittingQuestion ? "Sending..." : "Submit Question"}
+                </button>
+              </>
+            ) : (
+              <div className="text-center py-2 space-y-1">
+                <p className="text-2xl">💕</p>
+                <p className="font-bold text-foreground text-sm">Thank you for your question!</p>
+                <p className="text-xs text-muted-foreground">
+                  Based on feedback from TwinTrack families, we'll review and publish it soon.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

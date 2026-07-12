@@ -1,0 +1,155 @@
+TwinTrack — High Priority Fixes & Subscription Strategy Update 💕🚀
+
+IMPORTANT CHANGE
+
+Please STOP the current 7 / 3 / 1 reminder email strategy that focuses primarily on trial expiration.
+
+We are seeing many emails sent but zero conversions.
+
+New goal:
+
+👉 Use these emails to drive feature discovery and perceived value.
+
+People already see the Founding Moms countdown inside the app every day.
+
+The emails should help moms discover:
+
+* Twin AI
+* Caregiver Access
+* Twins Magazines
+* Twins Academy
+* Community Questions
+* Memories
+
+The focus should be:
+
+"Look how much value exists"
+
+NOT
+
+"Your trial is ending."
+
+---
+
+HIGH PRIORITY BUGS / FEEDBACK
+
+1. CAREGIVER INVITATION BROKEN
+
+Feedback:
+
+"My wife sent me an invitation, but neither the link nor the button work."
+
+Please investigate:
+
+* caregiver invite URL generation
+* invite token validity
+* mobile deep links
+* email invite links
+* Clerk auth redirects
+
+This is becoming a critical feature.
+
+---
+
+2. YESTERDAY NIGHT SLEEP STILL NOT EDITABLE
+
+This feedback continues to return repeatedly.
+
+Parents still cannot reliably edit:
+
+* overnight sleep sessions
+* yesterday's sleep
+* wake-up times from previous day sessions
+
+Please fully investigate:
+
+* cross-midnight sleep records
+* edit permissions
+* stats/history edit flows
+
+This is now a recurring trust issue.
+
+---
+
+3. ACCIDENTAL CHILD CREATION
+
+Feedback:
+
+"Accidentally created child 3 and can't delete."
+
+Please add:
+
+* Delete Child
+* Archive Child
+
+inside child management.
+
+---
+
+4. COMMUNITY QUESTIONS & POLLS
+
+I've approved 2 community questions.
+
+However:
+
+I cannot see engagements
+
+Goal:
+
+Increase community engagement and discovery/ put them on top.
+
+---
+
+5. EMAIL DUPLICATES
+
+I still receive:
+
+[contact@allaboutwins.com](mailto:contact@allaboutwins.com)
+
+emails every time the system sends 7/3/1 emails.
+
+Please investigate:
+
+* duplicate notification triggers
+* admin copies
+* unnecessary internal email notifications
+
+I should not receive 3 admin emails every time a user receives a reminder email, make sure also that nobody else got a duplicate email!
+
+---
+
+6. SUBSCRIPTION VERIFICATION HEALTH
+
+Admin currently shows:
+
+⚠️ Users fell back to cached plan data.
+
+And:
+
+All rc_verification_failure events are API timeouts.
+
+Please investigate:
+
+* /api/plan performance
+* timeout thresholds
+* API availability
+* caching strategy
+* RevenueCat verification flow
+
+Goal:
+
+Eliminate unnecessary verification failures and understand whether users are seeing subscription status issues.
+
+---
+
+PRIORITY ORDER
+
+1. Caregiver invite fix
+2. Overnight sleep edit fix
+3. Community Questions visibility
+4. Duplicate admin emails
+5. Subscription verification health investigation
+6. New value-focused email strategy
+7. Make sure that notifications are updated regularly 
+
+💕

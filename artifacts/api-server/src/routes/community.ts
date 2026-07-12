@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, count, sum, sql } from "drizzle-orm";
 import { db, communityQuestions, communityAnswers, communityAnswerLikes } from "@workspace/db";
 import { z } from "zod/v4";
 import { isAdminAuth } from "./admin-auth";
@@ -115,7 +115,7 @@ router.post("/community/answers/:id/like", async (req, res): Promise<void> => {
 
 // ── Admin endpoints ───────────────────────────────────────────────────────
 
-// GET /admin/community/questions — all questions (all statuses)
+// GET /admin/community/questions — all questions (all statuses) with engagement counts
 router.get("/admin/community/questions", async (req, res): Promise<void> => {
   if (!isAdminAuth(req)) { res.status(403).json({ error: "Forbidden" }); return; }
   const questions = await db
@@ -123,7 +123,25 @@ router.get("/admin/community/questions", async (req, res): Promise<void> => {
     .from(communityQuestions)
     .orderBy(desc(communityQuestions.createdAt))
     .limit(200);
-  res.json(questions);
+
+  const withEngagement = await Promise.all(
+    questions.map(async (q) => {
+      const [row] = await db
+        .select({
+          answerCount: count(communityAnswers.id),
+          totalLikes: sql<number>`coalesce(sum(${communityAnswers.likes}), 0)`,
+        })
+        .from(communityAnswers)
+        .where(eq(communityAnswers.questionId, q.id));
+      return {
+        ...q,
+        answerCount: Number(row?.answerCount ?? 0),
+        totalLikes: Number(row?.totalLikes ?? 0),
+      };
+    }),
+  );
+
+  res.json(withEngagement);
 });
 
 // PATCH /admin/community/questions/:id — update status / pin answer
